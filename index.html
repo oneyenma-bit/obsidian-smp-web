@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian SMP | Tienda Oficial — Rangos y Kits</title>
+    <meta name="description" content="Tienda oficial del servidor Obsidian SMP. Adquiere kits exclusivos y rangos dentro de Shulker Boxes. Pagos seguros con Visa, Google Pay y PayPal.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Canvas de partículas -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- ===== NAVBAR ===== -->
+    <header class="navbar" id="navbar">
+        <div class="nav-inner">
+            <!-- Brand / Logo 3D -->
+            <div class="brand" id="brand-logo-btn" onclick="switchTab('inicio')" title="Ir al inicio">
+                <div class="logo-wrap-3d">
+                    <img src="obsidian_logo_3d.png" alt="Obsidian 3D Logo" class="logo-img-3d" id="logo-img">
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">OBSIDIAN <em>SMP</em></span>
+                    <span class="brand-sub">TIENDA OFICIAL</span>
+                </div>
+            </div>
+
+            <!-- Server IP Center Pill -->
+            <button class="ip-pill" id="copy-ip-btn" title="Haz clic para copiar la IP">
+                <span class="ip-live-dot"></span>
+                <div class="ip-detail">
+                    <span class="ip-addr">play.obsidiansmp.net</span>
+                    <span class="ip-online"><i class="fa-solid fa-signal"></i> 144 ONLINE</span>
+                </div>
+                <i class="fa-regular fa-copy ip-copy-icon"></i>
+            </button>
+
+            <!-- Nav Right Actions -->
+            <div class="nav-right">
+                <a href="https://discord.gg" target="_blank" class="discord-btn">
+                    <i class="fa-brands fa-discord"></i> Discord
+                    <span class="disc-badge">144</span>
+                </a>
+
+                <!-- TikTok Badge Button -->
+                <a href="https://www.tiktok.com/@Cowsmall7w7" target="_blank" class="nav-tiktok-btn" title="TikTok del Owner Cow (@Cowsmall7w7)">
+                    <i class="fa-brands fa-tiktok"></i> <span>TikTok</span>
+                </a>
+
+                <!-- Gemas Pill -->
+                <div class="points-pill" onclick="switchTab('puntos')" title="Ver Gemas y Recompensas">
+                    <i class="fa-solid fa-gem"></i>
+                    <span id="nav-points-val">0</span> Gemas · <span class="pts-redeem-label">CANJEAR</span>
+                </div>
+
+                <!-- Inbox Pill -->
+                <div class="points-pill" onclick="openInboxModal()" title="Buzón de Mensajes" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <i class="fa-solid fa-envelope"></i>
+                    Buzón <span class="pts-redeem-label" id="inbox-badge" style="background:#ef4444; color:white; display:none; padding:2px 6px; border-radius:10px;">0</span>
+                </div>
+
+                <!-- User Profile Trigger Pill -->
+                <div class="user-pill" onclick="openModal('modal-login')" title="Cambiar usuario de Minecraft">
+                    <img id="nav-skin-img" src="https://mc-heads.net/avatar/MHF_Steve/40" alt="Skin" class="nav-skin">
+                    <div class="user-pill-text">
+                        <span class="user-pill-label">Usuario</span>
+                        <span class="user-pill-val" id="nav-username">Invitado</span>
+                    </div>
+                    <i class="fa-solid fa-pen-to-square user-edit-icon"></i>
+                </div>
+
+                <!-- Cart Badge -->
+                <div class="cart-badge" id="cart-badge-btn" onclick="openCheckoutModal()">
+                    <i class="fa-solid fa-cart-shopping cart-icon-main"></i>
+                    <div class="cart-badge-info">
+                        <span class="cart-status" id="nav-cart-status">HAZ CLIC PARA INICIAR</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== MAIN NAVIGATION TAB BAR ===== -->
+    <div class="cat-bar" id="main-nav-bar">
+        <div class="cat-bar-inner">
+            <button class="cat-tab active" id="tab-inicio" data-tab="inicio" onclick="switchTab('inicio')">
+                <i class="fa-solid fa-house"></i> INICIO
+            </button>
+            <button class="cat-tab" id="tab-reglas" data-tab="reglas" onclick="switchTab('reglas')">
+                <i class="fa-solid fa-book-bookmark"></i> REGLAS
+            </button>
+            <button class="cat-tab" id="tab-quienes" data-tab="quienes" onclick="switchTab('quienes')">
+                <i class="fa-solid fa-users"></i> QUIÉNES SOMOS
+            </button>
+            <button class="cat-tab" id="tab-kits" data-tab="kits" onclick="switchTab('kits')">
+                <i class="fa-solid fa-box-archive"></i> TIENDA DE KITS
+            </button>
+            <button class="cat-tab points-cat-tab" id="tab-puntos" data-tab="puntos" onclick="switchTab('puntos')">
+                <i class="fa-solid fa-gem"></i> OBJETOS &amp; RANGOS (GEMAS)
+            </button>
+            <button class="cat-tab marketplace-cat-tab" id="tab-marketplace" data-tab="marketplace" onclick="switchTab('marketplace')">
+                <i class="fa-solid fa-store"></i> MARKETPLACE (INTERCAMBIOS)
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== VIEWS CONTAINER ===== -->
+    <div class="views-wrapper">
+
+        <!-- ==================== VISTA 1: INICIO ==================== -->
+        <section class="view-section active" id="view-inicio">
+            <div class="home-hero-card" style="position: relative;">
+                <div class="home-banner-wrap" style="position: relative;">
+                    <img src="hero_minecraft_scenery.png" alt="Obsidian SMP Widescreen Render" class="home-banner-img">
+                    <div class="home-banner-overlay"></div>
+                    <div class="home-banner-badge">
+                        <span class="live-pulse"></span> APERTURA DE OBSIDIAN SMP
+                    </div>
+                </div>
+                
+                <div class="home-intro-content">
+                    <h1 class="hero-title">OBSIDIAN <span>SMP</span></h1>
+                    <p class="home-description-short">
+                        Servidor Survival VC Semi-Anárquico de Minecraft. Consigue kits de Shulker Boxes y acumula Gemas Obsidian en cada compra para canjear recompensas in-game.
+                    </p>
+
+                    <!-- Owner TikTok Highlight Card -->
+                    <div class="owner-tiktok-card">
+                        <div class="owner-avatar-wrap">
+                            <img src="https://mc-heads.net/avatar/MHF_Steve/80" alt="Cow Owner Skin" class="owner-avatar" id="owner-skin-img">
+                            <span class="owner-crown" title="Server Owner"><i class="fa-solid fa-crown"></i></span>
+                        </div>
+                        <div class="owner-info">
+                            <div class="owner-tag-row">
+                                <span class="owner-name">Cow</span>
+                                <span class="owner-role-badge"><i class="fa-solid fa-shield-halved"></i> OWNER</span>
+                            </div>
+                            <a href="https://www.tiktok.com/@Cowsmall7w7" target="_blank" class="tiktok-btn">
+                                <i class="fa-brands fa-tiktok"></i>
+                                <span>TikTok: <strong>@Cowsmall7w7</strong></span>
+                                <i class="fa-solid fa-arrow-up-right-from-square tt-arrow"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="home-actions">
+                        <button class="btn-hero-primary" onclick="switchTab('kits')">
+                            <i class="fa-solid fa-store"></i> EXPLORAR KITS
+                        </button>
+                        <button class="btn-hero-points" onclick="switchTab('puntos')">
+                            <i class="fa-solid fa-gem"></i> RECOMPENSAS DE GEMAS (<span id="hero-pts-count">0</span> Gemas)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Showcase Grid 2.5D -->
+            <div class="home-features-heading">
+                <h3><i class="fa-solid fa-sparkles"></i> MODALIDADES DE OBSIDIAN SMP</h3>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feat-icon"><i class="fa-solid fa-headset"></i></div>
+                    <h4>Survival VC Semi-Anárquico</h4>
+                    <p>Chat de voz in-game (VC), supervivencia libre con toque semi-anárquico y misiones.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feat-icon"><i class="fa-solid fa-box-archive"></i></div>
+                    <h4>Kits de Shulkers TOP</h4>
+                    <p>Armaduras de Netherite, armas encantadas y tótems listos para usar.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feat-icon"><i class="fa-solid fa-gem"></i></div>
+                    <h4>Gemas Obsidian</h4>
+                    <p>Obtén 100 Gemas por cada $1 USD gastado para canjear en la tienda de Gemas.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feat-icon"><i class="fa-brands fa-tiktok"></i></div>
+                    <h4>Comunidad &amp; Directos</h4>
+                    <p>Sigue a <strong>Cow (@Cowsmall7w7)</strong> en TikTok para sorteos y noticias.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VISTA 2: REGLAS (3D BOOK) ==================== -->
+        <section class="view-section" id="view-reglas" style="display:none;">
+            <div class="rules-container">
+                <div class="rules-header-card">
+                    <div class="rules-book-wrap">
+                        <img src="minecraft_book_official.png" alt="Minecraft Enchanted Book" class="rules-book-img">
+                    </div>
+                    <div class="rules-header-text">
+                        <h2><i class="fa-solid fa-book"></i> REGLAMENTO OFICIAL DE OBSIDIAN SMP</h2>
+                        <p>Al jugar en el servidor de Minecraft o formar parte de nuestro Discord, aceptas cumplir con este reglamento.</p>
+                    </div>
+                </div>
+
+                <div class="rules-grid">
+                    <!-- Minecraft Server Rules -->
+                    <div class="rule-box mc-rules-box">
+                        <div class="rule-box-header">
+                            <i class="fa-solid fa-gamepad"></i>
+                            <h3>Reglas del Servidor de Minecraft</h3>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-num">1</span>
+                            <div>
+                                <h4>Prohibido el uso de hacks y clientes modificados</h4>
+                                <p>Está estrictamente prohibido el uso de hacks, clientes o utilidades que otorguen ventajas injustas in-game.</p>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-num">2</span>
+                            <div>
+                                <h4>Prohibida la duplicación y uso de exploits</h4>
+                                <p>Aprovecharse de bugs del juego, fallos de plugins o mecanismos de duplicación de ítems/bloques está totalmente prohibido y conlleva sanción directa.</p>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-num">3</span>
+                            <div>
+                                <h4>Respeto en el chat global</h4>
+                                <p>Aunque el griefing y el robo dentro del juego son parte del estilo semi-anárquico, el chat global debe mantenerse limpio. Prohibido el spam masivo, enlaces maliciosos o enlaces a otros servidores.</p>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-num">4</span>
+                            <div>
+                                <h4>Identidad y skins apropiadas</h4>
+                                <p>No se permite el ingreso con nicknames o skins de contenido explícito, discriminatorio u ofensivo.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discord Server Rules -->
+                    <div class="rule-box discord-rules-box">
+                        <div class="rule-box-header">
+                            <i class="fa-brands fa-discord"></i>
+                            <h3>Reglas del Servidor de Discord</h3>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-num">1</span>
+                            <div>
+                                <h4>Respeto mutuo y cero acoso</h4>
+                                <p>No se tolera el racismo, la discriminación, el acoso, la transfobia ni la divulgación de información personal (doxxing) de ningún miembro o equipo de staff.</p>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-num">2</span>
+                            <div>
+                                <h4>Prohibido el contenido NSFW / Gore</h4>
+                                <p>Queda estrictamente prohibido compartir imágenes, vídeos, enlaces o nombres de usuario con contenido para adultos (NSFW), explícito o desagradable (Gore).</p>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-num">3</span>
+                            <div>
+                                <h4>Spam y uso correcto de los canales</h4>
+                                <p>Respeta la temática de cada canal (soporte en tickets, memes en memes, etc.). Evita saturar el chat con mensajes repetitivos, flood o mayúsculas excesivas.</p>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-num">4</span>
+                            <div>
+                                <h4>Prohibida la publicidad sin autorización</h4>
+                                <p>Está prohibido enviar invitaciones de otros servidores de Discord, enlaces promocionales o publicidad por canales públicos o mensajes privados (DM).</p>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-num">5</span>
+                            <div>
+                                <h4>Buen uso del soporte y menciones</h4>
+                                <p>No abras tickets sin un motivo real ni hagas menciones innecesarias al staff. Utiliza las plantillas correspondientes para apelaciones y reportes.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VISTA 3: QUIÉNES SOMOS ==================== -->
+        <section class="view-section" id="view-quienes" style="display:none;">
+            <div class="about-container">
+                <div class="about-header">
+                    <h2><i class="fa-solid fa-users"></i> QUIÉNES SOMOS</h2>
+                    <p>Conoce la historia del proyecto y al equipo de administración de Obsidian SMP</p>
+                </div>
+
+                <div class="about-grid">
+                    <div class="about-card story-card">
+                        <div class="ac-icon"><i class="fa-solid fa-cube"></i></div>
+                        <h3>Nuestra Historia &amp; Visión</h3>
+                        <p>
+                            Obsidian SMP fue creado con la meta de ofrecer un servidor Survival VC Semi-Anárquico de Minecraft emocionante, justo y lleno de retos. Diseñado desde cero para que cada jugador progrese, forme clanes y participe en eventos constantes organizados por el staff.
+                        </p>
+                    </div>
+
+                    <!-- Staff Team Cards: Cow & fabiann (MARCELOe) -->
+                    <div class="about-card staff-team-card">
+                        <div class="ac-icon"><i class="fa-solid fa-crown"></i></div>
+                        <h3>Equipo de Administración</h3>
+                        
+                        <div class="staff-members-list">
+                            <!-- Cow (Owner) -->
+                            <div class="staff-item">
+                                <div class="staff-avatar-wrap">
+                                    <img src="https://mc-heads.net/avatar/MHF_Steve/64" alt="Cow Owner" class="staff-avatar">
+                                    <span class="staff-crown-gold"><i class="fa-solid fa-crown"></i></span>
+                                </div>
+                                <div class="staff-details">
+                                    <div class="staff-name-row">
+                                        <span class="staff-name">Cow</span>
+                                        <span class="staff-badge owner-badge">OWNER</span>
+                                    </div>
+                                    <p class="staff-bio">Fundador y desarrollador principal de Obsidian SMP.</p>
+                                    <a href="https://www.tiktok.com/@Cowsmall7w7" target="_blank" class="btn-staff-tt">
+                                        <i class="fa-brands fa-tiktok"></i> @Cowsmall7w7
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- fabiann (Co-Owner, skin MARCELOe) -->
+                            <div class="staff-item">
+                                <div class="staff-avatar-wrap">
+                                    <img src="https://mc-heads.net/avatar/MARCELOe/64" alt="fabiann Co-Owner" class="staff-avatar">
+                                    <span class="staff-crown-silver"><i class="fa-solid fa-shield-halved"></i></span>
+                                </div>
+                                <div class="staff-details">
+                                    <div class="staff-name-row">
+                                        <span class="staff-name">fabiann</span>
+                                        <span class="staff-badge co-owner-badge">CO-OWNER</span>
+                                    </div>
+                                    <p class="staff-bio">Co-Owner y gestor de la comunidad y soporte del servidor.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="about-values">
+                    <div class="val-item">
+                        <i class="fa-solid fa-bolt"></i>
+                        <h4>Rendimiento Sin Lag</h4>
+                        <p>Servidores optimizados en hardware potente para una experiencia sin interrupciones.</p>
+                    </div>
+                    <div class="val-item">
+                        <i class="fa-solid fa-handshake"></i>
+                        <h4>Soporte 24/7 en Discord</h4>
+                        <p>Atención directa por nuestro equipo para cualquier duda o consulta in-game.</p>
+                    </div>
+                    <div class="val-item">
+                        <i class="fa-solid fa-gem"></i>
+                        <h4>Gemas por Compras</h4>
+                        <p>Tus compras generan Gemas Obsidian que puedes canjear por recompensas gratuitas.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VISTA 4: TIENDA DE KITS ==================== -->
+        <section class="view-section" id="view-kits" style="display:none;">
+            <main class="store-main" id="store-kits-inner">
+                <div class="section-heading">
+                    <h2><i class="fa-solid fa-cubes"></i> KITS DE SHULKER BOXES</h2>
+                    <p>Elige tu kit y recibe la Shulker Box exclusiva directamente en el servidor</p>
+                </div>
+
+                <div class="kits-grid">
+
+                    <!-- AMBER -->
+                    <div class="kit-card" data-tier="amber">
+                        <div class="card-top-glow amber-glow"></div>
+                        <span class="tier-chip">RANGO 1</span>
+                        <div class="shulker-wrap-3d">
+                            <img src="shulker_void_3d.png" alt="Shulker Amber 3D" class="shulker-img-3d">
+                        </div>
+                        <div class="kit-body">
+                            <h3 class="kit-name amber-color">AMBER</h3>
+                            <p class="kit-desc">Full Diamante + Herramientas + 14 Libros Encantados</p>
+                            <div class="kit-price"><span class="price-num">$2.00</span> <span class="price-usd">USD</span></div>
+                        </div>
+                        <div class="kit-actions">
+                            <button class="btn-glass" onclick="openShulkerModal('amber')"><i class="fa-solid fa-eye"></i> Ver Kit</button>
+                            <button class="btn-primary" onclick="addToCart('amber','Rango Amber + Shulker Roja',2.00)"><i class="fa-solid fa-cart-plus"></i> Comprar $2 USD</button>
+                        </div>
+                    </div>
+
+                    <!-- VOID -->
+                    <div class="kit-card" data-tier="void">
+                        <div class="card-top-glow void-glow"></div>
+                        <span class="tier-chip">RANGO 2</span>
+                        <div class="shulker-wrap-3d">
+                            <img src="shulker_void_3d.png" alt="Shulker Void 3D" class="shulker-img-3d">
+                        </div>
+                        <div class="kit-body">
+                            <h3 class="kit-name void-color">VOID</h3>
+                            <p class="kit-desc">Full Netherite + Tridente + Arco + Tótem + Manzanas de Oro</p>
+                            <div class="kit-price"><span class="price-num">$4.00</span> <span class="price-usd">USD</span></div>
+                        </div>
+                        <div class="kit-actions">
+                            <button class="btn-glass" onclick="openShulkerModal('void')"><i class="fa-solid fa-eye"></i> Ver Kit</button>
+                            <button class="btn-primary" onclick="addToCart('void','Rango Void + Shulker Morada',4.00)"><i class="fa-solid fa-cart-plus"></i> Comprar $4 USD</button>
+                        </div>
+                    </div>
+
+                    <!-- MIDNIGHT -->
+                    <div class="kit-card popular-card" data-tier="midnight">
+                        <div class="card-top-glow midnight-glow"></div>
+                        <span class="tier-chip popular-chip"><i class="fa-solid fa-fire"></i> POPULAR</span>
+                        <div class="shulker-wrap-3d">
+                            <img src="shulker_void_3d.png" alt="Shulker Midnight 3D" class="shulker-img-3d">
+                        </div>
+                        <div class="kit-body">
+                            <h3 class="kit-name midnight-color">MIDNIGHT</h3>
+                            <p class="kit-desc">Full Netherite Elite + Elytras + Mazo + Plantilla Warden + 3 Tótems</p>
+                            <div class="kit-price"><span class="price-num">$6.00</span> <span class="price-usd">USD</span></div>
+                        </div>
+                        <div class="kit-actions">
+                            <button class="btn-glass" onclick="openShulkerModal('midnight')"><i class="fa-solid fa-eye"></i> Ver Kit</button>
+                            <button class="btn-primary" onclick="addToCart('midnight','Rango Midnight + Shulker Negra',6.00)"><i class="fa-solid fa-cart-plus"></i> Comprar $6 USD</button>
+                        </div>
+                    </div>
+
+                    <!-- ASCENSION — PROXIMAMENTE -->
+                    <div class="kit-card locked-card" data-tier="ascension">
+                        <div class="card-top-glow ascension-glow"></div>
+                        <span class="tier-chip coming-chip">PRÓXIMAMENTE</span>
+                        <div class="shulker-wrap-3d locked-shulker">
+                            <img src="shulker_void_3d.png" alt="Shulker Ascension 3D" class="shulker-img-3d">
+                            <div class="lock-overlay"><i class="fa-solid fa-lock"></i></div>
+                        </div>
+                        <div class="kit-body">
+                            <h3 class="kit-name ascension-color">ASCENSION</h3>
+                            <p class="kit-desc">Shulker Dorada Radiante</p>
+                            <div class="coming-price">PROXIMAMENTE...</div>
+                        </div>
+                        <div class="kit-actions">
+                            <button class="btn-glass" onclick="openShulkerModal('ascension')"><i class="fa-solid fa-eye"></i> Ver Kit</button>
+                            <button class="btn-disabled" disabled><i class="fa-solid fa-clock"></i> No Disponible</button>
+                        </div>
+                    </div>
+
+                    <!-- CELESTIAL — PROXIMAMENTE -->
+                    <div class="kit-card locked-card" data-tier="celestial">
+                        <div class="card-top-glow celestial-glow"></div>
+                        <span class="tier-chip coming-chip">PRÓXIMAMENTE</span>
+                        <div class="shulker-wrap-3d locked-shulker">
+                            <img src="shulker_void_3d.png" alt="Shulker Celestial 3D" class="shulker-img-3d">
+                            <div class="lock-overlay"><i class="fa-solid fa-lock"></i></div>
+                        </div>
+                        <div class="kit-body">
+                            <h3 class="kit-name celestial-color">CELESTIAL</h3>
+                            <p class="kit-desc">Shulker Cósmica Divina</p>
+                            <div class="coming-price">PROXIMAMENTE...</div>
+                        </div>
+                        <div class="kit-actions">
+                            <button class="btn-glass" onclick="openShulkerModal('celestial')"><i class="fa-solid fa-eye"></i> Ver Kit</button>
+                            <button class="btn-disabled" disabled><i class="fa-solid fa-clock"></i> No Disponible</button>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </section>
+
+        <!-- ==================== VISTA 4: RECOMPENSAS POR GEMAS ==================== -->
+        <section class="view-section" id="view-puntos" style="display:none;">
+            <div class="points-page-container">
+                <div class="points-page-header">
+                    <div class="pp-title-group">
+                        <h2><i class="fa-solid fa-gem"></i> OBJETOS &amp; RANGOS POR GEMAS OBSIDIAN</h2>
+                        <p>Gana 100 Gemas por cada $1 USD gastado en la tienda y canjéalas por recompensas exclusivas in-game</p>
+                    </div>
+                    <div class="points-balance-card-page">
+                        <span class="pbc-label">TUS GEMAS DISPONIBLES</span>
+                        <div class="pbc-amount-wrap">
+                            <span class="pbc-val" id="page-points-val">0</span>
+                            <i class="fa-solid fa-gem gem-icon"></i>
+                        </div>
+                        <span class="pbc-subtext"><i class="fa-solid fa-circle-info"></i> Cada $1.00 USD = 100 Gemas</span>
+                    </div>
+                </div>
+
+                <div class="rewards-grid page-rewards-grid">
+                    <!-- Reward 1: 3x Manzanas de Notch -->
+                    <div class="reward-card">
+                        <div class="reward-icon"><i class="fa-solid fa-apple-whole"></i></div>
+                        <h4>3x Manzanas de Notch Encantadas</h4>
+                        <p>Recibe 3 Manzanas Doradas Encantadas (Notch) directo en el juego.</p>
+                        <div class="reward-cost"><i class="fa-solid fa-gem"></i> 200 Gemas</div>
+                        <button class="btn-primary" onclick="redeemReward('apples', 200, '3x Manzanas de Notch Encantadas')">Canjear por 200 Gemas</button>
+                    </div>
+
+                    <!-- Reward 2: Pack 3x Tótems de Inmortalidad -->
+                    <div class="reward-card">
+                        <div class="reward-icon"><i class="fa-solid fa-ankh"></i></div>
+                        <h4>Pack 3x Tótems de la Inmortalidad</h4>
+                        <p>Recibe 3 Tótems de la Inmortalidad de protección en el juego.</p>
+                        <div class="reward-cost"><i class="fa-solid fa-gem"></i> 500 Gemas</div>
+                        <button class="btn-primary" onclick="redeemReward('totems', 500, 'Pack 3x Tótems de Inmortalidad')">Canjear por 500 Gemas</button>
+                    </div>
+
+                    <!-- Reward 3: Rango VIP Obsidian -->
+                    <div class="reward-card popular-reward">
+                        <div class="reward-chip">MÁS POPULAR</div>
+                        <div class="reward-icon"><i class="fa-solid fa-crown"></i></div>
+                        <h4>Rango VIP Obsidian (30 Días)</h4>
+                        <p>Comando /fly, prefijo [VIP] y acceso a kits diarios.</p>
+                        <div class="reward-cost"><i class="fa-solid fa-gem"></i> 1000 Gemas</div>
+                        <button class="btn-primary" onclick="redeemReward('vip', 1000, 'Rango VIP Obsidian')">Canjear por 1000 Gemas</button>
+                    </div>
+
+                    <!-- Reward 4: Kit Mítico Netherite -->
+                    <div class="reward-card">
+                        <div class="reward-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                        <h4>Kit Mítico Netherite Legendario</h4>
+                        <p>Armadura completa Netherite Filo V Protección IV.</p>
+                        <div class="reward-cost"><i class="fa-solid fa-gem"></i> 1500 Gemas</div>
+                        <button class="btn-primary" onclick="redeemReward('netherite', 1500, 'Kit Mítico Netherite')">Canjear por 1500 Gemas</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VISTA 5: MARKETPLACE (INTERCAMBIOS) ==================== -->
+        <section class="view-section" id="view-marketplace" style="display:none;">
+            <div class="marketplace-container">
+                <div class="marketplace-hero-card">
+                    <div class="mh-left">
+                        <h2><i class="fa-solid fa-store"></i> MARKETPLACE OBSIDIAN</h2>
+                        <p>Compra, vende e intercambia ítems con otros jugadores del servidor en tiempo real estilo Facebook Marketplace</p>
+                    </div>
+                    <button class="btn-create-listing" onclick="openModal('modal-create-listing')">
+                        <i class="fa-solid fa-plus-circle"></i> Publicar Oferta de Intercambio
+                    </button>
+                </div>
+
+                <!-- Search and Categories Filter Bar -->
+                <div class="market-filter-bar">
+                    <div class="market-search-wrap">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="market-search-input" placeholder="Buscar por nombre, armadura, materiales, espadas..." oninput="onMarketSearchChange(this.value)">
+                    </div>
+
+                    <div class="market-categories-scroll">
+                        <button class="market-cat-pill active" data-cat="all" onclick="setMarketCategory('all')">
+                            <i class="fa-solid fa-border-all" style="margin-right:4px;"></i> Todos
+                        </button>
+                        <button class="market-cat-pill" data-cat="armadura" onclick="setMarketCategory('armadura')">
+                            <img src="netherite_chestplate.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Armadura
+                        </button>
+                        <button class="market-cat-pill" data-cat="armas" onclick="setMarketCategory('armas')">
+                            <img src="netherite_sword.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Armas &amp; Herramientas
+                        </button>
+                        <button class="market-cat-pill" data-cat="comida" onclick="setMarketCategory('comida')">
+                            <img src="golden_apple.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Comida &amp; Pociones
+                        </button>
+                        <button class="market-cat-pill" data-cat="materiales" onclick="setMarketCategory('materiales')">
+                            <img src="obsidian.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Materiales &amp; Bloques
+                        </button>
+                        <button class="market-cat-pill" data-cat="libros" onclick="setMarketCategory('libros')">
+                            <img src="totem_of_undying.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Libros &amp; Tótems
+                        </button>
+                        <button class="market-cat-pill" data-cat="shulkers" onclick="setMarketCategory('shulkers')">
+                            <i class="fa-solid fa-box-archive" style="margin-right:4px;"></i> Shulkers &amp; Cajas
+                        </button>
+                        <button class="market-cat-pill" data-cat="cosmeticos" onclick="setMarketCategory('cosmeticos')">
+                            <img src="emerald.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Cosméticos &amp; Varios
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Listings Grid -->
+                <div class="marketplace-grid" id="marketplace-grid">
+                    <!-- Rendered dynamically by JS -->
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="footer-brand-name">OBSIDIAN SMP</div>
+                <div class="footer-copy">© 2026 Obsidian SMP. Servidor Oficial de Minecraft.</div>
+            </div>
+            <div class="footer-links">
+                <a href="https://discord.gg" target="_blank" class="footer-link"><i class="fa-brands fa-discord"></i> Discord</a>
+                <a href="https://www.tiktok.com/@Cowsmall7w7" target="_blank" class="footer-link"><i class="fa-brands fa-tiktok"></i> TikTok: @Cowsmall7w7</a>
+            </div>
+        </div>
+    </footer>
+        </div>
+    </footer>
+
+    <!-- Floating Cart Button -->
+    <div class="floating-cart-btn" id="floating-cart" onclick="openCheckoutModal()">
+        <i class="fa-solid fa-cart-shopping"></i>
+        <span class="fc-count" id="fc-count">0</span>
+        <span class="fc-total" id="fc-total">$0.00</span>
+    </div>
+
+    <!-- ===== MODAL: LOGIN MINECRAFT ===== -->
+    <div class="modal-bg" id="modal-login">
+        <div class="modal-box login-box">
+            <button class="modal-close" onclick="closeModal('modal-login')">&times;</button>
+            <div class="login-icon">
+                <img id="login-skin-img" src="https://mc-heads.net/head/MHF_Steve" alt="Skin" class="login-skin">
+            </div>
+            <h3 class="modal-title">Ingresa tu nombre de usuario para continuar</h3>
+            <p class="modal-desc">Los nombres de usuario no pueden contener espacios. Distinguen mayúsculas y minúsculas.</p>
+            <div class="login-input-row">
+                <input type="text" id="username-input" placeholder="Tu usuario de Minecraft Java..." autocomplete="off" spellcheck="false">
+            </div>
+            <button class="btn-continue" id="save-user-btn">CONTINUAR</button>
+            <div class="bedrock-row">
+                <span>¿Usuario de Bedrock?</span>
+                <button class="bedrock-toggle" id="bedrock-btn" onclick="toggleBedrock()">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: SHULKER INVENTORY ===== -->
+    <div class="modal-bg" id="modal-shulker">
+        <div class="modal-box shulker-box">
+            <button class="modal-close" onclick="closeModal('modal-shulker')">&times;</button>
+            <div class="shulker-modal-header">
+                <div class="shulker-head-left">
+                    <h3 id="shulker-modal-title">Shulker Box</h3>
+                    <span class="shulker-tier-chip" id="shulker-tier-chip">AMBER</span>
+                </div>
+            </div>
+            <!-- Minecraft GUI Chest -->
+            <div class="mc-gui">
+                <div class="mc-gui-header">
+                    <span class="mc-gui-name"><i class="fa-solid fa-box-archive"></i> <span id="mc-gui-name">Shulker Box</span></span>
+                    <span class="mc-gui-badge"><i class="fa-solid fa-camera"></i> Contenido Real del Servidor</span>
+                </div>
+                <div class="mc-inventory-view" id="mc-inventory-view">
+                    <!-- Rendered dynamically by JS with real image -->
+                </div>
+            </div>
+            <div class="shulker-modal-footer">
+                <p class="shulker-hint"><i class="fa-solid fa-shield-halved"></i> Entrega instantánea en el juego tras realizar la compra.</p>
+                <button class="btn-primary" id="shulker-buy-btn">
+                    <i class="fa-solid fa-cart-plus"></i> Comprar este Kit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: CHECKOUT TEBEX STYLE ===== -->
+    <div class="modal-bg" id="modal-checkout">
+        <div class="modal-box checkout-box">
+            <button class="modal-close" onclick="closeModal('modal-checkout')">&times;</button>
+            <div class="checkout-layout">
+                <!-- Sidebar Order Summary -->
+                <div class="checkout-sidebar">
+                    <div class="order-header">
+                        <span>Orden de <strong id="checkout-username">Invitado</strong></span>
+                        <a href="javascript:void(0)" onclick="openModal('modal-login')" class="change-link">Cambiar</a>
+                    </div>
+                    <div class="order-items" id="order-items">
+                        <div class="empty-cart-msg">Tu carrito está vacío.</div>
+                    </div>
+                    <div class="order-totals">
+                        <div class="total-row"><span>Total parcial:</span><span id="checkout-subtotal">$0.00 USD</span></div>
+                        <div class="total-row grand"><span>Precio total:</span><span class="grand-amt" id="checkout-grand">$0.00 USD</span></div>
+                    </div>
+                    <div class="sidebar-branding"><i class="fa-solid fa-shield-halved"></i> Procesado por Obsidian SMP | Tebex</div>
+                </div>
+                <!-- Main Payment Area -->
+                <div class="checkout-main">
+                    <div class="breadcrumbs"><span class="bc-active">Pago Seguro (Tebex)</span></div>
+                    
+                    <div class="secure-payment-notice" style="text-align: center; padding: 2rem 1rem;">
+                        <i class="fa-solid fa-shield-halved" style="font-size: 3.5rem; color: #4ade80; margin-bottom: 1rem;"></i>
+                        <h2 style="margin-bottom: 1rem; color: #fff; font-size: 1.5rem;">Pago 100% Seguro</h2>
+                        <p style="color: var(--text-muted); margin-bottom: 2rem; line-height: 1.5; font-size: 0.95rem;">Para garantizar la máxima seguridad, no procesamos tarjetas directamente. Serás redirigido a nuestra tienda oficial en <strong>Tebex</strong> donde podrás pagar de forma segura con Visa, Google Pay o PayPal.</p>
+                        
+                        <div class="pay-methods" style="justify-content: center; margin-bottom: 2rem; gap: 1rem; border: none;">
+                            <div class="pay-opt active" style="cursor: default; pointer-events: none;"><span class="pay-logo-visa">VISA</span></div>
+                            <div class="pay-opt active" style="cursor: default; pointer-events: none;"><span style="color:#4285F4;font-weight:900">G</span><span style="color:#fff;font-weight:800">Pay</span></div>
+                            <div class="pay-opt active" style="cursor: default; pointer-events: none;"><i class="fa-brands fa-paypal" style="color:#0079C1"></i> <span>PayPal</span></div>
+                        </div>
+                        
+                        <button class="btn-pay" id="pay-btn" onclick="processPayment()" style="width: 100%;">
+                            <i class="fa-solid fa-lock"></i> CONTINUAR A TEBEX <span id="pay-amt">$0.00 USD</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: 2-STEP SUCCESS ===== -->
+    <div class="modal-bg" id="modal-success">
+        <div class="modal-box success-box">
+            <!-- Close Button to Exit Success Modal -->
+            <button class="modal-close" onclick="closeModal('modal-success')" title="Cerrar ventana">&times;</button>
+            
+            <!-- Step 1: Thank You with good_boy.jpg -->
+            <div id="success-step-1" class="success-step-content active">
+                <div class="good-boy-card">
+                    <img src="good_boy.jpg" alt="¡Gracias por tu compra!" class="good-boy-img">
+                </div>
+                <h2 class="thank-you-title">¡GRACIAS POR TU COMPRA!</h2>
+                <p class="thank-you-sub">Agradecemos enormemente tu apoyo al servidor <strong>Obsidian SMP</strong>.</p>
+                <div class="earned-points-badge">
+                    <i class="fa-solid fa-gem"></i> ¡Has ganado <strong id="success-points-amt">0</strong> Puntos Obsidian!
+                </div>
+                <button class="btn-primary btn-next-step" onclick="nextSuccessStep()">
+                    SIGUIENTE <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- Step 2: Receipt & Order Details -->
+            <div id="success-step-2" class="success-step-content" style="display:none;">
+                <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+                <h2>ORDEN CONFIRMADA Y PROCESADA</h2>
+                <p>Detalles del pedido para <strong id="success-user">Jugador</strong>:</p>
+                <div class="success-details">
+                    <div class="sd-row"><i class="fa-solid fa-box"></i><span>Paquete:</span><strong id="success-item">—</strong></div>
+                    <div class="sd-row"><i class="fa-solid fa-receipt"></i><span>ID de Transacción:</span><code id="success-tx">—</code></div>
+                    <div class="sd-row"><i class="fa-solid fa-gem"></i><span>Puntos Ganados:</span><strong id="success-points-amt2" style="color:#fde047">0 Pts</strong></div>
+                    <div class="sd-row"><i class="fa-solid fa-gamepad"></i><span>Estado:</span><span class="status-ok">Entregado in-game al conectar</span></div>
+                </div>
+                <p class="success-note">Tu Shulker Box y rango se activarán al entrar a <code>play.obsidiansmp.net</code>.</p>
+                <div class="success-actions">
+                    <button class="btn-glass" onclick="prevSuccessStep()"><i class="fa-solid fa-arrow-left"></i> Atrás</button>
+                    <button class="btn-primary" onclick="closeModal('modal-success')"><i class="fa-solid fa-store"></i> Volver a la Tienda</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: OBSIDIAN POINTS STORE ===== -->
+    <div class="modal-bg" id="modal-points">
+        <div class="modal-box points-box">
+            <button class="modal-close" onclick="closeModal('modal-points')">&times;</button>
+            <div class="points-modal-header">
+                <div class="points-title-wrap">
+                    <h3><i class="fa-solid fa-gem"></i> Tienda de Puntos Obsidian</h3>
+                    <p>Gana 100 Puntos por cada $1 USD gastado en la tienda y canjéalos por recompensas exclusivas</p>
+                </div>
+                <div class="points-balance-card">
+                    <span class="pbc-label">Tus Puntos:</span>
+                    <span class="pbc-val" id="points-modal-balance">0</span> <i class="fa-solid fa-gem"></i>
+                </div>
+            </div>
+            <div class="rewards-grid">
+                <!-- Reward 1 -->
+                <div class="reward-card">
+                    <div class="reward-icon"><i class="fa-solid fa-apple-whole"></i></div>
+                    <h4>Caja de Manzanas Encantadas</h4>
+                    <p>Recibe 16 Manzanas de Notch directo en el servidor.</p>
+                    <div class="reward-cost"><i class="fa-solid fa-gem"></i> 200 Puntos</div>
+                    <button class="btn-primary" onclick="redeemReward('apples', 200, 'Caja de Manzanas Encantadas')">Canjear</button>
+                </div>
+                <!-- Reward 2 -->
+                <div class="reward-card">
+                    <div class="reward-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <h4>Cosmético Partículas Neón</h4>
+                    <p>Aura neón púrpura exclusiva alrededor de tu personaje.</p>
+                    <div class="reward-cost"><i class="fa-solid fa-gem"></i> 500 Puntos</div>
+                    <button class="btn-primary" onclick="redeemReward('particles', 500, 'Cosmético Partículas Neón')">Canjear</button>
+                </div>
+                <!-- Reward 3 -->
+                <div class="reward-card popular-reward">
+                    <div class="reward-chip">MÁS POPULAR</div>
+                    <div class="reward-icon"><i class="fa-solid fa-crown"></i></div>
+                    <h4>Rango VIP Obsidian (30 Días)</h4>
+                    <p>Comando /fly, prefijo [VIP] y acceso a kits diarios.</p>
+                    <div class="reward-cost"><i class="fa-solid fa-gem"></i> 1000 Puntos</div>
+                    <button class="btn-primary" onclick="redeemReward('vip', 1000, 'Rango VIP Obsidian')">Canjear</button>
+                </div>
+                <!-- Reward 4 -->
+                <div class="reward-card">
+                    <div class="reward-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <h4>Kit Mítico Netherite Legendario</h4>
+                    <p>Armadura completa Netherite Filo V Protección IV.</p>
+                    <div class="reward-cost"><i class="fa-solid fa-gem"></i> 1500 Puntos</div>
+                    <button class="btn-primary" onclick="redeemReward('netherite', 1500, 'Kit Mítico Netherite')">Canjear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: CREAR PUBLICACION MARKETPLACE ===== -->
+    <div class="modal-bg" id="modal-create-listing">
+        <div class="modal-box market-form-box">
+            <button class="modal-close" onclick="closeModal('modal-create-listing')">&times;</button>
+            <div class="market-modal-header">
+                <h3><i class="fa-solid fa-plus-circle"></i> Publicar en el Marketplace</h3>
+                <p>Publica tu oferta de intercambio para que otros jugadores de Obsidian SMP la vean y te contacten</p>
+            </div>
+            
+            <form id="form-create-listing" onsubmit="handleCreateListingSubmit(event)">
+                <div class="form-group">
+                    <label>Título del Ítem u Oferta *</label>
+                    <input type="text" id="market-input-title" required maxlength="65" placeholder="Ej: Set Completo Netherite Protección IV o Stack de Manzanas Doradas">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group f1">
+                        <label>Categoría de Minecraft *</label>
+                        <select id="market-input-cat" required>
+                            <option value="armadura">🛡️ Armadura</option>
+                            <option value="armas">🗡️ Armas &amp; Herramientas</option>
+                            <option value="comida">🍏 Comida &amp; Pociones</option>
+                            <option value="materiales">🧱 Materiales &amp; Bloques</option>
+                            <option value="libros">📜 Libros &amp; Tótems</option>
+                            <option value="shulkers">📦 Shulkers &amp; Cajas</option>
+                            <option value="cosmeticos">🎨 Cosméticos &amp; Varios</option>
+                        </select>
+                    </div>
+                    <div class="form-group f1">
+                        <label>Precio / Oferta Solicitada *</label>
+                        <input type="text" id="market-input-price" required placeholder="Ej: Cambio por 32 Diamantes / Ofertas">
+                    </div>
+                </div>
+
+                <!-- Image Upload Dropzone -->
+                <div class="form-group">
+                    <label>Imagen de la Oferta (Sube una captura de pantalla de Minecraft)</label>
+                    <div class="image-upload-zone" id="upload-zone" onclick="document.getElementById('market-input-file').click()">
+                        <input type="file" id="market-input-file" accept="image/*" style="display:none" onchange="handleListingImageSelect(event)">
+                        <div class="upload-zone-prompt" id="upload-prompt">
+                            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                            <span>Haz clic para subir o arrastra una imagen aquí</span>
+                            <small>Formatos PNG, JPG o WEBP (Máx. 5MB)</small>
+                        </div>
+                        <div class="upload-preview-wrap" id="upload-preview-wrap" style="display:none;">
+                            <img id="market-img-preview" src="" alt="Vista previa de la imagen">
+                            <button type="button" class="btn-remove-img" onclick="removeListingImage(event)"><i class="fa-solid fa-trash"></i> Quitar imagen</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description with 700 Character Limit Counter -->
+                <div class="form-group">
+                    <div class="desc-label-row">
+                        <label>Descripción detallada de la oferta *</label>
+                        <span class="char-counter-badge" id="market-desc-counter">0 / 700 caracteres</span>
+                    </div>
+                    <textarea id="market-input-desc" required maxlength="700" rows="5" placeholder="Escribe los detalles, encantamientos exactos, coordenadas de entrega o lo que pides a cambio..." oninput="updateDescCharCounter(this)"></textarea>
+                </div>
+
+                <div class="market-form-footer">
+                    <button type="button" class="btn-glass" onclick="closeModal('modal-create-listing')">Cancelar</button>
+                    <button type="submit" class="btn-primary btn-publish">
+                        <i class="fa-solid fa-paper-plane"></i> PUBLICAR EN EL MARKETPLACE
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: DETALLE DE OFERTA EN MARKETPLACE ===== -->
+    <div class="modal-bg" id="modal-view-listing">
+        <div class="modal-box market-detail-box">
+            <button class="modal-close" onclick="closeModal('modal-view-listing')">&times;</button>
+            <div class="market-detail-layout" id="market-detail-content">
+                <!-- Rendered dynamically by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toasts"></div>
+
+    <!-- ===== MODAL: EDIT LISTING ===== -->
+    <div class="modal-bg" id="modal-edit-listing">
+        <div class="modal-box market-form-box" style="padding: 2rem;">
+            <button class="modal-close" onclick="closeModal('modal-edit-listing')">&times;</button>
+            <div class="market-modal-header" style="margin-bottom: 1.5rem;">
+                <h3><i class="fa-solid fa-pen-to-square" style="color:#f59e0b;"></i> Editar Publicación</h3>
+                <p style="margin-top: 4px; color: var(--text-dim);">Modifica los datos de tu oferta en el Marketplace.</p>
+            </div>
+            <form id="form-edit-listing" class="market-form" onsubmit="handleEditListingSubmit(event)">
+                <input type="hidden" id="edit-listing-id">
+                <div class="form-group">
+                    <label>Título de la Oferta <span class="req">*</span></label>
+                    <input type="text" id="edit-input-title" required placeholder="Ej: Espada de Netherite (Filo V)" maxlength="60">
+                </div>
+                <div class="form-row">
+                    <div class="form-group f1">
+                        <label>Categoría <span class="req">*</span></label>
+                        <select id="edit-input-cat" required>
+                            <option value="armadura">🛡️ Armadura</option>
+                            <option value="armas">🗡️ Armas & Herramientas</option>
+                            <option value="comida">🍏 Comida & Pociones</option>
+                            <option value="materiales">🧱 Materiales & Bloques</option>
+                            <option value="libros">📜 Libros & Tótems</option>
+                            <option value="shulkers">📦 Shulkers & Cajas</option>
+                            <option value="cosmeticos">🎨 Cosméticos & Varios</option>
+                        </select>
+                    </div>
+                    <div class="form-group f1">
+                        <label>Precio / Intercambio <span class="req">*</span></label>
+                        <input type="text" id="edit-input-price" required placeholder="Ej: 32 Diamantes o Ofertas">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div style="display:flex;justify-content:space-between;">
+                        <label>Descripción detallada <span class="req">*</span></label>
+                        <span class="char-counter" id="edit-desc-counter">0 / 700 caracteres</span>
+                    </div>
+                    <textarea id="edit-input-desc" required maxlength="700" rows="5" placeholder="Escribe los detalles..." oninput="updateEditDescCharCounter(this)"></textarea>
+                </div>
+                <div class="market-form-footer">
+                    <button type="button" class="btn-glass" onclick="closeModal('modal-edit-listing')">Cancelar</button>
+                    <button type="button" class="btn-glass" onclick="deleteListing(document.getElementById('edit-listing-id').value)" style="background: #ef4444 !important; border-color:#ef4444 !important; color: white !important; text-shadow: none !important;">
+                        <i class="fa-solid fa-trash"></i> Eliminar
+                    </button>
+                    <button type="submit" class="btn-primary btn-publish">
+                        <i class="fa-solid fa-save"></i> GUARDAR CAMBIOS
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: SEND MESSAGE ===== -->
+    <div class="modal-bg" id="modal-send-message">
+        <div class="modal-box market-form-box" style="max-width: 500px; padding: 2rem;">
+            <button class="modal-close" onclick="closeModal('modal-send-message')">&times;</button>
+            <div class="market-modal-header" style="margin-bottom: 1.5rem;">
+                <h3><i class="fa-solid fa-message" style="color:#10b981;"></i> Enviar Mensaje</h3>
+                <p id="send-msg-subtitle" style="margin-top: 4px; line-height: 1.4; color: var(--text-dim);"></p>
+            </div>
+            <div class="market-form">
+                <input type="hidden" id="send-msg-listing-id">
+                <input type="hidden" id="send-msg-receiver">
+                <div class="form-group">
+                    <label>Tu Mensaje <span class="req">*</span></label>
+                    <textarea id="send-msg-text" required rows="4" placeholder="Hola, me interesa tu oferta. ¿Podemos negociar?"></textarea>
+                </div>
+                <div class="market-form-footer" style="margin-top: 1rem;">
+                    <button type="button" class="btn-glass" onclick="closeModal('modal-send-message')">Cancelar</button>
+                    <button type="button" class="btn-primary btn-publish" onclick="submitFirstMessage()">
+                        <i class="fa-solid fa-paper-plane"></i> ENVIAR MENSAJE
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: INBOX & CHAT ===== -->
+    <div class="modal-bg" id="modal-inbox">
+        <div class="modal-box checkout-box" style="max-width: 900px; display: flex; flex-direction: column;">
+            <button class="modal-close" onclick="closeModal('modal-inbox')">&times;</button>
+            <div class="market-modal-header" style="padding: 1.5rem 1.5rem 0.5rem 1.5rem; margin-bottom: 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <h3><i class="fa-solid fa-envelope" style="color:var(--primary);"></i> Buzón de Mensajes</h3>
+                <p style="margin-top: 2px; color: var(--text-dim);">Negocia e intercambia con otros jugadores de Obsidian SMP</p>
+            </div>
+            <div class="checkout-layout" style="display: grid; grid-template-columns: 280px 1fr; gap: 0; min-height: 500px; padding: 0;">
+                
+                <!-- Sidebar: Chat List -->
+                <div class="checkout-sidebar" style="border-radius: 0; border-right: 1px solid rgba(255,255,255,0.1); padding: 1rem;">
+                    <div style="display:flex; gap:.5rem; margin-bottom: 1rem; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 8px;">
+                        <button id="tab-inbox-pending" style="flex:1; padding:.5rem; border-radius: 6px; border:none; background:rgba(168,85,247,0.35); color:#fff; font-weight:bold; cursor:pointer; font-size:0.85rem;" onclick="setInboxTab('pending')">Pendientes</button>
+                        <button id="tab-inbox-active" style="flex:1; padding:.5rem; border-radius: 6px; border:none; background:transparent; color:var(--text-muted); font-weight:bold; cursor:pointer; font-size:0.85rem;" onclick="setInboxTab('active')">Activos</button>
+                    </div>
+                    <div id="inbox-list" style="overflow-y: auto; max-height: 400px;">
+                        <!-- List of chats injected here -->
+                    </div>
+                </div>
+
+                <!-- Main Area: Chat View -->
+                <div class="checkout-main" style="border-radius: 0; padding: 0; display: flex; flex-direction: column; flex: 1;">
+                    <div id="chat-header" style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); display: flex; align-items: center; gap: 1rem;">
+                        <!-- Selected chat info here -->
+                        <span style="color: var(--text-muted);">Selecciona una conversación para empezar a chatear.</span>
+                    </div>
+                    
+                    <div id="chat-messages" style="flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; max-height: 380px;">
+                        <!-- Chat messages -->
+                    </div>
+
+                    <div id="chat-input-area" style="padding: 1rem; border-top: 1px solid rgba(255,255,255,0.1); display: none; gap: .5rem;">
+                        <input type="text" id="chat-reply-text" placeholder="Escribe un mensaje..." style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: .8rem; border-radius: 8px;" onkeypress="if(event.key === 'Enter') replyChat()">
+                        <button class="btn-primary" onclick="replyChat()" style="padding: 0 1.5rem;"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase JS Client for Realtime Database -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+</body>
+</html>

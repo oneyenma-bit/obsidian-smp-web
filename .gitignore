@@ -1,0 +1,5 @@
+.gemini/
+.agents/
+.stitch/
+stitch_output.json
+*.log
