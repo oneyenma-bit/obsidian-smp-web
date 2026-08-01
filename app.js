@@ -119,12 +119,22 @@ const state = {
 };
 
 function parsePublisher(pubStr) {
-    if (!pubStr) return { username: 'Invitado', discordId: null };
+    if (!pubStr) return { username: 'Invitado', discordId: null, avatar: null };
     if (pubStr.includes('|')) {
         const parts = pubStr.split('|');
-        return { username: parts[0], discordId: parts[1] };
+        return { username: parts[0], discordId: parts[1] || null, avatar: parts[2] || null };
     }
-    return { username: pubStr, discordId: null };
+    return { username: pubStr, discordId: null, avatar: null };
+}
+
+function getPublisherAvatar(pubInfo, size = 32) {
+    if (pubInfo.discordId) {
+        if (pubInfo.avatar) {
+            return `https://cdn.discordapp.com/avatars/${pubInfo.discordId}/${pubInfo.avatar}.png`;
+        }
+        return `https://cdn.discordapp.com/embed/avatars/0.png`;
+    }
+    return `https://mc-heads.net/avatar/${encodeURIComponent(pubInfo.username || 'Steve')}/${size}`;
 }
 
 // ─── DISCORD AUTHENTICATION FUNCTIONS ──────────────────────────
@@ -221,28 +231,33 @@ function logout() {
 async function unlinkAccount() {
     if (!state.discordId || !state.username) return;
     
-    const confirmUnlink = confirm("¿Estás seguro de que quieres desvincular tu usuario de Minecraft de tu cuenta de Discord?");
-    if (!confirmUnlink) return;
+    closeModal('modal-login'); // Close profile modal first so the confirmation modal is clear
+    
+    customConfirm(
+        '¿Desvincular cuenta?',
+        '¿Estás seguro de que quieres desvincular tu usuario de Minecraft de tu cuenta de Discord? Esto liberará tu Nickname en el servidor.',
+        async () => {
+            if (supabaseClient) {
+                showToast("⏳ Desvinculando cuenta de la base de datos...");
+                try {
+                    const { error } = await supabaseClient
+                        .from('conversations')
+                        .delete()
+                        .eq('listing_id', 'registration')
+                        .eq('buyer', state.username.toLowerCase())
+                        .eq('seller', state.discordId);
+                    if (error) throw error;
+                } catch (err) {
+                    console.error("Error al desvincular cuenta:", err);
+                    showToast("❌ Error al desvincular de la base de datos, pero se cerrará sesión local.");
+                }
+            }
 
-    if (supabaseClient) {
-        showToast("⏳ Desvinculando cuenta de la base de datos...");
-        try {
-            const { error } = await supabaseClient
-                .from('conversations')
-                .delete()
-                .eq('listing_id', 'registration')
-                .eq('buyer', state.username.toLowerCase())
-                .eq('seller', state.discordId);
-            if (error) throw error;
-        } catch (err) {
-            console.error("Error al desvincular cuenta:", err);
-            showToast("❌ Error al desvincular de la base de datos, pero se cerrará sesión local.");
+            localStorage.removeItem(`obs_mc_user_${state.discordId}`);
+            logout();
+            showToast("✅ Cuenta desvinculada y sesión cerrada.");
         }
-    }
-
-    localStorage.removeItem(`obs_mc_user_${state.discordId}`);
-    logout();
-    showToast("✅ Cuenta desvinculada y sesión cerrada.");
+    );
 }
 
 function toggleSetting(key) {
@@ -298,6 +313,32 @@ function playMcClick() {
         osc.start();
         osc.stop(ctx.currentTime + 0.05);
     } catch (e) {}
+}
+
+function customConfirm(title, msg, onOk) {
+    const titleEl = document.getElementById('confirm-modal-title');
+    const msgEl = document.getElementById('confirm-modal-msg');
+    const okBtn = document.getElementById('confirm-modal-ok-btn');
+    const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
+    
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = msg;
+    
+    const newOk = okBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(newOk, okBtn);
+    const newCancel = cancelBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+    
+    newCancel.addEventListener('click', () => {
+        closeModal('modal-confirm');
+    });
+    
+    newOk.addEventListener('click', () => {
+        closeModal('modal-confirm');
+        if (onOk) onOk();
+    });
+    
+    openModal('modal-confirm');
 }
 
 if (!state.marketplaceListings) {
@@ -565,14 +606,41 @@ function bindEvents() {
 
     document.getElementById('save-user-btn')?.addEventListener('click', saveUser);
     document.getElementById('username-input')?.addEventListener('keypress', e => { if (e.key === 'Enter') saveUser(); });
+    document.getElementById('password-input')?.addEventListener('keypress', e => { if (e.key === 'Enter') saveUser(); });
 
     let debounce;
+    let descDebounce;
     document.getElementById('username-input')?.addEventListener('input', e => {
         clearTimeout(debounce);
-        debounce = setTimeout(() => {
-            const v = e.target.value.trim();
-            if (v) document.getElementById('login-skin-img').src = `https://mc-heads.net/head/${encodeURIComponent(v)}`;
-        }, 400);
+        clearTimeout(descDebounce);
+        
+        const v = e.target.value.trim();
+        if (v) {
+            debounce = setTimeout(() => {
+                document.getElementById('login-skin-img').src = `https://mc-heads.net/head/${encodeURIComponent(v)}`;
+            }, 400);
+
+            descDebounce = setTimeout(async () => {
+                if (supabaseClient) {
+                    try {
+                        const { data } = await supabaseClient
+                            .from('conversations')
+                            .select('*')
+                            .eq('listing_id', 'registration')
+                            .eq('buyer', v.toLowerCase());
+                        
+                        const desc = document.getElementById('mc-link-desc');
+                        if (desc) {
+                            if (data && data.length > 0) {
+                                desc.innerHTML = '⚠️ Este usuario de Minecraft ya está registrado. <strong style="color: var(--primary);">Ingresa tu contraseña de seguridad de 2 pasos</strong> para enlazarlo.';
+                            } else {
+                                desc.innerHTML = '✨ El usuario está disponible. <strong style="color: #4ade80;">Crea una contraseña de seguridad de 2 pasos</strong> para proteger tu cuenta.';
+                            }
+                        }
+                    } catch(err){}
+                }
+            }, 500);
+        }
     });
 
     document.getElementById('copy-ip-btn')?.addEventListener('click', copyIP);
@@ -591,9 +659,13 @@ function bindEvents() {
 
 async function saveUser() {
     const inp = document.getElementById('username-input');
+    const passInp = document.getElementById('password-input');
     const v = inp?.value.trim();
+    const enteredPass = passInp?.value.trim();
+    
     if (!v) { showToast('⚠️ Ingresa tu usuario de Minecraft.'); return; }
     if (v.includes(' ') || v.includes('|')) { showToast('⚠️ Nombre de usuario no válido.'); return; }
+    if (!enteredPass) { showToast('⚠️ Ingresa tu contraseña de seguridad de 2 pasos.'); return; }
     
     if (!state.discordId) {
         showToast('⚠️ Primero debes iniciar sesión con Discord.');
@@ -607,7 +679,7 @@ async function saveUser() {
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> VERIFICANDO...';
     }
 
-    // Verificar bloqueo de registro en base de datos Supabase
+    // Verificar bloqueo de registro y contraseña en base de datos Supabase
     if (supabaseClient) {
         try {
             const { data, error } = await supabaseClient
@@ -620,16 +692,27 @@ async function saveUser() {
             
             if (data && data.length > 0) {
                 const reg = data[0];
-                if (reg.seller !== state.discordId) {
-                    showToast('❌ Este usuario de Minecraft ya está registrado por otra cuenta de Discord.');
+                const storedPass = reg.messages && reg.messages[0] ? reg.messages[0].replace('pass:', '') : '';
+                
+                if (enteredPass !== storedPass) {
+                    showToast('❌ Contraseña de seguridad de 2 pasos incorrecta.');
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = origText;
                     }
                     return;
                 }
+                
+                // Si la contraseña coincide pero se loguea desde otro Discord, actualizamos el Discord ID (seller)
+                if (reg.seller !== state.discordId) {
+                    const { error: updError } = await supabaseClient
+                        .from('conversations')
+                        .update({ seller: state.discordId })
+                        .eq('id', reg.id);
+                    if (updError) throw updError;
+                }
             } else {
-                // Registrar este usuario a este Discord ID
+                // Registrar este usuario a este Discord ID con su contraseña
                 const { error: insError } = await supabaseClient
                     .from('conversations')
                     .insert([{
@@ -638,7 +721,7 @@ async function saveUser() {
                         buyer: v.toLowerCase(),
                         seller: state.discordId,
                         status: 'active',
-                        messages: []
+                        messages: ["pass:" + enteredPass]
                     }]);
                 if (insError) throw insError;
             }
@@ -933,10 +1016,11 @@ function redeemReward(rewardId, gemasCost, rewardName) {
 
 // ─── IP COPY ──────────────────────────────────────────────────
 function copyIP() {
-    navigator.clipboard.writeText('play.obsidiansmp.net').then(() => {
-        showToast('📋 IP copiada: play.obsidiansmp.net');
+    const ip = 'PICOLANDNEWWORLD.aternos.me:51309';
+    navigator.clipboard.writeText(ip).then(() => {
+        showToast('📋 IP copiada: ' + ip);
     }).catch(() => {
-        showToast('📋 IP del servidor: play.obsidiansmp.net');
+        showToast('📋 IP del servidor: ' + ip);
     });
 }
 
@@ -1002,7 +1086,7 @@ function renderMarketplace() {
     grid.innerHTML = filtered.map(item => {
         const catLabel = CAT_LABELS[item.category] || '📦 Ítem';
         const pubInfo = parsePublisher(item.publisher);
-        const pubSkin = `https://mc-heads.net/avatar/${encodeURIComponent(pubInfo.username || 'Steve')}/28`;
+        const pubSkin = getPublisherAvatar(pubInfo, 28);
         let itemImg = item.image || 'img/shulker_void_3d.png';
         if (itemImg && !itemImg.startsWith('img/') && !itemImg.startsWith('data:') && !itemImg.startsWith('http') && !itemImg.startsWith('https')) {
             itemImg = 'img/' + itemImg;
@@ -1129,7 +1213,15 @@ function handleCreateListingSubmit(e) {
         return;
     }
 
-    const publisher = state.username || 'Invitado';
+    let publisher = state.username || 'Invitado';
+    if (state.discordId) {
+        publisher += '|' + state.discordId;
+        if (state.discordUser && state.discordUser.avatar) {
+            publisher += '|' + state.discordUser.avatar;
+        } else {
+            publisher += '|';
+        }
+    }
     const newListing = {
         id: 'm_' + Date.now(),
         title,
@@ -1176,9 +1268,9 @@ function openListingDetailModal(listingId) {
     const detailContainer = document.getElementById('market-detail-content');
     if (!detailContainer) return;
 
-    const catLabel = CAT_LABELS[item.category] || '📦 Ítem';
+        const catLabel = CAT_LABELS[item.category] || '📦 Ítem';
     const pubInfo = parsePublisher(item.publisher);
-    const pubSkin = `https://mc-heads.net/avatar/${encodeURIComponent(pubInfo.username || 'Steve')}/36`;
+    const pubSkin = getPublisherAvatar(pubInfo, 36);
     let itemImg = item.image || 'img/shulker_void_3d.png';
     if (itemImg && !itemImg.startsWith('img/') && !itemImg.startsWith('data:') && !itemImg.startsWith('http') && !itemImg.startsWith('https')) {
         itemImg = 'img/' + itemImg;
@@ -1576,39 +1668,27 @@ function deleteListing(id) {
     closeModal('modal-edit-listing');
 
     setTimeout(() => {
-        const okBtn     = document.getElementById('confirm-modal-ok-btn');
-        const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
+        customConfirm(
+            '¿Eliminar publicación?',
+            'Esta acción no se puede deshacer. La publicación desaparecerá del marketplace para todos los jugadores.',
+            () => {
+                state.marketplaceListings = state.marketplaceListings.filter(l => l.id !== listingId);
+                localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
 
-        const freshOk = okBtn.cloneNode(true);
-        okBtn.parentNode.replaceChild(freshOk, okBtn);
-        const freshCancel = cancelBtn.cloneNode(true);
-        cancelBtn.parentNode.replaceChild(freshCancel, cancelBtn);
+                if (supabaseClient) {
+                    supabaseClient
+                        .from('listings')
+                        .delete()
+                        .eq('id', listingId)
+                        .then(({ error }) => {
+                            if (error) showToast('❌ Error al eliminar: ' + error.message);
+                        });
+                }
 
-        freshOk.addEventListener('click', () => {
-            closeModal('modal-confirm');
-
-            state.marketplaceListings = state.marketplaceListings.filter(l => l.id !== listingId);
-            localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
-
-            if (supabaseClient) {
-                supabaseClient
-                    .from('listings')
-                    .delete()
-                    .eq('id', listingId)
-                    .then(({ error }) => {
-                        if (error) showToast('❌ Error al eliminar: ' + error.message);
-                    });
+                closeModal('modal-view-listing');
+                renderMarketplace();
+                showToast('🗑️ Publicación eliminada.');
             }
-
-            closeModal('modal-view-listing');
-            renderMarketplace();
-            showToast('🗑️ Publicación eliminada.');
-        });
-
-        freshCancel.addEventListener('click', () => {
-            closeModal('modal-confirm');
-        });
-
-        openModal('modal-confirm');
-    }, 300);
+        );
+    }, 150);
 }

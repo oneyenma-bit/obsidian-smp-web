@@ -34,7 +34,7 @@
             <button class="ip-pill" id="copy-ip-btn" title="Haz clic para copiar la IP">
                 <span class="ip-live-dot"></span>
                 <div class="ip-detail">
-                    <span class="ip-addr">play.obsidiansmp.net</span>
+                    <span class="ip-addr">PICOLANDNEWWORLD.aternos.me:51309</span>
                     <span class="ip-online"><i class="fa-solid fa-signal"></i> 144 ONLINE</span>
                 </div>
                 <i class="fa-regular fa-copy ip-copy-icon"></i>
@@ -42,7 +42,7 @@
 
             <!-- Nav Right Actions -->
             <div class="nav-right">
-                <a href="https://discord.gg" target="_blank" class="discord-btn">
+                <a href="https://discord.gg/FG6nGuhjw" target="_blank" class="discord-btn">
                     <i class="fa-brands fa-discord"></i> Discord
                     <span class="disc-badge">144</span>
                 </a>
@@ -562,7 +562,7 @@
                     <img src="img/netherite_pickaxe.png"  class="mc-sticker" style="bottom:-10px; right:62%; --r:-10deg;--s:48px; --delay:.9s" alt="">
                     <div class="mh-left">
                         <h2><i class="fa-solid fa-store"></i> MARKETPLACE OBSIDIAN</h2>
-                        <p>Compra, vende e intercambia ítems con otros jugadores del servidor en tiempo real estilo Facebook Marketplace</p>
+                        <p>Compra, vende e intercambia ítems con otros jugadores del servidor en tiempo real de forma segura y directa</p>
                     </div>
                     <button class="btn-create-listing" onclick="openModal('modal-create-listing')">
                         <i class="fa-solid fa-plus-circle"></i> Publicar Oferta de Intercambio
@@ -621,7 +621,7 @@
                 <div class="footer-copy">© 2026 Obsidian SMP. Servidor Oficial de Minecraft.</div>
             </div>
             <div class="footer-links">
-                <a href="https://discord.gg" target="_blank" class="footer-link"><i class="fa-brands fa-discord"></i> Discord</a>
+                <a href="https://discord.gg/FG6nGuhjw" target="_blank" class="footer-link"><i class="fa-brands fa-discord"></i> Discord</a>
                 <a href="https://www.tiktok.com/@Cowsmall7w7" target="_blank" class="footer-link"><i class="fa-brands fa-tiktok"></i> TikTok: @Cowsmall7w7</a>
             </div>
         </div>
@@ -660,10 +660,16 @@
                     <img id="login-skin-img" src="https://mc-heads.net/head/MHF_Steve" alt="Skin" class="login-skin">
                 </div>
                 <h3 class="modal-title">Enlaza tu usuario de Minecraft</h3>
-                <p class="modal-desc">¡Verificado con Discord exitosamente! Ahora introduce el Nickname de tu cuenta de Minecraft para tus kits y rangos.</p>
-                <div class="login-input-row">
+                <p class="modal-desc" id="mc-link-desc">¡Verificado con Discord exitosamente! Escribe tu Nickname de Minecraft y crea o ingresa tu contraseña de seguridad de 2 pasos.</p>
+                
+                <div class="login-input-row" style="margin-bottom: 0.6rem;">
                     <input type="text" id="username-input" placeholder="Tu usuario de Minecraft Java..." autocomplete="off" spellcheck="false">
                 </div>
+                
+                <div class="login-input-row" style="margin-bottom: 1.1rem;">
+                    <input type="password" id="password-input" placeholder="Contraseña de 2-Pasos..." autocomplete="off">
+                </div>
+                
                 <button class="btn-continue" id="save-user-btn">ENLAZAR CUENTA</button>
                 <div class="bedrock-row">
                     <span>¿Usuario de Bedrock?</span>
@@ -824,7 +830,7 @@
                     <div class="sd-row"><i class="fa-solid fa-gem"></i><span>Puntos Ganados:</span><strong id="success-points-amt2" style="color:#fde047">0 Pts</strong></div>
                     <div class="sd-row"><i class="fa-solid fa-gamepad"></i><span>Estado:</span><span class="status-ok">Entregado in-game al conectar</span></div>
                 </div>
-                <p class="success-note">Tu Shulker Box y rango se activarán al entrar a <code>play.obsidiansmp.net</code>.</p>
+                <p class="success-note">Tu Shulker Box y rango se activarán al entrar a <code>PICOLANDNEWWORLD.aternos.me:51309</code>.</p>
                 <div class="success-actions">
                     <button class="btn-glass" onclick="prevSuccessStep()"><i class="fa-solid fa-arrow-left"></i> Atrás</button>
                     <button class="btn-primary" onclick="closeModal('modal-success')"><i class="fa-solid fa-store"></i> Volver a la Tienda</button>
