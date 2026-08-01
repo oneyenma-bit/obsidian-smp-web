@@ -636,22 +636,39 @@
         <span class="fc-total" id="fc-total">$0.00</span>
     </div>
 
-    <!-- ===== MODAL: LOGIN MINECRAFT ===== -->
+    <!-- ===== MODAL: LOGIN / DISCORD AUTH ===== -->
     <div class="modal-bg" id="modal-login">
         <div class="modal-box login-box">
             <button class="modal-close" onclick="closeModal('modal-login')">&times;</button>
-            <div class="login-icon">
-                <img id="login-skin-img" src="https://mc-heads.net/head/MHF_Steve" alt="Skin" class="login-skin">
+            
+            <!-- Discord Authentication View -->
+            <div id="discord-auth-view" style="display: block;">
+                <div class="login-icon" style="background: #5865F2; display: flex; align-items: center; justify-content: center; border-color: #5865F2; box-shadow: 0 0 20px rgba(88, 101, 242, 0.4); border-radius: 14px; overflow: hidden; border: 3px solid #5865F2; width: 72px; height: 72px; margin: 0 auto .85rem;">
+                    <i class="fa-brands fa-discord" style="color: white; font-size: 2.2rem;"></i>
+                </div>
+                <h3 class="modal-title">Seguridad con Discord</h3>
+                <p class="modal-desc">Inicia sesión con tu cuenta de Discord para verificar tu identidad de forma segura. Esto evita suplantaciones y protege tus gemas y publicaciones.</p>
+                
+                <button class="btn-continue" id="discord-login-btn" onclick="loginWithDiscord()" style="background: #5865F2; box-shadow: 0 6px 20px rgba(88, 101, 242, 0.35);">
+                    <i class="fa-brands fa-discord"></i> INICIAR SESIÓN CON DISCORD
+                </button>
             </div>
-            <h3 class="modal-title">Ingresa tu nombre de usuario para continuar</h3>
-            <p class="modal-desc">Los nombres de usuario no pueden contener espacios. Distinguen mayúsculas y minúsculas.</p>
-            <div class="login-input-row">
-                <input type="text" id="username-input" placeholder="Tu usuario de Minecraft Java..." autocomplete="off" spellcheck="false">
-            </div>
-            <button class="btn-continue" id="save-user-btn">CONTINUAR</button>
-            <div class="bedrock-row">
-                <span>¿Usuario de Bedrock?</span>
-                <button class="bedrock-toggle" id="bedrock-btn" onclick="toggleBedrock()">No</button>
+
+            <!-- Minecraft Username Link View -->
+            <div id="minecraft-link-view" style="display: none;">
+                <div class="login-icon">
+                    <img id="login-skin-img" src="https://mc-heads.net/head/MHF_Steve" alt="Skin" class="login-skin">
+                </div>
+                <h3 class="modal-title">Enlaza tu usuario de Minecraft</h3>
+                <p class="modal-desc">¡Verificado con Discord exitosamente! Ahora introduce el Nickname de tu cuenta de Minecraft para tus kits y rangos.</p>
+                <div class="login-input-row">
+                    <input type="text" id="username-input" placeholder="Tu usuario de Minecraft Java..." autocomplete="off" spellcheck="false">
+                </div>
+                <button class="btn-continue" id="save-user-btn">ENLAZAR CUENTA</button>
+                <div class="bedrock-row">
+                    <span>¿Usuario de Bedrock?</span>
+                    <button class="bedrock-toggle" id="bedrock-btn" onclick="toggleBedrock()">No</button>
+                </div>
             </div>
         </div>
     </div>

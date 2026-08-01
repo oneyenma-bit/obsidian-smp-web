@@ -97,11 +97,17 @@ if (supabaseClient) {
         .subscribe();
 }
 
+// CONFIGURACIÓN DE DISCORD CLIENT
+const DISCORD_CLIENT_ID = "1279177114631245906"; // Reemplazar con el Client ID de tu aplicación de Discord
+
 // ─── STATE ───────────────────────────────────────────────────
 const state = {
-    username: localStorage.getItem('obs_user') || '',
+    username: '',
     isBedrock: localStorage.getItem('obs_bedrock') === 'true',
-    points: parseInt(localStorage.getItem('obs_points') || '0', 10),
+    points: 0,
+    discordUser: null,
+    discordId: null,
+    discordTag: null,
     cart: [],
     payMethod: 'visa',
     currentKit: null,
@@ -112,27 +118,121 @@ const state = {
     conversations: JSON.parse(localStorage.getItem('obs_conversations') || '[]')
 };
 
+function parsePublisher(pubStr) {
+    if (!pubStr) return { username: 'Invitado', discordId: null };
+    if (pubStr.includes('|')) {
+        const parts = pubStr.split('|');
+        return { username: parts[0], discordId: parts[1] };
+    }
+    return { username: pubStr, discordId: null };
+}
+
+// ─── DISCORD AUTHENTICATION FUNCTIONS ──────────────────────────
+function checkDiscordCallback() {
+    if (window.location.hash) {
+        const params = new URLSearchParams(window.location.hash.substring(1));
+        const token = params.get("access_token");
+        if (token) {
+            localStorage.setItem("obs_discord_token", token);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            showToast("🌐 Conectando con Discord...");
+        }
+    }
+}
+
+async function verifyDiscordLogin() {
+    const token = localStorage.getItem("obs_discord_token");
+    const authView = document.getElementById('discord-auth-view');
+    const linkView = document.getElementById('minecraft-link-view');
+    
+    if (!token) {
+        if (authView) authView.style.display = 'block';
+        if (linkView) linkView.style.display = 'none';
+        return false;
+    }
+    
+    try {
+        const res = await fetch("https://discord.com/api/users/@me", {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+            const user = await res.json();
+            state.discordUser = user;
+            state.discordId = user.id;
+            state.discordTag = `${user.username}#${user.discriminator || '0'}`;
+            
+            // Cargar usuario de Minecraft enlazado
+            state.username = localStorage.getItem(`obs_mc_user_${user.id}`) || '';
+            state.points = parseInt(localStorage.getItem(`obs_points_${user.id}`) || '0', 10);
+            
+            if (state.username) {
+                syncUser();
+                closeModal('modal-login');
+            } else {
+                if (authView) authView.style.display = 'none';
+                if (linkView) linkView.style.display = 'block';
+                openModal('modal-login');
+            }
+            return true;
+        } else {
+            localStorage.removeItem("obs_discord_token");
+            if (authView) authView.style.display = 'block';
+            if (linkView) linkView.style.display = 'none';
+            return false;
+        }
+    } catch (e) {
+        console.error("Error verifying Discord token:", e);
+        if (authView) authView.style.display = 'block';
+        if (linkView) linkView.style.display = 'none';
+        return false;
+    }
+}
+
+function loginWithDiscord() {
+    const redirectUri = window.location.origin + window.location.pathname;
+    const url = `https://discord.com/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify`;
+    window.location.href = url;
+}
+
+function logout() {
+    localStorage.removeItem("obs_discord_token");
+    state.username = '';
+    state.discordUser = null;
+    state.discordId = null;
+    state.discordTag = null;
+    state.points = 0;
+    
+    syncUser();
+    showToast("🚪 Sesión cerrada correctamente.");
+    
+    const authView = document.getElementById('discord-auth-view');
+    const linkView = document.getElementById('minecraft-link-view');
+    if (authView) authView.style.display = 'block';
+    if (linkView) linkView.style.display = 'none';
+    
+    openModal('modal-login');
+}
+
 if (!state.marketplaceListings) {
     state.marketplaceListings = [];
 }
-// Clean up any remaining mock listings (m1 to m6)
 state.marketplaceListings = state.marketplaceListings.filter(item => !/^[m][1-6]$/.test(item.id));
 localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
 
-// Cargar datos de base de datos o local al iniciar
-if (supabaseClient) {
-    dbFetchListings().then(() => {
-        if (state.activeMarketCategory) renderMarketplace();
-    });
-    dbFetchConversations().then(() => {
-        updateInboxBadge();
-    });
-} else {
-    // Si no hay Supabase, renderizado local inmediato
-    setTimeout(() => {
-        if (state.activeMarketCategory) renderMarketplace();
-        updateInboxBadge();
-    }, 100);
+function loadInitialDatabaseData() {
+    if (supabaseClient) {
+        dbFetchListings().then(() => {
+            if (state.activeMarketCategory) renderMarketplace();
+        });
+        dbFetchConversations().then(() => {
+            updateInboxBadge();
+        });
+    } else {
+        setTimeout(() => {
+            if (state.activeMarketCategory) renderMarketplace();
+            updateInboxBadge();
+        }, 100);
+    }
 }
 
 // ─── KIT DATA ─────────────────────────────────────────────────
@@ -258,15 +358,19 @@ function initParticles() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initParticles();
-    syncUser();
-    renderCart();
-    bindEvents();
-
-    if (!state.username) {
+    checkDiscordCallback();
+    
+    const isLogged = await verifyDiscordLogin();
+    loadInitialDatabaseData();
+    
+    if (!isLogged) {
         setTimeout(() => openModal('modal-login'), 700);
     }
+    
+    renderCart();
+    bindEvents();
 
     window.addEventListener('scroll', () => {
         document.getElementById('navbar')?.classList.toggle('scrolled', window.scrollY > 10);
@@ -386,12 +490,22 @@ function bindEvents() {
 function saveUser() {
     const inp = document.getElementById('username-input');
     const v = inp?.value.trim();
-    if (!v) { showToast('⚠️ Ingresa tu usuario de Minecraft Java.'); return; }
+    if (!v) { showToast('⚠️ Ingresa tu usuario de Minecraft.'); return; }
+    if (v.includes(' ') || v.includes('|')) { showToast('⚠️ Nombre de usuario no válido.'); return; }
+    
+    if (!state.discordId) {
+        showToast('⚠️ Primero debes iniciar sesión con Discord.');
+        return;
+    }
+    
     state.username = v;
-    localStorage.setItem('obs_user', v);
+    localStorage.setItem(`obs_mc_user_${state.discordId}`, v);
+    localStorage.setItem('obs_user', v); // compatible fallback
+    
     syncUser();
     closeModal('modal-login');
-    showToast(`✅ Bienvenido, ${v}!`);
+    showToast(`✅ Cuenta vinculada: ¡Bienvenido, ${v}!`);
+    loadInitialDatabaseData();
 }
 
 function toggleBedrock() {
@@ -401,7 +515,16 @@ function toggleBedrock() {
 }
 
 // ─── MODALS ───────────────────────────────────────────────────
-function openModal(id) { document.getElementById(id)?.classList.add('open'); }
+function openModal(id) {
+    if (id === 'modal-create-listing' || id === 'modal-checkout') {
+        if (!state.discordId || !state.username) {
+            showToast('⚠️ Debes iniciar sesión con Discord y enlazar tu cuenta de Minecraft para continuar.');
+            openModal('modal-login');
+            return;
+        }
+    }
+    document.getElementById(id)?.classList.add('open');
+}
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
 // ─── SHULKER MODAL & UPSELL RECOMMENDATIONS ───────────────────
@@ -660,8 +783,8 @@ function renderMarketplace() {
     const filtered = (state.marketplaceListings || []).filter(item => {
         const matchesCat = (cat === 'all' || item.category === cat);
         const matchesText = !query || 
-            item.title.toLowerCase().includes(query) ||
-            item.desc.toLowerCase().includes(query) ||
+            (item.title && item.title.toLowerCase().includes(query)) ||
+            (item.desc && item.desc.toLowerCase().includes(query)) ||
             (item.price && item.price.toLowerCase().includes(query)) ||
             (item.publisher && item.publisher.toLowerCase().includes(query));
 
@@ -681,11 +804,16 @@ function renderMarketplace() {
 
     grid.innerHTML = filtered.map(item => {
         const catLabel = CAT_LABELS[item.category] || '📦 Ítem';
-        const pubSkin = `https://mc-heads.net/avatar/${encodeURIComponent(item.publisher || 'Steve')}/28`;
+        const pubInfo = parsePublisher(item.publisher);
+        const pubSkin = `https://mc-heads.net/avatar/${encodeURIComponent(pubInfo.username || 'Steve')}/28`;
         let itemImg = item.image || 'img/shulker_void_3d.png';
         if (itemImg && !itemImg.startsWith('img/') && !itemImg.startsWith('data:') && !itemImg.startsWith('http') && !itemImg.startsWith('https')) {
             itemImg = 'img/' + itemImg;
         }
+
+        const isOwner = pubInfo.discordId 
+            ? (pubInfo.discordId === state.discordId)
+            : (pubInfo.username === state.username);
 
         return `
             <div class="market-card" onclick="openListingDetailModal('${item.id}')">
@@ -703,15 +831,15 @@ function renderMarketplace() {
                     <p class="mc-desc">${item.desc}</p>
                     <div class="mc-publisher-row">
                         <div class="mc-user-info">
-                            <img src="${pubSkin}" alt="${item.publisher}" class="mc-user-avatar">
-                            <span class="mc-username">${item.publisher}</span>
+                            <img src="${pubSkin}" alt="${pubInfo.username}" class="mc-user-avatar">
+                            <span class="mc-username">${pubInfo.username}</span>
                         </div>
-                        ${item.publisher === state.username ? `
+                        ${isOwner ? `
                         <button class="btn-contact-listing edit-btn" onclick="event.stopPropagation(); openEditListingModal('${item.id}')" style="background: #f59e0b;">
                             <i class="fa-solid fa-pen"></i> Editar
                         </button>
                         ` : `
-                        <button class="btn-contact-listing" onclick="event.stopPropagation(); openContactModal('${item.publisher}', '${item.title.replace(/'/g, "\\'")}', '${item.id}')">
+                        <button class="btn-contact-listing" onclick="event.stopPropagation(); openContactModal('${item.publisher.replace(/'/g, "\\'")}', '${item.title.replace(/'/g, "\\'")}', '${item.id}')">
                             <i class="fa-solid fa-message"></i> Contactar
                         </button>
                         `}
@@ -852,11 +980,16 @@ function openListingDetailModal(listingId) {
     if (!detailContainer) return;
 
     const catLabel = CAT_LABELS[item.category] || '📦 Ítem';
-    const pubSkin = `https://mc-heads.net/avatar/${encodeURIComponent(item.publisher || 'Steve')}/36`;
+    const pubInfo = parsePublisher(item.publisher);
+    const pubSkin = `https://mc-heads.net/avatar/${encodeURIComponent(pubInfo.username || 'Steve')}/36`;
     let itemImg = item.image || 'img/shulker_void_3d.png';
     if (itemImg && !itemImg.startsWith('img/') && !itemImg.startsWith('data:') && !itemImg.startsWith('http') && !itemImg.startsWith('https')) {
         itemImg = 'img/' + itemImg;
     }
+
+    const isOwner = pubInfo.discordId 
+        ? (pubInfo.discordId === state.discordId)
+        : (pubInfo.username === state.username);
 
     detailContainer.innerHTML = `
         <img src="${itemImg}" alt="${item.title}" class="md-img">
@@ -867,9 +1000,9 @@ function openListingDetailModal(listingId) {
             
             <div class="mc-publisher-row">
                 <div class="mc-user-info">
-                    <img src="${pubSkin}" alt="${item.publisher}" class="mc-user-avatar" style="width:36px;height:36px">
+                    <img src="${pubSkin}" alt="${pubInfo.username}" class="mc-user-avatar" style="width:36px;height:36px">
                     <div>
-                        <span class="mc-username" style="font-size:.95rem">${item.publisher}</span>
+                        <span class="mc-username" style="font-size:.95rem">${pubInfo.username}</span>
                         <span style="font-size:.72rem;color:var(--text-muted);display:block">Publicado ${item.timeAgo}</span>
                     </div>
                 </div>
@@ -877,9 +1010,9 @@ function openListingDetailModal(listingId) {
 
             <div class="md-desc">${item.desc}</div>
 
-            ${item.publisher === state.username
+            ${isOwner
                 ? `<button class="btn-copy-msg edit-btn" onclick="openEditListingModal('${item.id}')" style="background:#f59e0b; border:none; margin-top:1rem; width:100%;"><i class="fa-solid fa-pen"></i> Editar Oferta</button>`
-                : `<button class="btn-copy-msg" onclick="openContactModal('${item.publisher}', '${item.title.replace(/'/g, "\\'")}', '${item.id}')" style="margin-top:1rem; width:100%;"><i class="fa-solid fa-message"></i> Enviar Mensaje</button>`
+                : `<button class="btn-copy-msg" onclick="openContactModal('${item.publisher.replace(/'/g, "\\'")}', '${item.title.replace(/'/g, "\\'")}', '${item.id}')" style="margin-top:1rem; width:100%;"><i class="fa-solid fa-message"></i> Enviar Mensaje</button>`
             }
         </div>
     `;
@@ -1231,11 +1364,21 @@ function deleteListing(id) {
     const listingId = id || document.getElementById('edit-listing-id')?.value;
     if (!listingId) return;
 
-    // Close edit modal first, THEN show confirm (avoids z-index stacking)
+    const item = state.marketplaceListings.find(l => l.id === listingId);
+    if (item) {
+        const pubInfo = parsePublisher(item.publisher);
+        const isOwner = pubInfo.discordId 
+            ? (pubInfo.discordId === state.discordId)
+            : (pubInfo.username === state.username);
+        if (!isOwner) {
+            showToast('⚠️ No tienes permiso para eliminar esta publicación.');
+            return;
+        }
+    }
+
     closeModal('modal-edit-listing');
 
     setTimeout(() => {
-        // Set up confirm modal buttons
         const okBtn     = document.getElementById('confirm-modal-ok-btn');
         const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
 
