@@ -3327,3 +3327,120 @@ input:focus, textarea:focus, select:focus {
         display: none !important;
     }
 }
+
+/* ──── SLEEK UNIFIED TOP BAR NAVIGATION ──── */
+.social-circle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+.social-circle-btn:hover {
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.social-circle-btn.discord:hover {
+    background: #5865F2;
+    border-color: #5865F2;
+    box-shadow: 0 0 15px rgba(88, 101, 242, 0.4);
+}
+.social-circle-btn.tiktok:hover {
+    background: #000;
+    border-color: #00f2fe;
+    box-shadow: -2px 0 10px rgba(0, 242, 254, 0.4), 2px 0 10px rgba(255, 0, 80, 0.4);
+}
+
+.nav-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    transition: all 0.3s ease;
+    position: relative;
+    cursor: pointer;
+}
+.nav-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    transform: translateY(-1px);
+}
+.inbox-badge-floating {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 1.5px solid #0e0a17;
+    line-height: 1;
+}
+
+.user-pill-unified {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 4px 14px 4px 6px;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.user-pill-unified:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary);
+    box-shadow: 0 0 12px var(--primary-glow);
+    transform: translateY(-1px);
+}
+.user-avatar-small {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    image-rendering: pixelated;
+    background: rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+.user-pill-unified:hover .user-avatar-small {
+    border-color: var(--primary);
+}
+.user-details-small {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    line-height: 1.25;
+}
+.user-name-small {
+    font-size: 0.76rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.2px;
+}
+.user-gems-small {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+

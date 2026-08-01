@@ -41,45 +41,32 @@
             </button>
 
             <!-- Nav Right Actions -->
-            <div class="nav-right">
-                <a href="https://discord.gg/FG6nGuhjw" target="_blank" class="discord-btn">
-                    <i class="fa-brands fa-discord"></i> Discord
-                    <span class="disc-badge">144</span>
+            <div class="nav-right" style="gap: 0.8rem; display: flex; align-items: center;">
+                <!-- Social Circle Buttons -->
+                <a href="https://discord.gg/FG6nGuhjw" target="_blank" class="social-circle-btn discord" title="Discord oficial: PICOLAND">
+                    <i class="fa-brands fa-discord"></i>
+                </a>
+                <a href="https://www.tiktok.com/@Cowsmall7w7" target="_blank" class="social-circle-btn tiktok" title="TikTok del Owner Cow (@Cowsmall7w7)">
+                    <i class="fa-brands fa-tiktok"></i>
                 </a>
 
-                <!-- TikTok Badge Button -->
-                <a href="https://www.tiktok.com/@Cowsmall7w7" target="_blank" class="nav-tiktok-btn" title="TikTok del Owner Cow (@Cowsmall7w7)">
-                    <i class="fa-brands fa-tiktok"></i> <span>TikTok</span>
-                </a>
+                <!-- Sleek vertical separator -->
+                <span style="width: 1px; height: 20px; background: rgba(255,255,255,0.08); margin: 0 4px; display: inline-block;"></span>
 
-                <!-- Gemas Pill -->
-                <div class="points-pill" onclick="switchTab('puntos')" title="Ver Gemas y Recompensas">
-                    <i class="fa-solid fa-gem"></i>
-                    <span id="nav-points-val">0</span> Gemas · <span class="pts-redeem-label">CANJEAR</span>
-                </div>
+                <!-- Inbox Mail Button -->
+                <button class="nav-icon-btn" onclick="openInboxModal()" title="Buzón de Mensajes" style="border: none; background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-envelope" style="font-size: 0.95rem;"></i>
+                    <span class="inbox-badge-floating" id="inbox-badge" style="display: none;">0</span>
+                </button>
 
-                <!-- Inbox Pill -->
-                <div class="points-pill" onclick="openInboxModal()" title="Buzón de Mensajes" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1);">
-                    <i class="fa-solid fa-envelope"></i>
-                    Buzón <span class="pts-redeem-label" id="inbox-badge" style="background:#ef4444; color:white; display:none; padding:2px 6px; border-radius:10px;">0</span>
-                </div>
-
-                <!-- User Profile Trigger Pill -->
-                <div class="user-pill" onclick="openModal('modal-login')" title="Cambiar usuario de Minecraft">
-                    <img id="nav-skin-img" src="https://mc-heads.net/avatar/MHF_Steve/40" alt="Skin" class="nav-skin">
-                    <div class="user-pill-text">
-                        <span class="user-pill-label">Usuario</span>
-                        <span class="user-pill-val" id="nav-username">Invitado</span>
+                <!-- Unified Profile & Gems Card -->
+                <div class="user-pill-unified" onclick="openModal('modal-login')" title="Perfil y Configuración de Obsidian SMP">
+                    <img id="nav-skin-img" src="https://mc-heads.net/avatar/MHF_Steve/30" alt="Skin" class="user-avatar-small">
+                    <div class="user-details-small">
+                        <span class="user-name-small" id="nav-username">Invitado</span>
+                        <span class="user-gems-small"><i class="fa-solid fa-gem" style="color: #fde047; font-size: 0.6rem;"></i> <strong id="nav-points-val">0</strong> Gemas</span>
                     </div>
-                    <i class="fa-solid fa-pen-to-square user-edit-icon"></i>
-                </div>
-
-                <!-- Cart Badge -->
-                <div class="cart-badge" id="cart-badge-btn" onclick="openCheckoutModal()">
-                    <i class="fa-solid fa-cart-shopping cart-icon-main"></i>
-                    <div class="cart-badge-info">
-                        <span class="cart-status" id="nav-cart-status">HAZ CLIC PARA INICIAR</span>
-                    </div>
+                    <i class="fa-solid fa-chevron-down" style="font-size: 0.55rem; color: var(--text-muted); margin-left: 2px;"></i>
                 </div>
             </div>
         </div>
