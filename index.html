@@ -649,9 +649,16 @@
                 <h3 class="modal-title">Seguridad con Discord</h3>
                 <p class="modal-desc">Inicia sesión con tu cuenta de Discord para verificar tu identidad de forma segura. Esto evita suplantaciones y protege tus gemas y publicaciones.</p>
                 
-                <button class="btn-continue" id="discord-login-btn" onclick="loginWithDiscord()" style="background: #5865F2; box-shadow: 0 6px 20px rgba(88, 101, 242, 0.35);">
+                <button class="btn-continue" id="discord-login-btn" onclick="loginWithDiscord()" style="background: #5865F2; box-shadow: 0 6px 20px rgba(88, 101, 242, 0.35); margin-bottom: 0.5rem;">
                     <i class="fa-brands fa-discord"></i> INICIAR SESIÓN CON DISCORD
                 </button>
+                
+                <a href="javascript:void(0)" onclick="toggleClientIdSetup()" style="font-size: 0.72rem; color: var(--text-muted); text-decoration: underline; display: block; margin-top: 0.8rem; font-weight: 600;">⚙️ CONFIGURAR DISCORD CLIENT ID (ADMIN)</a>
+                <div id="client-id-setup-wrap" style="display: none; margin-top: 0.8rem; background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.08); text-align: left;">
+                    <label style="font-size:0.7rem; color:var(--text-muted); font-weight:bold; display:block; margin-bottom:0.3rem;">DISCORD CLIENT ID:</label>
+                    <input type="text" id="discord-client-id-input" placeholder="Pega tu Client ID aquí..." style="width: 100%; padding: 0.5rem; font-size: 0.8rem; background: #111; border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 6px; margin-bottom: 0.5rem; outline: none;">
+                    <button onclick="saveClientId()" style="width: 100%; padding: 0.5rem; font-size: 0.75rem; background: #10b981; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase;">Guardar Cambios</button>
+                </div>
             </div>
 
             <!-- Minecraft Username Link View -->

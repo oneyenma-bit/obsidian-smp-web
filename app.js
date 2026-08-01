@@ -98,7 +98,7 @@ if (supabaseClient) {
 }
 
 // CONFIGURACIÓN DE DISCORD CLIENT
-const DISCORD_CLIENT_ID = "1279177114631245906"; // Reemplazar con el Client ID de tu aplicación de Discord
+const DISCORD_CLIENT_ID = localStorage.getItem('obs_discord_client_id') || "1279177114631245906"; // Reemplazar con el Client ID de tu aplicación de Discord
 
 // ─── STATE ───────────────────────────────────────────────────
 const state = {
@@ -211,6 +211,32 @@ function logout() {
     if (linkView) linkView.style.display = 'none';
     
     openModal('modal-login');
+}
+
+function toggleClientIdSetup() {
+    const wrap = document.getElementById('client-id-setup-wrap');
+    if (wrap) {
+        const isHidden = wrap.style.display === 'none';
+        wrap.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) {
+            const input = document.getElementById('discord-client-id-input');
+            if (input) input.value = localStorage.getItem('obs_discord_client_id') || "1279177114631245906";
+        }
+    }
+}
+
+function saveClientId() {
+    const input = document.getElementById('discord-client-id-input');
+    const val = input ? input.value.trim() : '';
+    if (!val) {
+        showToast('⚠️ Por favor ingresa un Client ID válido.');
+        return;
+    }
+    localStorage.setItem('obs_discord_client_id', val);
+    showToast('✅ Client ID actualizado con éxito. Recargando...');
+    setTimeout(() => {
+        window.location.reload();
+    }, 800);
 }
 
 if (!state.marketplaceListings) {
