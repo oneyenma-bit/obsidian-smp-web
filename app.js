@@ -8,8 +8,8 @@
 const TEBEX_STORE_URL = "https://tu-tienda.tebex.io";
 
 // CONFIGURACIÓN DE SUPABASE (TIEMPO REAL)
-// Regístrate gratis en supabaseClient.com, crea un proyecto y pega tus credenciales aquí.
-const SUPABASE_URL = "https://ijfvbgglhvhzbmmqrnwc.supabaseClient.co";
+// Regístrate gratis en supabase.com, crea un proyecto y pega tus credenciales aquí.
+const SUPABASE_URL = "https://ijfvbgglhvhzbmmqrnwc.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_2w2khQIaLpbQNB-sQyt_pg_Dzufp7z0";
 
 let supabaseClient = null;
