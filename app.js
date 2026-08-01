@@ -563,7 +563,17 @@ function syncUser() {
     const navStatus = document.getElementById('nav-cart-status');
     const ownerSkin = document.getElementById('owner-skin-img');
     if (navName) navName.textContent = u;
-    if (navSkin) navSkin.src = `https://mc-heads.net/avatar/${encodeURIComponent(u)}/40`;
+    if (navSkin) {
+        if (state.discordId) {
+            if (state.discordUser && state.discordUser.avatar) {
+                navSkin.src = `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`;
+            } else {
+                navSkin.src = `https://cdn.discordapp.com/embed/avatars/0.png`;
+            }
+        } else {
+            navSkin.src = `https://mc-heads.net/avatar/${encodeURIComponent(u)}/40`;
+        }
+    }
     if (ownerSkin) ownerSkin.src = `https://mc-heads.net/avatar/MHF_Steve/80`;
 
     const coName = document.getElementById('checkout-username');
