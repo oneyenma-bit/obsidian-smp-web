@@ -3116,4 +3116,147 @@ input:focus, textarea:focus, select:focus {
     border-color: var(--primary) !important;
 }
 
+/* ============================================================
+   MINECRAFT CONFIRM MODAL
+   ============================================================ */
+.modal-confirm-box {
+    max-width: 460px;
+    width: 95%;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 3px solid #1a1a2e !important;
+    box-shadow:
+        0 0 0 3px #7c3aed,
+        0 0 0 6px #0f0a1e,
+        0 24px 60px rgba(0,0,0,.9),
+        inset 0 1px 0 rgba(255,255,255,.07) !important;
+    image-rendering: pixelated;
+}
 
+/* Red danger header strip */
+.confirm-mc-header {
+    background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #7f1d1d 100%);
+    border-bottom: 3px solid #450a0a;
+    padding: 1.5rem 1rem 1rem;
+    text-align: center;
+    position: relative;
+}
+.confirm-mc-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,.15) 3px,
+        rgba(0,0,0,.15) 4px
+    );
+    pointer-events: none;
+}
+
+.confirm-mc-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    border: 3px solid #000;
+    box-shadow:
+        3px 3px 0 #450a0a,
+        -1px -1px 0 rgba(255,255,255,.2) inset;
+    font-size: 2rem;
+    position: relative;
+    z-index: 1;
+}
+.confirm-mc-icon span {
+    color: #fef08a;
+    text-shadow: 2px 2px 0 #78350f, -1px -1px 0 #fbbf24;
+    line-height: 1;
+}
+
+/* Body text */
+.confirm-mc-body {
+    padding: 1.75rem 2rem 1.5rem;
+    text-align: center;
+    background: linear-gradient(180deg, #16082e 0%, #0f0a1e 100%);
+}
+.confirm-mc-body h3 {
+    color: #fca5a5;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: .75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 20px rgba(239,68,68,.5);
+}
+.confirm-mc-body p {
+    color: #94a3b8;
+    font-size: .9rem;
+    line-height: 1.6;
+}
+
+/* Footer buttons */
+.confirm-mc-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 3px solid #1e1040;
+}
+
+.confirm-btn-cancel,
+.confirm-btn-delete {
+    padding: 1rem 1.25rem;
+    font-size: .95rem;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    transition: filter .15s, transform .1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    overflow: hidden;
+    position: relative;
+}
+.confirm-btn-cancel:active,
+.confirm-btn-delete:active {
+    transform: scale(.97);
+}
+
+/* Cancel — dark stone style */
+.confirm-btn-cancel {
+    background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+    color: #cbd5e1;
+    border-right: 3px solid #1e1040;
+}
+.confirm-btn-cancel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,.08) 0%, transparent 50%);
+    pointer-events: none;
+}
+.confirm-btn-cancel:hover {
+    filter: brightness(1.2);
+    color: white;
+}
+
+/* Delete — TNT red */
+.confirm-btn-delete {
+    background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%);
+    color: white;
+    text-shadow: 1px 1px 0 rgba(0,0,0,.5);
+}
+.confirm-btn-delete::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,.15) 0%, transparent 50%);
+    pointer-events: none;
+}
+.confirm-btn-delete:hover {
+    filter: brightness(1.15);
+}

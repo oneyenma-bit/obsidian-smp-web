@@ -999,18 +999,23 @@
 
     <!-- ===== MODAL: CONFIRMACIÓN PERSONALIZADA ===== -->
     <div class="modal-bg" id="modal-confirm" style="z-index:10000;">
-        <div class="modal-box" style="max-width:420px; text-align:center; position:relative; z-index:10001;">
-            <div style="font-size:3rem; margin-bottom:1rem;">🗑️</div>
-            <h3 style="color:white; margin-bottom:.75rem;" id="confirm-modal-title">¿Eliminar publicación?</h3>
-            <p style="color:var(--text-muted); margin-bottom:2rem; line-height:1.5;" id="confirm-modal-msg">
-                Esta acción no se puede deshacer. La publicación desaparecerá del marketplace para todos los jugadores.
-            </p>
-            <div style="display:flex; gap:1rem; justify-content:center;">
-                <button class="btn-secondary" id="confirm-modal-cancel-btn" style="flex:1; padding:.8rem;">
-                    <i class="fa-solid fa-xmark"></i> Cancelar
+        <div class="modal-box modal-confirm-box">
+            <!-- Minecraft-style warning header -->
+            <div class="confirm-mc-header">
+                <div class="confirm-mc-icon">
+                    <span>⚠</span>
+                </div>
+            </div>
+            <div class="confirm-mc-body">
+                <h3 id="confirm-modal-title">¿Eliminar publicación?</h3>
+                <p id="confirm-modal-msg">Esta acción no se puede deshacer. La publicación desaparecerá del marketplace para todos los jugadores.</p>
+            </div>
+            <div class="confirm-mc-footer">
+                <button id="confirm-modal-cancel-btn" class="confirm-btn-cancel">
+                    <i class="fa-solid fa-arrow-left"></i> Volver
                 </button>
-                <button id="confirm-modal-ok-btn" class="btn-primary" style="flex:1; padding:.8rem; background:linear-gradient(135deg,#ef4444,#b91c1c);">
-                    <i class="fa-solid fa-trash"></i> Sí, eliminar
+                <button id="confirm-modal-ok-btn" class="confirm-btn-delete">
+                    <i class="fa-solid fa-trash"></i> Confirmar
                 </button>
             </div>
         </div>
@@ -1018,6 +1023,6 @@
 
     <!-- Supabase JS Client for Realtime Database -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js?v=1.0.7"></script>
+    <script src="app.js?v=1.0.8"></script>
 </body>
 </html>
