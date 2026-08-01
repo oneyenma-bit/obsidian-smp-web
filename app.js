@@ -8,20 +8,20 @@
 const TEBEX_STORE_URL = "https://tu-tienda.tebex.io";
 
 // CONFIGURACIÓN DE SUPABASE (TIEMPO REAL)
-// Regístrate gratis en supabase.com, crea un proyecto y pega tus credenciales aquí.
-const SUPABASE_URL = "https://ijfvbgglhvhzbmmqrnwc.supabase.co";
+// Regístrate gratis en supabaseClient.com, crea un proyecto y pega tus credenciales aquí.
+const SUPABASE_URL = "https://ijfvbgglhvhzbmmqrnwc.supabaseClient.co";
 const SUPABASE_ANON_KEY = "sb_publishable_2w2khQIaLpbQNB-sQyt_pg_Dzufp7z0";
 
-let supabase = null;
+let supabaseClient = null;
 if (typeof window.supabase !== 'undefined' && SUPABASE_URL !== "TU_SUPABASE_URL" && SUPABASE_ANON_KEY !== "TU_SUPABASE_ANON_KEY") {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
 // ─── SUPABASE / DATABASE WRAPPERS ─────────────────────────────
 async function dbFetchListings() {
-    if (!supabase) return;
+    if (!supabaseClient) return;
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('listings')
             .select('*')
             .order('created_at', { ascending: false });
@@ -45,9 +45,9 @@ async function dbFetchListings() {
 }
 
 async function dbFetchConversations() {
-    if (!supabase || !state.username) return;
+    if (!supabaseClient || !state.username) return;
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('conversations')
             .select('*')
             .or(`buyer.eq.${state.username},seller.eq.${state.username}`)
@@ -81,8 +81,8 @@ function calculateTimeAgo(timestamp) {
 }
 
 // Suscripción Realtime
-if (supabase) {
-    supabase
+if (supabaseClient) {
+    supabaseClient
         .channel('schema-db-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'listings' }, () => {
             dbFetchListings().then(() => renderMarketplace());
@@ -120,7 +120,7 @@ state.marketplaceListings = state.marketplaceListings.filter(item => !/^[m][1-6]
 localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
 
 // Cargar datos de base de datos o local al iniciar
-if (supabase) {
+if (supabaseClient) {
     dbFetchListings().then(() => {
         if (state.activeMarketCategory) renderMarketplace();
     });
@@ -813,8 +813,8 @@ function handleCreateListingSubmit(e) {
         timeAgo: 'Hace un momento'
     };
 
-    if (supabase) {
-        supabase
+    if (supabaseClient) {
+        supabaseClient
             .from('listings')
             .insert([{
                 id: newListing.id,
@@ -923,8 +923,8 @@ function handleEditListingSubmit(e) {
     const price = document.getElementById('edit-input-price').value.trim();
     const desc = document.getElementById('edit-input-desc').value.trim();
 
-    if (supabase) {
-        supabase
+    if (supabaseClient) {
+        supabaseClient
             .from('listings')
             .update({
                 title: title,
@@ -1018,8 +1018,8 @@ function submitFirstMessage() {
         }]
     };
 
-    if (supabase) {
-        supabase
+    if (supabaseClient) {
+        supabaseClient
             .from('conversations')
             .insert([{
                 id: newConv.id,
@@ -1169,7 +1169,7 @@ function replyChat() {
     const c = state.conversations.find(conv => conv.id === activeChatId);
     if (!c) return;
 
-    if (supabase) {
+    if (supabaseClient) {
         const newMessages = [...c.messages, {
             sender: state.username,
             text,
@@ -1177,7 +1177,7 @@ function replyChat() {
         }];
         const newStatus = (c.status === 'pending' && c.seller === state.username) ? 'active' : c.status;
         
-        supabase
+        supabaseClient
             .from('conversations')
             .update({ 
                 messages: newMessages, 
@@ -1223,8 +1223,8 @@ setTimeout(() => updateInboxBadge(), 1000);
 function deleteListing(id) {
     if (!confirm('¿Estás seguro de que deseas eliminar esta publicación?')) return;
     
-    if (supabase) {
-        supabase
+    if (supabaseClient) {
+        supabaseClient
             .from('listings')
             .delete()
             .eq('id', id)
