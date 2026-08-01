@@ -1220,26 +1220,52 @@ syncUser = function() {
 }
 setTimeout(() => updateInboxBadge(), 1000);
 
-function deleteListing(id) {
-    if (!confirm('¿Estás seguro de que deseas eliminar esta publicación?')) return;
-    
-    if (supabaseClient) {
-        supabaseClient
-            .from('listings')
-            .delete()
-            .eq('id', id)
-            .then(({ error }) => {
-                if (error) showToast('❌ Error de base de datos: ' + error.message);
-            });
-    } else {
-        state.marketplaceListings = state.marketplaceListings.filter(l => l.id !== id);
-        localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
-        renderMarketplace();
-    }
-    
-    closeModal('modal-edit-listing');
-    closeModal('modal-view-listing');
-    showToast('🗑️ Publicación eliminada correctamente.');
+// ─── CUSTOM CONFIRM MODAL ─────────────────────────────────────
+function showConfirm(title, message, onConfirm) {
+    const titleEl = document.getElementById('confirm-modal-title');
+    const msgEl   = document.getElementById('confirm-modal-msg');
+    const okBtn   = document.getElementById('confirm-modal-ok-btn');
+
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl)   msgEl.textContent   = message;
+
+    // Remove old listener and attach fresh one
+    const freshBtn = okBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(freshBtn, okBtn);
+    freshBtn.addEventListener('click', () => {
+        closeModal('modal-confirm');
+        onConfirm();
+    });
+
+    openModal('modal-confirm');
 }
+
+function deleteListing(id) {
+    showConfirm(
+        '¿Eliminar publicación?',
+        'Esta acción no se puede deshacer. La publicación desaparecerá del marketplace para todos los jugadores.',
+        () => {
+            // Remove from local state immediately so UI updates right away
+            state.marketplaceListings = state.marketplaceListings.filter(l => l.id !== id);
+            localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+
+            if (supabaseClient) {
+                supabaseClient
+                    .from('listings')
+                    .delete()
+                    .eq('id', id)
+                    .then(({ error }) => {
+                        if (error) showToast('❌ Error al eliminar: ' + error.message);
+                    });
+            }
+
+            closeModal('modal-edit-listing');
+            closeModal('modal-view-listing');
+            renderMarketplace();
+            showToast('🗑️ Publicación eliminada correctamente.');
+        }
+    );
+}
+
 
 
