@@ -1222,39 +1222,35 @@ setTimeout(() => updateInboxBadge(), 1000);
 
 // ─── CUSTOM CONFIRM MODAL ─────────────────────────────────────
 function showConfirm(title, message, onConfirm) {
-    const titleEl = document.getElementById('confirm-modal-title');
-    const msgEl   = document.getElementById('confirm-modal-msg');
-    const okBtn   = document.getElementById('confirm-modal-ok-btn');
+    const titleEl   = document.getElementById('confirm-modal-title');
+    const msgEl     = document.getElementById('confirm-modal-msg');
+    const okBtn     = document.getElementById('confirm-modal-ok-btn');
+    const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
 
     if (titleEl) titleEl.textContent = title;
     if (msgEl)   msgEl.textContent   = message;
 
-    // Clone to remove any stale event listeners
-    const freshBtn = okBtn.cloneNode(true);
-    okBtn.parentNode.replaceChild(freshBtn, okBtn);
-    freshBtn.addEventListener('click', () => {
+    // Clone buttons to remove any old event listeners
+    const freshOk = okBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(freshOk, okBtn);
+
+    const freshCancel = cancelBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(freshCancel, cancelBtn);
+
+    freshOk.addEventListener('click', () => {
         closeModal('modal-confirm');
         onConfirm();
     });
 
-    // Show confirm on top of everything — temporarily hide other modals
-    document.querySelectorAll('.modal-bg, .modal-overlay').forEach(m => {
-        if (m.id !== 'modal-confirm') m.style.visibility = 'hidden';
+    freshCancel.addEventListener('click', () => {
+        closeModal('modal-confirm');
     });
-    document.getElementById('modal-confirm').style.display = 'flex';
-    document.getElementById('modal-confirm').style.visibility = 'visible';
 
-    // On cancel, restore other modals
-    document.querySelector('#modal-confirm .btn-secondary').onclick = () => {
-        document.getElementById('modal-confirm').style.display = 'none';
-        document.querySelectorAll('.modal-bg, .modal-overlay').forEach(m => {
-            m.style.visibility = '';
-        });
-    };
+    openModal('modal-confirm');
 }
 
 function deleteListing(id) {
-    // Capture id value immediately (before any modal closes)
+    // Capture id IMMEDIATELY before any modal interaction
     const listingId = id || document.getElementById('edit-listing-id')?.value;
     if (!listingId) return;
 
@@ -1262,7 +1258,6 @@ function deleteListing(id) {
         '¿Eliminar publicación?',
         'Esta acción no se puede deshacer. La publicación desaparecerá del marketplace para todos los jugadores.',
         () => {
-            // Update local state immediately
             state.marketplaceListings = state.marketplaceListings.filter(l => l.id !== listingId);
             localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
 
@@ -1276,16 +1271,10 @@ function deleteListing(id) {
                     });
             }
 
-            // Restore and close all modals
-            document.querySelectorAll('.modal-bg, .modal-overlay').forEach(m => {
-                m.style.visibility = '';
-                m.style.display = 'none';
-            });
+            closeModal('modal-edit-listing');
+            closeModal('modal-view-listing');
             renderMarketplace();
             showToast('🗑️ Publicación eliminada correctamente.');
         }
     );
 }
-
-
-
