@@ -98,7 +98,7 @@ if (supabaseClient) {
 }
 
 // CONFIGURACIÓN DE DISCORD CLIENT
-const DISCORD_CLIENT_ID = localStorage.getItem('obs_discord_client_id') || "1279177114631245906"; // Reemplazar con el Client ID de tu aplicación de Discord
+const DISCORD_CLIENT_ID = localStorage.getItem('obs_discord_client_id') || "1532950008251551844"; // Reemplazar con el Client ID de tu aplicación de Discord
 
 // ─── STATE ───────────────────────────────────────────────────
 const state = {
@@ -220,7 +220,7 @@ function toggleClientIdSetup() {
         wrap.style.display = isHidden ? 'block' : 'none';
         if (isHidden) {
             const input = document.getElementById('discord-client-id-input');
-            if (input) input.value = localStorage.getItem('obs_discord_client_id') || "1279177114631245906";
+            if (input) input.value = localStorage.getItem('obs_discord_client_id') || "1532950008251551844";
         }
     }
 }
