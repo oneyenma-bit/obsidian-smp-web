@@ -189,7 +189,10 @@ async function verifyDiscordLogin() {
 }
 
 function loginWithDiscord() {
-    const redirectUri = window.location.origin + window.location.pathname;
+    let redirectUri = window.location.origin + window.location.pathname;
+    if (redirectUri.endsWith('/') && window.location.pathname === '/') {
+        redirectUri = redirectUri.slice(0, -1);
+    }
     const url = `https://discord.com/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify`;
     window.location.href = url;
 }
