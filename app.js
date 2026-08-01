@@ -506,6 +506,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     renderCart();
     bindEvents();
+    
+    // Obtener el estado del servidor en tiempo real
+    updateServerStatus();
+    setInterval(updateServerStatus, 30000); // Actualizar cada 30 segundos
 
     // Interceptor global para reproducir sonido de clic al interactuar
     document.addEventListener('click', (e) => {
@@ -1032,6 +1036,35 @@ function copyIP() {
     }).catch(() => {
         showToast('📋 IP del servidor: ' + ip);
     });
+}
+
+async function updateServerStatus() {
+    const ip = 'PICOLANDNEWWORLD.aternos.me:51309';
+    const statusTextEl = document.querySelector('.ip-online');
+    const liveDotEl = document.querySelector('.ip-live-dot');
+    
+    if (!statusTextEl || !liveDotEl) return;
+    
+    try {
+        const res = await fetch(`https://api.mcsrvstat.us/2/${ip}`);
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        
+        if (data.online) {
+            const currentPlayers = data.players ? data.players.online : 0;
+            statusTextEl.innerHTML = `<i class="fa-solid fa-signal"></i> ${currentPlayers} ONLINE`;
+            statusTextEl.style.color = '#4ade80';
+            liveDotEl.style.background = '#4ade80';
+            liveDotEl.style.boxShadow = '0 0 8px #4ade80';
+        } else {
+            statusTextEl.innerHTML = `<i class="fa-solid fa-ban"></i> APAGADO`;
+            statusTextEl.style.color = '#ef4444';
+            liveDotEl.style.background = '#ef4444';
+            liveDotEl.style.boxShadow = '0 0 8px #ef4444';
+        }
+    } catch (err) {
+        console.error("Error fetching Minecraft server status:", err);
+    }
 }
 
 function comingSoonTab(el, name) {
