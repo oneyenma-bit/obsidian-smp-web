@@ -3260,3 +3260,34 @@ input:focus, textarea:focus, select:focus {
 .confirm-btn-delete:hover {
     filter: brightness(1.15);
 }
+
+/* ============================================================
+   MINECRAFT ITEM STICKERS (marketplace hero card)
+   ============================================================ */
+.mc-sticker {
+    position: absolute;
+    width:  var(--s, 48px);
+    height: var(--s, 48px);
+    object-fit: contain;
+    image-rendering: pixelated;
+    transform: rotate(var(--r, 10deg)) translateY(0);
+    filter:
+        drop-shadow(0 4px 10px rgba(0,0,0,.8))
+        drop-shadow(0 0 8px rgba(168,85,247,.35));
+    animation: mc-bob 3s ease-in-out infinite;
+    animation-delay: var(--delay, 0s);
+    pointer-events: none;
+    z-index: 0;
+    opacity: .9;
+}
+@keyframes mc-bob {
+    0%, 100% { transform: rotate(var(--r, 10deg)) translateY(0px); }
+    50%       { transform: rotate(var(--r, 10deg)) translateY(-7px); }
+}
+
+/* Keep text/button on top of stickers */
+.marketplace-hero-card .mh-left,
+.marketplace-hero-card .btn-create-listing {
+    position: relative;
+    z-index: 1;
+}
