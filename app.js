@@ -210,10 +210,94 @@ function logout() {
     
     const authView = document.getElementById('discord-auth-view');
     const linkView = document.getElementById('minecraft-link-view');
+    const profileView = document.getElementById('profile-settings-view');
     if (authView) authView.style.display = 'block';
     if (linkView) linkView.style.display = 'none';
+    if (profileView) profileView.style.display = 'none';
     
     openModal('modal-login');
+}
+
+async function unlinkAccount() {
+    if (!state.discordId || !state.username) return;
+    
+    const confirmUnlink = confirm("¿Estás seguro de que quieres desvincular tu usuario de Minecraft de tu cuenta de Discord?");
+    if (!confirmUnlink) return;
+
+    if (supabaseClient) {
+        showToast("⏳ Desvinculando cuenta de la base de datos...");
+        try {
+            const { error } = await supabaseClient
+                .from('conversations')
+                .delete()
+                .eq('listing_id', 'registration')
+                .eq('buyer', state.username.toLowerCase())
+                .eq('seller', state.discordId);
+            if (error) throw error;
+        } catch (err) {
+            console.error("Error al desvincular cuenta:", err);
+            showToast("❌ Error al desvincular de la base de datos, pero se cerrará sesión local.");
+        }
+    }
+
+    localStorage.removeItem(`obs_mc_user_${state.discordId}`);
+    logout();
+    showToast("✅ Cuenta desvinculada y sesión cerrada.");
+}
+
+function toggleSetting(key) {
+    if (key === 'sound') {
+        const current = localStorage.getItem('mc_sound') !== 'false';
+        localStorage.setItem('mc_sound', !current ? 'true' : 'false');
+        updateSettingsUI();
+        if (!current) playMcClick();
+    } else if (key === 'particles') {
+        const current = localStorage.getItem('mc_particles') !== 'false';
+        localStorage.setItem('mc_particles', !current ? 'true' : 'false');
+        updateSettingsUI();
+        const canvas = document.getElementById('particles-canvas');
+        if (canvas) {
+            canvas.style.display = !current ? 'block' : 'none';
+        }
+    }
+}
+
+function updateSettingsUI() {
+    const soundBtn = document.getElementById('setting-sound-btn');
+    const particlesBtn = document.getElementById('setting-particles-btn');
+    
+    const soundOn = localStorage.getItem('mc_sound') !== 'false';
+    const particlesOn = localStorage.getItem('mc_particles') !== 'false';
+    
+    if (soundBtn) {
+        soundBtn.textContent = soundOn ? 'Sí' : 'No';
+        soundBtn.classList.toggle('yes', soundOn);
+    }
+    if (particlesBtn) {
+        particlesBtn.textContent = particlesOn ? 'Sí' : 'No';
+        particlesBtn.classList.toggle('yes', particlesOn);
+    }
+}
+
+function playMcClick() {
+    if (localStorage.getItem('mc_sound') === 'false') return;
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(120, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(10, ctx.currentTime + 0.05);
+        
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+        
+        osc.start();
+        osc.stop(ctx.currentTime + 0.05);
+    } catch (e) {}
 }
 
 if (!state.marketplaceListings) {
@@ -365,6 +449,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     initParticles();
     checkDiscordCallback();
     
+    // Configuración inicial de partículas
+    const canvas = document.getElementById('particles-canvas');
+    if (canvas) {
+        const particlesOn = localStorage.getItem('mc_particles') !== 'false';
+        canvas.style.display = particlesOn ? 'block' : 'none';
+    }
+    
     const isLogged = await verifyDiscordLogin();
     loadInitialDatabaseData();
     
@@ -374,6 +465,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     renderCart();
     bindEvents();
+
+    // Interceptor global para reproducir sonido de clic al interactuar
+    document.addEventListener('click', (e) => {
+        const target = e.target.closest('button, a, .market-card, .cat-tab, .points-pill, .user-pill, .modal-close');
+        if (target) {
+            playMcClick();
+        }
+    });
 
     window.addEventListener('scroll', () => {
         document.getElementById('navbar')?.classList.toggle('scrolled', window.scrollY > 10);
@@ -490,7 +589,7 @@ function bindEvents() {
     });
 }
 
-function saveUser() {
+async function saveUser() {
     const inp = document.getElementById('username-input');
     const v = inp?.value.trim();
     if (!v) { showToast('⚠️ Ingresa tu usuario de Minecraft.'); return; }
@@ -499,6 +598,64 @@ function saveUser() {
     if (!state.discordId) {
         showToast('⚠️ Primero debes iniciar sesión con Discord.');
         return;
+    }
+
+    const btn = document.getElementById('save-user-btn');
+    const origText = btn ? btn.innerHTML : 'ENLAZAR CUENTA';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> VERIFICANDO...';
+    }
+
+    // Verificar bloqueo de registro en base de datos Supabase
+    if (supabaseClient) {
+        try {
+            const { data, error } = await supabaseClient
+                .from('conversations')
+                .select('*')
+                .eq('listing_id', 'registration')
+                .eq('buyer', v.toLowerCase());
+            
+            if (error) throw error;
+            
+            if (data && data.length > 0) {
+                const reg = data[0];
+                if (reg.seller !== state.discordId) {
+                    showToast('❌ Este usuario de Minecraft ya está registrado por otra cuenta de Discord.');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = origText;
+                    }
+                    return;
+                }
+            } else {
+                // Registrar este usuario a este Discord ID
+                const { error: insError } = await supabaseClient
+                    .from('conversations')
+                    .insert([{
+                        id: 'reg_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+                        listing_id: 'registration',
+                        buyer: v.toLowerCase(),
+                        seller: state.discordId,
+                        status: 'active',
+                        messages: []
+                    }]);
+                if (insError) throw insError;
+            }
+        } catch (err) {
+            console.error("Error al registrar cuenta en Supabase:", err);
+            showToast('❌ Error de conexión al verificar el usuario.');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+            return;
+        }
+    }
+
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = origText;
     }
     
     state.username = v;
@@ -519,6 +676,43 @@ function toggleBedrock() {
 
 // ─── MODALS ───────────────────────────────────────────────────
 function openModal(id) {
+    if (id === 'modal-login') {
+        const authView = document.getElementById('discord-auth-view');
+        const linkView = document.getElementById('minecraft-link-view');
+        const profileView = document.getElementById('profile-settings-view');
+        
+        if (state.discordId && state.username) {
+            if (authView) authView.style.display = 'none';
+            if (linkView) linkView.style.display = 'none';
+            if (profileView) {
+                profileView.style.display = 'block';
+                const discordAvatar = document.getElementById('profile-discord-avatar');
+                const discordTag = document.getElementById('profile-discord-tag');
+                const mcSkin = document.getElementById('profile-minecraft-skin');
+                const mcName = document.getElementById('profile-minecraft-name');
+                const bedrockBadge = document.getElementById('profile-bedrock-badge');
+                const javaBadge = document.getElementById('profile-java-badge');
+                
+                if (discordAvatar) discordAvatar.src = state.discordUser?.avatar 
+                    ? `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`
+                    : "https://cdn.discordapp.com/embed/avatars/0.png";
+                if (discordTag) discordTag.textContent = state.discordTag;
+                if (mcSkin) mcSkin.src = `https://mc-heads.net/avatar/${encodeURIComponent(state.username)}/60`;
+                if (mcName) mcName.textContent = state.username;
+                if (bedrockBadge) bedrockBadge.style.display = state.isBedrock ? 'inline-block' : 'none';
+                if (javaBadge) javaBadge.style.display = state.isBedrock ? 'none' : 'inline-block';
+                updateSettingsUI();
+            }
+        } else if (state.discordId) {
+            if (authView) authView.style.display = 'none';
+            if (linkView) linkView.style.display = 'block';
+            if (profileView) profileView.style.display = 'none';
+        } else {
+            if (authView) authView.style.display = 'block';
+            if (linkView) linkView.style.display = 'none';
+            if (profileView) profileView.style.display = 'none';
+        }
+    }
     if (id === 'modal-create-listing' || id === 'modal-checkout') {
         if (!state.discordId || !state.username) {
             showToast('⚠️ Debes iniciar sesión con Discord y enlazar tu cuenta de Minecraft para continuar.');
