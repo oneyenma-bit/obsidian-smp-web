@@ -1609,6 +1609,17 @@ input { font-family: var(--font); }
     font-size: 2rem;
     color: #eab308;
     margin-bottom: .6rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 52px;
+}
+.reward-icon img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
 }
 .reward-card h4 { font-size: .95rem; font-weight: 800; color: #fff; margin-bottom: .3rem; }
 .reward-card p { font-size: .75rem; color: var(--text-muted); margin-bottom: .85rem; flex-grow: 1; }
@@ -3290,4 +3301,29 @@ input:focus, textarea:focus, select:focus {
 .marketplace-hero-card .btn-create-listing {
     position: relative;
     z-index: 1;
+}
+
+/* ============================================================
+   MINECRAFT MARGIN DECORATIONS (Inicio, Rules, About, Kits, Points)
+   ============================================================ */
+.mc-decor-sticker {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.8)) drop-shadow(0 0 10px rgba(168,85,247,0.25));
+    animation: mc-bob 4s ease-in-out infinite;
+    animation-delay: var(--delay, 0s);
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.85;
+    transition: opacity 0.3s ease;
+}
+
+/* Responsive Gutter safety: hide decorations on smaller screen widths */
+@media (max-width: 1420px) {
+    .mc-decor-sticker {
+        display: none !important;
+    }
 }

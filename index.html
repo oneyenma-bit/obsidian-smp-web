@@ -22,7 +22,7 @@
             <!-- Brand / Logo 3D -->
             <div class="brand" id="brand-logo-btn" onclick="switchTab('inicio')" title="Ir al inicio">
                 <div class="logo-wrap-3d">
-                    <img src="obsidian_logo_3d.png" alt="Obsidian 3D Logo" class="logo-img-3d" id="logo-img">
+                    <img src="img/obsidian_logo_3d.png" alt="Obsidian 3D Logo" class="logo-img-3d" id="logo-img">
                 </div>
                 <div class="brand-text">
                     <span class="brand-name">OBSIDIAN <em>SMP</em></span>
@@ -113,10 +113,17 @@
     <div class="views-wrapper">
 
         <!-- ==================== VISTA 1: INICIO ==================== -->
-        <section class="view-section active" id="view-inicio">
+        <section class="view-section active" id="view-inicio" style="position: relative; max-width: 1240px; margin: 0 auto;">
+            <!-- Floating Minecraft item stickers outside container (never overlap text, spread out vertically) -->
+            <img src="img/diamond.png"          class="mc-decor-sticker" style="top:80px;   left:-80px;  --r:-15deg; --delay:0.1s" alt="">
+            <img src="img/emerald.png"          class="mc-decor-sticker" style="top:320px;  right:-80px; --r:20deg;  --delay:0.5s" alt="">
+            <img src="img/netherite_ingot.png"  class="mc-decor-sticker" style="top:600px;  left:-80px;  --r:12deg;  --delay:0.8s" alt="">
+            <img src="img/golden_apple.png"     class="mc-decor-sticker" style="top:820px;  right:-80px; --r:-18deg; --delay:0.3s" alt="">
+
             <div class="home-hero-card" style="position: relative;">
+
                 <div class="home-banner-wrap" style="position: relative;">
-                    <img src="hero_minecraft_scenery.png" alt="Obsidian SMP Widescreen Render" class="home-banner-img">
+                    <img src="img/hero_minecraft_scenery.png" alt="Obsidian SMP Widescreen Render" class="home-banner-img">
                     <div class="home-banner-overlay"></div>
                     <div class="home-banner-badge">
                         <span class="live-pulse"></span> APERTURA DE OBSIDIAN SMP
@@ -191,10 +198,15 @@
 
         <!-- ==================== VISTA 2: REGLAS (3D BOOK) ==================== -->
         <section class="view-section" id="view-reglas" style="display:none;">
-            <div class="rules-container">
+            <div class="rules-container" style="position:relative;">
+                <!-- Floating Minecraft item stickers outside container (never overlap text) -->
+                <img src="img/book.png"           class="mc-decor-sticker" style="top:150px; left:-80px;  --r:-10deg; --delay:0.2s" alt="">
+                <img src="img/enchanted_book.png" class="mc-decor-sticker" style="top:250px; right:-80px; --r:15deg;  --delay:0.7s" alt="">
+                <img src="img/trident.png"        class="mc-decor-sticker" style="bottom:150px; left:-80px;  --r:25deg;  --delay:1.1s" alt="">
+                <img src="img/blaze_rod.png"      class="mc-decor-sticker" style="bottom:250px; right:-80px; --r:-20deg; --delay:0.4s" alt="">
                 <div class="rules-header-card">
                     <div class="rules-book-wrap">
-                        <img src="minecraft_book_official.png" alt="Minecraft Enchanted Book" class="rules-book-img">
+                        <img src="img/minecraft_book_official.png" alt="Minecraft Enchanted Book" class="rules-book-img">
                     </div>
                     <div class="rules-header-text">
                         <h2><i class="fa-solid fa-book"></i> REGLAMENTO OFICIAL DE OBSIDIAN SMP</h2>
@@ -205,8 +217,8 @@
                 <div class="rules-grid">
                     <!-- Minecraft Server Rules -->
                     <div class="rule-box mc-rules-box">
-                        <div class="rule-box-header">
-                            <i class="fa-solid fa-gamepad"></i>
+                        <div class="rule-box-header" style="display:flex; align-items:center; gap:0.6rem;">
+                            <img src="img/netherite_sword.png" style="width:24px; height:24px; image-rendering:pixelated; object-fit:contain;" alt="Minecraft">
                             <h3>Reglas del Servidor de Minecraft</h3>
                         </div>
                         <div class="rule-item">
@@ -241,8 +253,8 @@
 
                     <!-- Discord Server Rules -->
                     <div class="rule-box discord-rules-box">
-                        <div class="rule-box-header">
-                            <i class="fa-brands fa-discord"></i>
+                        <div class="rule-box-header" style="display:flex; align-items:center; gap:0.6rem;">
+                            <img src="img/ender_pearl.png" style="width:24px; height:24px; image-rendering:pixelated; object-fit:contain;" alt="Discord">
                             <h3>Reglas del Servidor de Discord</h3>
                         </div>
                         <div class="rule-item">
@@ -285,9 +297,13 @@
             </div>
         </section>
 
-        <!-- ==================== VISTA 3: QUIÉNES SOMOS ==================== -->
         <section class="view-section" id="view-quienes" style="display:none;">
-            <div class="about-container">
+            <div class="about-container" style="position:relative;">
+                <!-- Floating Minecraft item stickers outside container (never overlap text) -->
+                <img src="img/book.png"               class="mc-decor-sticker" style="top:100px;  left:-80px;  --r:12deg;  --delay:0.1s" alt="">
+                <img src="img/totem_of_undying.png"   class="mc-decor-sticker" style="top:200px;  right:-80px; --r:-18deg; --delay:0.6s" alt="">
+                <img src="img/experience_bottle.png"  class="mc-decor-sticker" style="bottom:100px; left:-80px;  --r:-12deg; --delay:0.9s" alt="">
+                <img src="img/netherite_ingot.png"    class="mc-decor-sticker" style="bottom:200px; right:-80px; --r:15deg;  --delay:0.3s" alt="">
                 <div class="about-header">
                     <h2><i class="fa-solid fa-users"></i> QUIÉNES SOMOS</h2>
                     <p>Conoce la historia del proyecto y al equipo de administración de Obsidian SMP</p>
@@ -365,9 +381,8 @@
             </div>
         </section>
 
-        <!-- ==================== VISTA 4: TIENDA DE KITS ==================== -->
         <section class="view-section" id="view-kits" style="display:none;">
-            <main class="store-main" id="store-kits-inner">
+            <main class="store-main" id="store-kits-inner" style="position:relative;">
                 <div class="section-heading">
                     <h2><i class="fa-solid fa-cubes"></i> KITS DE SHULKER BOXES</h2>
                     <p>Elige tu kit y recibe la Shulker Box exclusiva directamente en el servidor</p>
@@ -380,7 +395,7 @@
                         <div class="card-top-glow amber-glow"></div>
                         <span class="tier-chip">RANGO 1</span>
                         <div class="shulker-wrap-3d">
-                            <img src="shulker_void_3d.png" alt="Shulker Amber 3D" class="shulker-img-3d">
+                            <img src="img/shulker_void_3d.png" alt="Shulker Amber 3D" class="shulker-img-3d">
                         </div>
                         <div class="kit-body">
                             <h3 class="kit-name amber-color">AMBER</h3>
@@ -398,7 +413,7 @@
                         <div class="card-top-glow void-glow"></div>
                         <span class="tier-chip">RANGO 2</span>
                         <div class="shulker-wrap-3d">
-                            <img src="shulker_void_3d.png" alt="Shulker Void 3D" class="shulker-img-3d">
+                            <img src="img/shulker_void_3d.png" alt="Shulker Void 3D" class="shulker-img-3d">
                         </div>
                         <div class="kit-body">
                             <h3 class="kit-name void-color">VOID</h3>
@@ -416,7 +431,7 @@
                         <div class="card-top-glow midnight-glow"></div>
                         <span class="tier-chip popular-chip"><i class="fa-solid fa-fire"></i> POPULAR</span>
                         <div class="shulker-wrap-3d">
-                            <img src="shulker_void_3d.png" alt="Shulker Midnight 3D" class="shulker-img-3d">
+                            <img src="img/shulker_void_3d.png" alt="Shulker Midnight 3D" class="shulker-img-3d">
                         </div>
                         <div class="kit-body">
                             <h3 class="kit-name midnight-color">MIDNIGHT</h3>
@@ -434,7 +449,7 @@
                         <div class="card-top-glow ascension-glow"></div>
                         <span class="tier-chip coming-chip">PRÓXIMAMENTE</span>
                         <div class="shulker-wrap-3d locked-shulker">
-                            <img src="shulker_void_3d.png" alt="Shulker Ascension 3D" class="shulker-img-3d">
+                            <img src="img/shulker_void_3d.png" alt="Shulker Ascension 3D" class="shulker-img-3d">
                             <div class="lock-overlay"><i class="fa-solid fa-lock"></i></div>
                         </div>
                         <div class="kit-body">
@@ -453,7 +468,7 @@
                         <div class="card-top-glow celestial-glow"></div>
                         <span class="tier-chip coming-chip">PRÓXIMAMENTE</span>
                         <div class="shulker-wrap-3d locked-shulker">
-                            <img src="shulker_void_3d.png" alt="Shulker Celestial 3D" class="shulker-img-3d">
+                            <img src="img/shulker_void_3d.png" alt="Shulker Celestial 3D" class="shulker-img-3d">
                             <div class="lock-overlay"><i class="fa-solid fa-lock"></i></div>
                         </div>
                         <div class="kit-body">
@@ -473,7 +488,7 @@
 
         <!-- ==================== VISTA 4: RECOMPENSAS POR GEMAS ==================== -->
         <section class="view-section" id="view-puntos" style="display:none;">
-            <div class="points-page-container">
+            <div class="points-page-container" style="position:relative;">
                 <div class="points-page-header">
                     <div class="pp-title-group">
                         <h2><i class="fa-solid fa-gem"></i> OBJETOS &amp; RANGOS POR GEMAS OBSIDIAN</h2>
@@ -492,7 +507,7 @@
                 <div class="rewards-grid page-rewards-grid">
                     <!-- Reward 1: 3x Manzanas de Notch -->
                     <div class="reward-card">
-                        <div class="reward-icon"><i class="fa-solid fa-apple-whole"></i></div>
+                        <div class="reward-icon"><img src="img/golden_apple.png" alt="Manzana de Notch"></div>
                         <h4>3x Manzanas de Notch Encantadas</h4>
                         <p>Recibe 3 Manzanas Doradas Encantadas (Notch) directo en el juego.</p>
                         <div class="reward-cost"><i class="fa-solid fa-gem"></i> 200 Gemas</div>
@@ -501,7 +516,7 @@
 
                     <!-- Reward 2: Pack 3x Tótems de Inmortalidad -->
                     <div class="reward-card">
-                        <div class="reward-icon"><i class="fa-solid fa-ankh"></i></div>
+                        <div class="reward-icon"><img src="img/totem_of_undying.png" alt="Tótem"></div>
                         <h4>Pack 3x Tótems de la Inmortalidad</h4>
                         <p>Recibe 3 Tótems de la Inmortalidad de protección en el juego.</p>
                         <div class="reward-cost"><i class="fa-solid fa-gem"></i> 500 Gemas</div>
@@ -511,7 +526,7 @@
                     <!-- Reward 3: Rango VIP Obsidian -->
                     <div class="reward-card popular-reward">
                         <div class="reward-chip">MÁS POPULAR</div>
-                        <div class="reward-icon"><i class="fa-solid fa-crown"></i></div>
+                        <div class="reward-icon"><img src="img/nether_star.png" alt="Estrella Nether"></div>
                         <h4>Rango VIP Obsidian (30 Días)</h4>
                         <p>Comando /fly, prefijo [VIP] y acceso a kits diarios.</p>
                         <div class="reward-cost"><i class="fa-solid fa-gem"></i> 1000 Gemas</div>
@@ -520,7 +535,7 @@
 
                     <!-- Reward 4: Kit Mítico Netherite -->
                     <div class="reward-card">
-                        <div class="reward-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                        <div class="reward-icon"><img src="img/netherite_chestplate.png" alt="Netherite Chestplate"></div>
                         <h4>Kit Mítico Netherite Legendario</h4>
                         <p>Armadura completa Netherite Filo V Protección IV.</p>
                         <div class="reward-cost"><i class="fa-solid fa-gem"></i> 1500 Gemas</div>
@@ -535,16 +550,16 @@
             <div class="marketplace-container">
                 <div class="marketplace-hero-card" style="position:relative; overflow:hidden;">
                     <!-- Floating Minecraft item stickers -->
-                    <img src="netherite_sword.png"    class="mc-sticker" style="top:-10px;  left:2%;   --r:15deg;  --s:56px; --delay:0s"    alt="">
-                    <img src="netherite_chestplate.png" class="mc-sticker" style="top:-14px; left:18%;  --r:-12deg; --s:50px; --delay:.4s"  alt="">
-                    <img src="diamond.png"            class="mc-sticker" style="top:-8px;  left:36%;  --r:20deg;  --s:44px; --delay:.8s"   alt="">
-                    <img src="golden_apple.png"       class="mc-sticker" style="top:-12px; left:54%;  --r:-18deg; --s:48px; --delay:.2s"   alt="">
-                    <img src="netherite_helmet.png"   class="mc-sticker" style="top:-10px; left:70%;  --r:10deg;  --s:52px; --delay:.6s"   alt="">
-                    <img src="totem_of_undying.png"   class="mc-sticker" style="top:-8px;  left:86%;  --r:-22deg; --s:46px; --delay:1s"    alt="">
-                    <img src="elytra.png"             class="mc-sticker" style="bottom:-10px; right:3%;  --r:8deg;  --s:54px; --delay:.3s" alt="">
-                    <img src="netherite_axe.png"      class="mc-sticker" style="bottom:-12px; right:22%; --r:-15deg;--s:50px; --delay:.7s" alt="">
-                    <img src="emerald.png"            class="mc-sticker" style="bottom:-8px;  right:42%; --r:18deg; --s:42px; --delay:.1s" alt="">
-                    <img src="netherite_pickaxe.png"  class="mc-sticker" style="bottom:-10px; right:62%; --r:-10deg;--s:48px; --delay:.9s" alt="">
+                    <img src="img/netherite_sword.png"    class="mc-sticker" style="top:-10px;  left:2%;   --r:15deg;  --s:56px; --delay:0s"    alt="">
+                    <img src="img/netherite_chestplate.png" class="mc-sticker" style="top:-14px; left:18%;  --r:-12deg; --s:50px; --delay:.4s"  alt="">
+                    <img src="img/diamond.png"            class="mc-sticker" style="top:-8px;  left:36%;  --r:20deg;  --s:44px; --delay:.8s"   alt="">
+                    <img src="img/golden_apple.png"       class="mc-sticker" style="top:-12px; left:54%;  --r:-18deg; --s:48px; --delay:.2s"   alt="">
+                    <img src="img/netherite_helmet.png"   class="mc-sticker" style="top:-10px; left:70%;  --r:10deg;  --s:52px; --delay:.6s"   alt="">
+                    <img src="img/totem_of_undying.png"   class="mc-sticker" style="top:-8px;  left:86%;  --r:-22deg; --s:46px; --delay:1s"    alt="">
+                    <img src="img/elytra.png"             class="mc-sticker" style="bottom:-10px; right:3%;  --r:8deg;  --s:54px; --delay:.3s" alt="">
+                    <img src="img/netherite_axe.png"      class="mc-sticker" style="bottom:-12px; right:22%; --r:-15deg;--s:50px; --delay:.7s" alt="">
+                    <img src="img/emerald.png"            class="mc-sticker" style="bottom:-8px;  right:42%; --r:18deg; --s:42px; --delay:.1s" alt="">
+                    <img src="img/netherite_pickaxe.png"  class="mc-sticker" style="bottom:-10px; right:62%; --r:-10deg;--s:48px; --delay:.9s" alt="">
                     <div class="mh-left">
                         <h2><i class="fa-solid fa-store"></i> MARKETPLACE OBSIDIAN</h2>
                         <p>Compra, vende e intercambia ítems con otros jugadores del servidor en tiempo real estilo Facebook Marketplace</p>
@@ -566,25 +581,25 @@
                             <i class="fa-solid fa-border-all" style="margin-right:4px;"></i> Todos
                         </button>
                         <button class="market-cat-pill" data-cat="armadura" onclick="setMarketCategory('armadura')">
-                            <img src="netherite_chestplate.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Armadura
+                            <img src="img/netherite_chestplate.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Armadura
                         </button>
                         <button class="market-cat-pill" data-cat="armas" onclick="setMarketCategory('armas')">
-                            <img src="netherite_sword.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Armas &amp; Herramientas
+                            <img src="img/netherite_sword.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Armas &amp; Herramientas
                         </button>
                         <button class="market-cat-pill" data-cat="comida" onclick="setMarketCategory('comida')">
-                            <img src="golden_apple.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Comida &amp; Pociones
+                            <img src="img/golden_apple.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Comida &amp; Pociones
                         </button>
                         <button class="market-cat-pill" data-cat="materiales" onclick="setMarketCategory('materiales')">
-                            <img src="obsidian.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Materiales &amp; Bloques
+                            <img src="img/obsidian.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Materiales &amp; Bloques
                         </button>
                         <button class="market-cat-pill" data-cat="libros" onclick="setMarketCategory('libros')">
-                            <img src="totem_of_undying.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Libros &amp; Tótems
+                            <img src="img/totem_of_undying.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Libros &amp; Tótems
                         </button>
                         <button class="market-cat-pill" data-cat="shulkers" onclick="setMarketCategory('shulkers')">
                             <i class="fa-solid fa-box-archive" style="margin-right:4px;"></i> Shulkers &amp; Cajas
                         </button>
                         <button class="market-cat-pill" data-cat="cosmeticos" onclick="setMarketCategory('cosmeticos')">
-                            <img src="emerald.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Cosméticos &amp; Varios
+                            <img src="img/emerald.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Cosméticos &amp; Varios
                         </button>
                     </div>
                 </div>
@@ -723,7 +738,7 @@
             <!-- Step 1: Thank You with good_boy.jpg -->
             <div id="success-step-1" class="success-step-content active">
                 <div class="good-boy-card">
-                    <img src="good_boy.jpg" alt="¡Gracias por tu compra!" class="good-boy-img">
+                    <img src="img/good_boy.jpg" alt="¡Gracias por tu compra!" class="good-boy-img">
                 </div>
                 <h2 class="thank-you-title">¡GRACIAS POR TU COMPRA!</h2>
                 <p class="thank-you-sub">Agradecemos enormemente tu apoyo al servidor <strong>Obsidian SMP</strong>.</p>
@@ -1014,7 +1029,7 @@
             <!-- Minecraft-style warning header -->
             <div class="confirm-mc-header">
                 <div class="confirm-mc-icon">
-                    <img src="netherite_sword.png" alt="delete" style="width:40px;height:40px;image-rendering:pixelated;filter:drop-shadow(2px 2px 0 #000) drop-shadow(-1px -1px 0 rgba(255,100,100,.6));transform:rotate(-30deg);">
+                    <img src="img/netherite_sword.png" alt="delete" style="width:40px;height:40px;image-rendering:pixelated;filter:drop-shadow(2px 2px 0 #000) drop-shadow(-1px -1px 0 rgba(255,100,100,.6));transform:rotate(-30deg);">
                 </div>
             </div>
             <div class="confirm-mc-body">
@@ -1034,6 +1049,6 @@
 
     <!-- Supabase JS Client for Realtime Database -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js?v=1.0.8"></script>
+    <script src="app.js?v=1.0.11"></script>
 </body>
 </html>

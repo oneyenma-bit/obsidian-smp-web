@@ -142,7 +142,7 @@ const KITS = {
         price: 2.00,
         tier: 'AMBER',
         colorClass: 'amber-color',
-        image: 'amber.jpeg',
+        image: 'img/amber.jpeg',
         highlights: [
             'Armadura: Full Diamante Completo',
             'Herramientas: Espada, Pico y Hacha de Diamante',
@@ -156,7 +156,7 @@ const KITS = {
         price: 4.00,
         tier: 'VOID',
         colorClass: 'void-color',
-        image: 'void.jpeg',
+        image: 'img/void.jpeg',
         highlights: [
             'Armadura: Full Netherite (Protección IV, Irrompible III, Reparación)',
             'Pico Netherite: Fortuna III, Irrompible III, Eficiencia V, Reparación',
@@ -171,7 +171,7 @@ const KITS = {
         price: 6.00,
         tier: 'MIDNIGHT',
         colorClass: 'midnight-color',
-        image: 'midnight.png',
+        image: 'img/midnight.png',
         highlights: [
             'Armadura: Full Netherite (Protección IV, Irrompible III, Reparación)',
             'Pico Netherite: Fortuna III, Irrompible III, Eficiencia V, Reparación',
@@ -682,7 +682,10 @@ function renderMarketplace() {
     grid.innerHTML = filtered.map(item => {
         const catLabel = CAT_LABELS[item.category] || '📦 Ítem';
         const pubSkin = `https://mc-heads.net/avatar/${encodeURIComponent(item.publisher || 'Steve')}/28`;
-        const itemImg = item.image || 'shulker_void_3d.png';
+        let itemImg = item.image || 'img/shulker_void_3d.png';
+        if (itemImg && !itemImg.startsWith('img/') && !itemImg.startsWith('data:') && !itemImg.startsWith('http') && !itemImg.startsWith('https')) {
+            itemImg = 'img/' + itemImg;
+        }
 
         return `
             <div class="market-card" onclick="openListingDetailModal('${item.id}')">
@@ -808,7 +811,7 @@ function handleCreateListingSubmit(e) {
         category,
         price,
         desc,
-        image: state.uploadedImageBase64 || 'shulker_void_3d.png',
+        image: state.uploadedImageBase64 || 'img/shulker_void_3d.png',
         publisher,
         timeAgo: 'Hace un momento'
     };
@@ -850,7 +853,10 @@ function openListingDetailModal(listingId) {
 
     const catLabel = CAT_LABELS[item.category] || '📦 Ítem';
     const pubSkin = `https://mc-heads.net/avatar/${encodeURIComponent(item.publisher || 'Steve')}/36`;
-    const itemImg = item.image || 'shulker_void_3d.png';
+    let itemImg = item.image || 'img/shulker_void_3d.png';
+    if (itemImg && !itemImg.startsWith('img/') && !itemImg.startsWith('data:') && !itemImg.startsWith('http') && !itemImg.startsWith('https')) {
+        itemImg = 'img/' + itemImg;
+    }
 
     detailContainer.innerHTML = `
         <img src="${itemImg}" alt="${item.title}" class="md-img">
