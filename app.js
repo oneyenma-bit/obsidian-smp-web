@@ -1039,14 +1039,13 @@ function copyIP() {
 }
 
 async function updateServerStatus() {
-    const ip = 'PICOLANDNEWWORLD.aternos.me:51309';
     const statusTextEl = document.querySelector('.ip-online');
     const liveDotEl = document.querySelector('.ip-live-dot');
     
     if (!statusTextEl || !liveDotEl) return;
     
     try {
-        const res = await fetch(`https://api.mcsrvstat.us/2/${ip}`);
+        const res = await fetch('https://api.mcstatus.io/v2/status/java/PICOLANDNEWWORLD.aternos.me');
         if (!res.ok) throw new Error('API error');
         const data = await res.json();
         
