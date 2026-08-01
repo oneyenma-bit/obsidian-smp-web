@@ -1220,61 +1220,35 @@ syncUser = function() {
 }
 setTimeout(() => updateInboxBadge(), 1000);
 
-// ─── CUSTOM CONFIRM MODAL ─────────────────────────────────────
-function showConfirm(title, message, onConfirm) {
-    const titleEl   = document.getElementById('confirm-modal-title');
-    const msgEl     = document.getElementById('confirm-modal-msg');
-    const okBtn     = document.getElementById('confirm-modal-ok-btn');
-    const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
-
-    if (titleEl) titleEl.textContent = title;
-    if (msgEl)   msgEl.textContent   = message;
-
-    // Clone buttons to remove any old event listeners
-    const freshOk = okBtn.cloneNode(true);
-    okBtn.parentNode.replaceChild(freshOk, okBtn);
-
-    const freshCancel = cancelBtn.cloneNode(true);
-    cancelBtn.parentNode.replaceChild(freshCancel, cancelBtn);
-
-    freshOk.addEventListener('click', () => {
-        closeModal('modal-confirm');
-        onConfirm();
-    });
-
-    freshCancel.addEventListener('click', () => {
-        closeModal('modal-confirm');
-    });
-
-    openModal('modal-confirm');
-}
-
+// ─── DELETE LISTING ───────────────────────────────────────────
 function deleteListing(id) {
-    // Capture id IMMEDIATELY before any modal interaction
+    // Grab ID immediately
     const listingId = id || document.getElementById('edit-listing-id')?.value;
     if (!listingId) return;
 
-    showConfirm(
-        '¿Eliminar publicación?',
-        'Esta acción no se puede deshacer. La publicación desaparecerá del marketplace para todos los jugadores.',
-        () => {
-            state.marketplaceListings = state.marketplaceListings.filter(l => l.id !== listingId);
-            localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+    // Close edit modal first so confirm modal is clearly visible
+    closeModal('modal-edit-listing');
 
-            if (supabaseClient) {
-                supabaseClient
-                    .from('listings')
-                    .delete()
-                    .eq('id', listingId)
-                    .then(({ error }) => {
-                        if (error) showToast('❌ Error al eliminar: ' + error.message);
-                    });
-            }
+    // Small delay so the close animation finishes, then show confirm
+    setTimeout(() => {
+        const confirmed = window.confirm('¿Eliminar esta publicación? Esta acción no se puede deshacer.');
+        if (!confirmed) return;
 
-            closeModal('modal-edit-listing');
-            closeModal('modal-view-listing');
-            renderMarketplace();
-            showToast('🗑️ Publicación eliminada correctamente.');
+        state.marketplaceListings = state.marketplaceListings.filter(l => l.id !== listingId);
+        localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+
+        if (supabaseClient) {
+            supabaseClient
+                .from('listings')
+                .delete()
+                .eq('id', listingId)
+                .then(({ error }) => {
+                    if (error) showToast('❌ Error al eliminar: ' + error.message);
+                });
         }
-    );
+
+        closeModal('modal-view-listing');
+        renderMarketplace();
+        showToast('🗑️ Publicación eliminada.');
+    }, 300);
 }
