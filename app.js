@@ -216,32 +216,6 @@ function logout() {
     openModal('modal-login');
 }
 
-function toggleClientIdSetup() {
-    const wrap = document.getElementById('client-id-setup-wrap');
-    if (wrap) {
-        const isHidden = wrap.style.display === 'none';
-        wrap.style.display = isHidden ? 'block' : 'none';
-        if (isHidden) {
-            const input = document.getElementById('discord-client-id-input');
-            if (input) input.value = localStorage.getItem('obs_discord_client_id') || "1532950008251551844";
-        }
-    }
-}
-
-function saveClientId() {
-    const input = document.getElementById('discord-client-id-input');
-    const val = input ? input.value.trim() : '';
-    if (!val) {
-        showToast('⚠️ Por favor ingresa un Client ID válido.');
-        return;
-    }
-    localStorage.setItem('obs_discord_client_id', val);
-    showToast('✅ Client ID actualizado con éxito. Recargando...');
-    setTimeout(() => {
-        window.location.reload();
-    }, 800);
-}
-
 if (!state.marketplaceListings) {
     state.marketplaceListings = [];
 }
