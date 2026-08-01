@@ -1229,7 +1229,7 @@ function showConfirm(title, message, onConfirm) {
     if (titleEl) titleEl.textContent = title;
     if (msgEl)   msgEl.textContent   = message;
 
-    // Remove old listener and attach fresh one
+    // Clone to remove any stale event listeners
     const freshBtn = okBtn.cloneNode(true);
     okBtn.parentNode.replaceChild(freshBtn, okBtn);
     freshBtn.addEventListener('click', () => {
@@ -1237,30 +1237,50 @@ function showConfirm(title, message, onConfirm) {
         onConfirm();
     });
 
-    openModal('modal-confirm');
+    // Show confirm on top of everything — temporarily hide other modals
+    document.querySelectorAll('.modal-bg, .modal-overlay').forEach(m => {
+        if (m.id !== 'modal-confirm') m.style.visibility = 'hidden';
+    });
+    document.getElementById('modal-confirm').style.display = 'flex';
+    document.getElementById('modal-confirm').style.visibility = 'visible';
+
+    // On cancel, restore other modals
+    document.querySelector('#modal-confirm .btn-secondary').onclick = () => {
+        document.getElementById('modal-confirm').style.display = 'none';
+        document.querySelectorAll('.modal-bg, .modal-overlay').forEach(m => {
+            m.style.visibility = '';
+        });
+    };
 }
 
 function deleteListing(id) {
+    // Capture id value immediately (before any modal closes)
+    const listingId = id || document.getElementById('edit-listing-id')?.value;
+    if (!listingId) return;
+
     showConfirm(
         '¿Eliminar publicación?',
         'Esta acción no se puede deshacer. La publicación desaparecerá del marketplace para todos los jugadores.',
         () => {
-            // Remove from local state immediately so UI updates right away
-            state.marketplaceListings = state.marketplaceListings.filter(l => l.id !== id);
+            // Update local state immediately
+            state.marketplaceListings = state.marketplaceListings.filter(l => l.id !== listingId);
             localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
 
             if (supabaseClient) {
                 supabaseClient
                     .from('listings')
                     .delete()
-                    .eq('id', id)
+                    .eq('id', listingId)
                     .then(({ error }) => {
                         if (error) showToast('❌ Error al eliminar: ' + error.message);
                     });
             }
 
-            closeModal('modal-edit-listing');
-            closeModal('modal-view-listing');
+            // Restore and close all modals
+            document.querySelectorAll('.modal-bg, .modal-overlay').forEach(m => {
+                m.style.visibility = '';
+                m.style.display = 'none';
+            });
             renderMarketplace();
             showToast('🗑️ Publicación eliminada correctamente.');
         }
