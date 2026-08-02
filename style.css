@@ -3456,6 +3456,7 @@ input:focus, textarea:focus, select:focus {
     .ip-pill { order: 3; flex: 1 1 100%; max-width: 100%; margin-top: 0.5rem; }
     .brand { flex: 1; }
     .nav-right { flex: 1; justify-content: flex-end; }
+    .nav-social-hide { display: none !important; }
     
     .cat-bar-inner { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; justify-content: flex-start; padding-bottom: 5px; }
     .cat-bar-inner::-webkit-scrollbar { height: 4px; }
@@ -3470,6 +3471,7 @@ input:focus, textarea:focus, select:focus {
     .mc-decor-sticker, .mc-sticker { display: none !important; }
     
     .modal-box { width: 95%; max-height: 90vh; overflow-y: auto; padding: 1.5rem; }
+    .modal-close { width: 36px; height: 36px; font-size: 1.6rem; }
     
     .points-page-header { flex-direction: column; text-align: center; }
     .points-balance-card-page { margin: 1rem auto 0; }
@@ -3485,3 +3487,202 @@ input:focus, textarea:focus, select:focus {
     .user-pill-unified { padding: 4px; }
     .user-avatar-small { margin: 0; }
 }
+
+/* ============================================================
+   PREMIUM MINECRAFT MODAL STYLING
+   ============================================================ */
+.login-box.mc-styled {
+    max-width: 600px !important;
+    background: linear-gradient(135deg, rgba(16, 12, 28, 0.98) 0%, rgba(8, 6, 15, 0.99) 100%) !important;
+    border: 2px solid rgba(168, 85, 247, 0.4) !important;
+    box-shadow: 0 0 35px rgba(168, 85, 247, 0.35), inset 0 0 20px rgba(168, 85, 247, 0.15) !important;
+}
+
+.modal-header-mc {
+    margin-bottom: 1.8rem;
+    text-align: center;
+}
+.modal-logo-mc {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.8));
+    animation: pulseLogo 2s infinite alternate;
+}
+@keyframes pulseLogo {
+    0% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.6)); }
+    100% { transform: scale(1.08); filter: drop-shadow(0 0 16px rgba(168, 85, 247, 0.9)); }
+}
+.modal-title-mc {
+    font-family: 'VT323', 'Outfit', monospace;
+    font-size: 2.2rem;
+    font-weight: 400;
+    color: #fff;
+    letter-spacing: 1px;
+    margin-top: 0.5rem;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+}
+.modal-subtitle-mc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+}
+
+/* Grid for the cards */
+.login-options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+    margin-top: 1.5rem;
+}
+
+@media (max-width: 600px) {
+    .login-options-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+/* Minecraft Styled Cards */
+.login-card-mc {
+    background: rgba(20, 15, 36, 0.6);
+    border: 2px solid rgba(168, 85, 247, 0.25);
+    border-radius: 16px;
+    padding: 1.5rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+}
+.login-card-mc::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+    pointer-events: none;
+}
+.login-card-mc:hover {
+    transform: translateY(-5px);
+    background: rgba(30, 22, 54, 0.85);
+}
+
+/* Different glows for new vs existing */
+.login-card-mc.opt-new:hover {
+    border-color: var(--primary);
+    box-shadow: 0 10px 25px rgba(168, 85, 247, 0.35);
+}
+.login-card-mc.opt-existing:hover {
+    border-color: #10b981;
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);
+}
+
+.card-icon-mc {
+    width: 52px;
+    height: 52px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.pixel-img-mc {
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+.login-card-mc:hover .pixel-img-mc {
+    transform: scale(1.15) rotate(-5deg);
+}
+
+.card-title-mc {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.5px;
+}
+.opt-new .card-title-mc { color: var(--primary-text); }
+.opt-existing .card-title-mc { color: #34d399; }
+
+.card-desc-mc {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+    margin-bottom: 1.25rem;
+    flex-grow: 1;
+}
+
+/* Premium Buttons styled in 3D Minecraft style but modernized */
+.btn-mc-primary, .btn-mc-success {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 900;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+}
+.btn-mc-primary {
+    background: #5865F2;
+    box-shadow: 0 4px 0 #3b429f;
+}
+.btn-mc-primary:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #3b429f;
+}
+.btn-mc-success {
+    background: #10b981;
+    box-shadow: 0 4px 0 #077853;
+}
+.btn-mc-success:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #077853;
+}
+.btn-icon-pixel {
+    width: 16px;
+    height: 16px;
+    image-rendering: pixelated;
+}
+
+.bedrock-toggle {
+    background: #dc2626 !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 0.35rem 1.2rem !important;
+    font-weight: 900 !important;
+    font-size: 0.75rem !important;
+    border-radius: 6px !important;
+    box-shadow: 0 3px 0 #991b1b !important;
+    transition: all 0.15s !important;
+    text-transform: uppercase !important;
+}
+.bedrock-toggle:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 1px 0 #991b1b !important;
+}
+.bedrock-toggle.yes {
+    background: #10b981 !important;
+    box-shadow: 0 3px 0 #065f46 !important;
+}
+.bedrock-toggle.yes:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 1px 0 #065f46 !important;
+}
+
