@@ -127,6 +127,12 @@ function parsePublisher(pubStr) {
     return { username: pubStr, discordId: null, avatar: null };
 }
 
+function isAdminUser() {
+    const isDiscordAdmin = state.discordTag && state.discordTag.toLowerCase() === 'pablitorey_';
+    const isMcAdmin = state.username && state.username.toLowerCase() === 'elpayasowtf123';
+    return !!(isDiscordAdmin || isMcAdmin);
+}
+
 function getPublisherAvatar(pubInfo, size = 32) {
     if (pubInfo.discordId) {
         if (pubInfo.avatar) {
@@ -1200,9 +1206,9 @@ function renderMarketplace() {
             itemImg = 'img/' + itemImg;
         }
 
-        const isOwner = pubInfo.discordId 
+        const isOwner = (pubInfo.discordId 
             ? (pubInfo.discordId === state.discordId)
-            : (pubInfo.username === state.username);
+            : (pubInfo.username === state.username)) || isAdminUser();
 
         return `
             <div class="market-card" onclick="openListingDetailModal('${item.id}')">
@@ -1384,9 +1390,9 @@ function openListingDetailModal(listingId) {
         itemImg = 'img/' + itemImg;
     }
 
-    const isOwner = pubInfo.discordId 
+    const isOwner = (pubInfo.discordId 
         ? (pubInfo.discordId === state.discordId)
-        : (pubInfo.username === state.username);
+        : (pubInfo.username === state.username)) || isAdminUser();
 
     detailContainer.innerHTML = `
         <img src="${itemImg}" alt="${item.title}" class="md-img">
@@ -1764,9 +1770,9 @@ function deleteListing(id) {
     const item = state.marketplaceListings.find(l => l.id === listingId);
     if (item) {
         const pubInfo = parsePublisher(item.publisher);
-        const isOwner = pubInfo.discordId 
+        const isOwner = (pubInfo.discordId 
             ? (pubInfo.discordId === state.discordId)
-            : (pubInfo.username === state.username);
+            : (pubInfo.username === state.username)) || isAdminUser();
         if (!isOwner) {
             showToast('⚠️ No tienes permiso para eliminar esta publicación.');
             return;
