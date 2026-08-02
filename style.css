@@ -3492,7 +3492,7 @@ input:focus, textarea:focus, select:focus {
    PREMIUM MINECRAFT MODAL STYLING
    ============================================================ */
 .login-box.mc-styled {
-    max-width: 600px !important;
+    max-width: 620px !important;
     background: linear-gradient(135deg, rgba(16, 12, 28, 0.98) 0%, rgba(8, 6, 15, 0.99) 100%) !important;
     border: 2px solid rgba(168, 85, 247, 0.4) !important;
     box-shadow: 0 0 35px rgba(168, 85, 247, 0.35), inset 0 0 20px rgba(168, 85, 247, 0.15) !important;
@@ -4041,6 +4041,26 @@ input:focus, textarea:focus, select:focus {
         grid-template-columns: 1fr;
         gap: 1.2rem;
     }
+}
+
+.obsidian-block-pixel {
+    width: 54px;
+    height: 54px;
+    object-fit: contain;
+    z-index: 2;
+}
+
+.btn-dark-mc {
+    background: #2e2838;
+    border: 2px solid #1a1522;
+    box-shadow: inset -2px -2px 0px #1a1522, inset 2px 2px 0px #4a3f5c;
+}
+.btn-dark-mc:hover {
+    background: #3e364c;
+}
+.btn-dark-mc:active {
+    transform: translateY(2px);
+    box-shadow: inset 2px 2px 0px #1a1522;
 }
 
 
