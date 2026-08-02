@@ -149,11 +149,26 @@ function checkDiscordCallback() {
         }
     }
 }
-
 async function verifyDiscordLogin() {
     const token = localStorage.getItem("obs_discord_token");
     const authView = document.getElementById('discord-auth-view');
     const linkView = document.getElementById('minecraft-link-view');
+    const passLoginView = document.getElementById('mc-password-login-view');
+    
+    // Si inició sesión con contraseña local (sin Discord)
+    const localUser = localStorage.getItem('obs_logged_without_discord_user');
+    const localId = localStorage.getItem('obs_logged_without_discord_id');
+    
+    if (localUser && localId && !token) {
+        state.username = localUser;
+        state.discordId = localId;
+        state.discordTag = 'Acceso sin Discord';
+        state.points = parseInt(localStorage.getItem(`obs_points_${localId}`) || '0', 10);
+        syncUser();
+        return true;
+    }
+    
+    if (passLoginView) passLoginView.style.display = 'none';
     
     if (!token) {
         if (authView) authView.style.display = 'block';
@@ -227,6 +242,8 @@ function loginWithDiscord() {
 
 function logout() {
     localStorage.removeItem("obs_discord_token");
+    localStorage.removeItem("obs_logged_without_discord_user");
+    localStorage.removeItem("obs_logged_without_discord_id");
     state.username = '';
     state.discordUser = null;
     state.discordId = null;
@@ -238,9 +255,11 @@ function logout() {
     
     const authView = document.getElementById('discord-auth-view');
     const linkView = document.getElementById('minecraft-link-view');
+    const passLoginView = document.getElementById('mc-password-login-view');
     const profileView = document.getElementById('profile-settings-view');
     if (authView) authView.style.display = 'block';
     if (linkView) linkView.style.display = 'none';
+    if (passLoginView) passLoginView.style.display = 'none';
     if (profileView) profileView.style.display = 'none';
     
     openModal('modal-login');
@@ -1777,4 +1796,98 @@ function deleteListing(id) {
             }
         );
     }, 150);
+}
+
+// ─── LOGIN SIN DISCORD (RECOBRAR CUENTA CON CONTRASEÑA DE 2 PASOS) ───
+function showPasswordLoginView() {
+    const discordView = document.getElementById('discord-auth-view');
+    const passLoginView = document.getElementById('mc-password-login-view');
+    const linkView = document.getElementById('minecraft-link-view');
+    const profileView = document.getElementById('profile-settings-view');
+    
+    if (discordView) discordView.style.display = 'none';
+    if (linkView) linkView.style.display = 'none';
+    if (profileView) profileView.style.display = 'none';
+    if (passLoginView) passLoginView.style.display = 'block';
+}
+
+function showDiscordAuthView() {
+    const discordView = document.getElementById('discord-auth-view');
+    const passLoginView = document.getElementById('mc-password-login-view');
+    const linkView = document.getElementById('minecraft-link-view');
+    const profileView = document.getElementById('profile-settings-view');
+    
+    if (discordView) discordView.style.display = 'block';
+    if (linkView) linkView.style.display = 'none';
+    if (profileView) profileView.style.display = 'none';
+    if (passLoginView) passLoginView.style.display = 'none';
+}
+
+async function loginWithPasswordOnly() {
+    const userInp = document.getElementById('pass-login-username');
+    const passInp = document.getElementById('pass-login-password');
+    const u = userInp?.value.trim();
+    const p = passInp?.value.trim();
+    
+    if (!u) { showToast('⚠️ Ingresa tu usuario de Minecraft.'); return; }
+    if (!p) { showToast('⚠️ Ingresa tu contraseña de 2-Pasos.'); return; }
+    
+    const btn = document.getElementById('pass-login-submit-btn');
+    const origText = btn ? btn.innerHTML : 'INICIAR SESIÓN';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> VERIFICANDO...';
+    }
+    
+    if (supabaseClient) {
+        try {
+            const { data, error } = await supabaseClient
+                .from('conversations')
+                .select('*')
+                .eq('listing_id', 'registration')
+                .eq('buyer', u.toLowerCase());
+            
+            if (error) throw error;
+            
+            if (data && data.length > 0) {
+                const reg = data[0];
+                const storedPass = reg.messages && reg.messages[0] ? reg.messages[0].replace('pass:', '') : '';
+                
+                if (storedPass === 'none') {
+                    showToast('❌ Esta cuenta no tiene contraseña de 2-Pasos configurada. Debes iniciar sesión con Discord.');
+                } else if (p === storedPass) {
+                    // Login exitoso!
+                    state.username = reg.buyer;
+                    state.discordId = reg.seller; // ID de Discord enlazado
+                    state.points = parseInt(localStorage.getItem(`obs_points_${reg.seller}`) || '0', 10);
+                    state.discordTag = 'Acceso sin Discord';
+                    
+                    // Guardamos localmente
+                    localStorage.setItem(`obs_mc_user_${reg.seller}`, reg.buyer);
+                    localStorage.setItem('obs_user', reg.buyer);
+                    localStorage.setItem('obs_logged_without_discord_user', reg.buyer);
+                    localStorage.setItem('obs_logged_without_discord_id', reg.seller);
+                    
+                    syncUser();
+                    closeModal('modal-login');
+                    showToast(`✅ Bienvenido de nuevo, ${reg.buyer}!`);
+                    loadInitialDatabaseData();
+                } else {
+                    showToast('❌ Contraseña de 2-Pasos incorrecta.');
+                }
+            } else {
+                showToast('❌ Usuario de Minecraft no encontrado.');
+            }
+        } catch(err) {
+            console.error("Error logging in with password:", err);
+            showToast('❌ Error de conexión al verificar la cuenta.');
+        }
+    } else {
+        showToast('❌ Error de base de datos no configurada.');
+    }
+    
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = origText;
+    }
 }

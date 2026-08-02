@@ -3503,10 +3503,16 @@ input:focus, textarea:focus, select:focus {
     text-align: center;
 }
 .modal-logo-mc {
-    width: 60px;
-    height: 60px;
+    width: 64px;
+    height: 64px;
     object-fit: contain;
-    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.8));
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(168, 85, 247, 0.4);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.35);
+    margin: 0 auto 0.8rem;
+    display: block;
     animation: pulseLogo 2s infinite alternate;
 }
 @keyframes pulseLogo {
@@ -3684,5 +3690,23 @@ input:focus, textarea:focus, select:focus {
 .bedrock-toggle.yes:active {
     transform: translateY(2px) !important;
     box-shadow: 0 1px 0 #065f46 !important;
+}
+
+.btn-mc-link {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: underline;
+}
+.btn-mc-link:hover {
+    color: #fff;
+    text-shadow: 0 0 8px rgba(255,255,255,0.5);
 }
 
