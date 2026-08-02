@@ -634,11 +634,23 @@
                     <i class="fa-brands fa-discord" style="color: white; font-size: 2.2rem;"></i>
                 </div>
                 <h3 class="modal-title">Seguridad con Discord</h3>
-                <p class="modal-desc">Inicia sesión con tu cuenta de Discord para verificar tu identidad de forma segura. Esto evita suplantaciones y protege tus gemas y publicaciones.</p>
+                <p class="modal-desc">Conecta tu cuenta de Discord para verificar tu identidad y proteger tus ítems y gemas en Obsidian SMP.</p>
                 
-                <button class="btn-continue" id="discord-login-btn" onclick="loginWithDiscord()" style="background: #5865F2; box-shadow: 0 6px 20px rgba(88, 101, 242, 0.35); margin-bottom: 0.5rem;">
-                    <i class="fa-brands fa-discord"></i> INICIAR SESIÓN CON DISCORD
-                </button>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem;">
+                    <button class="btn-continue" id="discord-login-btn" onclick="loginWithDiscord()" style="background: #5865F2; box-shadow: 0 6px 20px rgba(88, 101, 242, 0.35); position: relative; overflow: hidden;">
+                        <i class="fa-brands fa-discord"></i> ENLAZAR NUEVO USUARIO
+                    </button>
+                    
+                    <div style="position: relative; text-align: center; margin: 0.5rem 0;">
+                        <span style="background: rgba(26,20,40,1); padding: 0 10px; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; position: relative; z-index: 2;">O SI YA TIENES CUENTA</span>
+                        <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.1); z-index: 1;"></div>
+                    </div>
+                    
+                    <button class="btn-continue" onclick="loginWithDiscord()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35); border-color: #34d399;">
+                        <img src="img/diamond.png" style="width: 18px; height: 18px; image-rendering: pixelated; margin-right: 8px; vertical-align: middle;" alt="">
+                        ¿CUENTA EXISTENTE? INICIA SESIÓN
+                    </button>
+                </div>
             </div>
 
             <!-- Minecraft Username Link View -->
@@ -647,14 +659,22 @@
                     <img id="login-skin-img" src="https://mc-heads.net/head/MHF_Steve" alt="Skin" class="login-skin">
                 </div>
                 <h3 class="modal-title">Enlaza tu usuario de Minecraft</h3>
-                <p class="modal-desc" id="mc-link-desc">¡Verificado con Discord exitosamente! Escribe tu Nickname de Minecraft y crea o ingresa tu contraseña de seguridad de 2 pasos.</p>
+                <p class="modal-desc" id="mc-link-desc">¡Verificado con Discord exitosamente! Escribe tu Nickname de Minecraft.</p>
                 
                 <div class="login-input-row" style="margin-bottom: 0.6rem;">
                     <input type="text" id="username-input" placeholder="Tu usuario de Minecraft Java..." autocomplete="off" spellcheck="false">
                 </div>
                 
-                <div class="login-input-row" style="margin-bottom: 1.1rem;">
-                    <input type="password" id="password-input" placeholder="Contraseña de 2-Pasos..." autocomplete="off">
+                <div style="margin-bottom: 0.6rem; text-align: left; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.8rem; color: var(--text-dim); font-weight: 600;">
+                        <input type="checkbox" id="enable-2fa-checkbox" onchange="toggle2FA()" style="width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer;">
+                        Activar Contraseña de 2-Pasos (Opcional)
+                    </label>
+                </div>
+                
+                <div class="login-input-row" id="password-container" style="display: none; margin-bottom: 1.1rem;">
+                    <input type="password" id="password-input" placeholder="Crea una contraseña..." autocomplete="off">
+                    <p style="font-size: 0.7rem; color: #f87171; margin-top: 6px; text-align: left; padding: 0 4px;"><i class="fa-solid fa-triangle-exclamation"></i> Necesaria si quieres recuperar tu cuenta desde otro Discord en el futuro.</p>
                 </div>
                 
                 <button class="btn-continue" id="save-user-btn">ENLAZAR CUENTA</button>

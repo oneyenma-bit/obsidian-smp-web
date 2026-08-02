@@ -175,6 +175,24 @@ async function verifyDiscordLogin() {
             state.username = localStorage.getItem(`obs_mc_user_${user.id}`) || '';
             state.points = parseInt(localStorage.getItem(`obs_points_${user.id}`) || '0', 10);
             
+            // Si no está en local storage (ej: otro dispositivo), lo buscamos en la base de datos
+            if (!state.username && supabaseClient) {
+                try {
+                    const { data } = await supabaseClient
+                        .from('conversations')
+                        .select('*')
+                        .eq('listing_id', 'registration')
+                        .eq('seller', user.id);
+                    if (data && data.length > 0) {
+                        state.username = data[0].buyer;
+                        localStorage.setItem(`obs_mc_user_${user.id}`, state.username);
+                        localStorage.setItem('obs_user', state.username);
+                    }
+                } catch(err) {
+                    console.error("Error fetching user from Supabase:", err);
+                }
+            }
+            
             if (state.username) {
                 syncUser();
                 closeModal('modal-login');
@@ -274,6 +292,14 @@ function toggleSetting(key) {
         if (canvas) {
             canvas.style.display = !current ? 'block' : 'none';
         }
+    }
+}
+
+function toggle2FA() {
+    const cb = document.getElementById('enable-2fa-checkbox');
+    const pc = document.getElementById('password-container');
+    if (cb && pc) {
+        pc.style.display = cb.checked ? 'block' : 'none';
     }
 }
 
@@ -646,9 +672,15 @@ function bindEvents() {
                         const desc = document.getElementById('mc-link-desc');
                         if (desc) {
                             if (data && data.length > 0) {
-                                desc.innerHTML = '⚠️ Este usuario de Minecraft ya está registrado. <strong style="color: var(--primary);">Ingresa tu contraseña de seguridad de 2 pasos</strong> para enlazarlo.';
+                                const reg = data[0];
+                                const storedPass = reg.messages && reg.messages[0] ? reg.messages[0].replace('pass:', '') : '';
+                                if (storedPass === 'none') {
+                                    desc.innerHTML = '❌ Este usuario ya está registrado a otro Discord sin contraseña de recuperación.';
+                                } else {
+                                    desc.innerHTML = '⚠️ Este usuario de Minecraft ya está registrado. <strong style="color: var(--primary);">Activa y escribe su contraseña de recuperación</strong> para enlazarlo.';
+                                }
                             } else {
-                                desc.innerHTML = '✨ El usuario está disponible. <strong style="color: #4ade80;">Crea una contraseña de seguridad de 2 pasos</strong> para proteger tu cuenta.';
+                                desc.innerHTML = '✨ El usuario está disponible. <strong style="color: #4ade80;">Te sugerimos activar la contraseña</strong> para proteger tu cuenta.';
                             }
                         }
                     } catch(err){}
@@ -674,12 +706,14 @@ function bindEvents() {
 async function saveUser() {
     const inp = document.getElementById('username-input');
     const passInp = document.getElementById('password-input');
+    const cb2fa = document.getElementById('enable-2fa-checkbox');
     const v = inp?.value.trim();
     const enteredPass = passInp?.value.trim();
+    const is2FAEnabled = cb2fa ? cb2fa.checked : false;
     
     if (!v) { showToast('⚠️ Ingresa tu usuario de Minecraft.'); return; }
     if (v.includes(' ') || v.includes('|')) { showToast('⚠️ Nombre de usuario no válido.'); return; }
-    if (!enteredPass) { showToast('⚠️ Ingresa tu contraseña de seguridad de 2 pasos.'); return; }
+    if (is2FAEnabled && !enteredPass) { showToast('⚠️ Ingresa tu contraseña de seguridad de 2 pasos.'); return; }
     
     if (!state.discordId) {
         showToast('⚠️ Primero debes iniciar sesión con Discord.');
@@ -708,8 +742,17 @@ async function saveUser() {
                 const reg = data[0];
                 const storedPass = reg.messages && reg.messages[0] ? reg.messages[0].replace('pass:', '') : '';
                 
-                if (enteredPass !== storedPass) {
-                    showToast('❌ Contraseña de seguridad de 2 pasos incorrecta.');
+                if (storedPass !== 'none') {
+                    if (enteredPass !== storedPass) {
+                        showToast('❌ Contraseña de seguridad de 2 pasos incorrecta o no activada.');
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = origText;
+                        }
+                        return;
+                    }
+                } else if (reg.seller !== state.discordId) {
+                    showToast('❌ Esta cuenta está ligada a otro Discord y no tiene contraseña de recuperación configurada.');
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = origText;
@@ -727,6 +770,7 @@ async function saveUser() {
                 }
             } else {
                 // Registrar este usuario a este Discord ID con su contraseña
+                const finalPass = is2FAEnabled ? enteredPass : 'none';
                 const { error: insError } = await supabaseClient
                     .from('conversations')
                     .insert([{
@@ -735,7 +779,7 @@ async function saveUser() {
                         buyer: v.toLowerCase(),
                         seller: state.discordId,
                         status: 'active',
-                        messages: ["pass:" + enteredPass]
+                        messages: ["pass:" + finalPass]
                     }]);
                 if (insError) throw insError;
             }

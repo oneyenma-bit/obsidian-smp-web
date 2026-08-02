@@ -3440,7 +3440,48 @@ input:focus, textarea:focus, select:focus {
     color: var(--text-muted);
     font-weight: 600;
     display: flex;
-    align-items: center;
     gap: 3px;
 }
 
+/* ============================================================
+   RESPONSIVIDAD MÓVIL
+   ============================================================ */
+@media (max-width: 992px) {
+    .features-grid, .rules-grid, .about-grid { grid-template-columns: 1fr; }
+    .hero-title { font-size: 3rem; }
+}
+
+@media (max-width: 768px) {
+    .nav-inner { flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; }
+    .ip-pill { order: 3; flex: 1 1 100%; max-width: 100%; margin-top: 0.5rem; }
+    .brand { flex: 1; }
+    .nav-right { flex: 1; justify-content: flex-end; }
+    
+    .cat-bar-inner { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; justify-content: flex-start; padding-bottom: 5px; }
+    .cat-bar-inner::-webkit-scrollbar { height: 4px; }
+    .cat-bar-inner::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+    .cat-tab { flex-shrink: 0; padding: 0.5rem 1rem; }
+    
+    .home-hero-card { padding: 1rem; margin-top: 1rem; }
+    .home-actions { flex-direction: column; width: 100%; }
+    .home-actions button { width: 100%; }
+    .owner-tiktok-card { flex-direction: column; text-align: center; }
+    
+    .mc-decor-sticker, .mc-sticker { display: none !important; }
+    
+    .modal-box { width: 95%; max-height: 90vh; overflow-y: auto; padding: 1.5rem; }
+    
+    .points-page-header { flex-direction: column; text-align: center; }
+    .points-balance-card-page { margin: 1rem auto 0; }
+    
+    .footer-inner { flex-direction: column; text-align: center; gap: 1rem; }
+    .footer-links { justify-content: center; flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+    .hero-title { font-size: 2.2rem; }
+    .brand-name { font-size: 1rem; }
+    .user-details-small { display: none; }
+    .user-pill-unified { padding: 4px; }
+    .user-avatar-small { margin: 0; }
+}
