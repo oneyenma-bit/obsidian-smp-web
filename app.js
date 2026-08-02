@@ -839,7 +839,10 @@ function openModal(id) {
     if (id === 'modal-login') {
         const authView = document.getElementById('discord-auth-view');
         const linkView = document.getElementById('minecraft-link-view');
+        const passLoginView = document.getElementById('mc-password-login-view');
         const profileView = document.getElementById('profile-settings-view');
+        
+        if (passLoginView) passLoginView.style.display = 'none';
         
         if (state.discordId && state.username) {
             if (authView) authView.style.display = 'none';
