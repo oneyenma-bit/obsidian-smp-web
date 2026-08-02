@@ -3662,9 +3662,20 @@ input:focus, textarea:focus, select:focus {
     box-shadow: 0 2px 0 #077853;
 }
 .btn-icon-pixel {
-    width: 16px;
-    height: 16px;
+    width: 22px;
+    height: 22px;
     image-rendering: pixelated;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+.nether-star-pixel {
+    width: 48px;
+    height: 48px;
+    image-rendering: pixelated;
+    object-fit: contain;
+    z-index: 2;
+    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.6));
 }
 
 .bedrock-toggle {
