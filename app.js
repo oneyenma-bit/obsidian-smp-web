@@ -181,8 +181,7 @@ async function verifyDiscordLogin() {
         state.username = localUser;
         state.discordId = localId;
         state.discordTag = 'Acceso sin Discord';
-        state.points = parseInt(localStorage.getItem(`obs_points_${localId}`) || '0', 10);
-        syncUser();
+        loadUserDataOnLogin(localId, localUser);
         return true;
     }
     
@@ -206,7 +205,6 @@ async function verifyDiscordLogin() {
             
             // Cargar usuario de Minecraft enlazado
             state.username = localStorage.getItem(`obs_mc_user_${user.id}`) || '';
-            state.points = parseInt(localStorage.getItem(`obs_points_${user.id}`) || '0', 10);
             
             // Si no está en local storage (ej: otro dispositivo), lo buscamos en la base de datos
             if (!state.username && supabaseClient) {
@@ -226,8 +224,9 @@ async function verifyDiscordLogin() {
                 }
             }
             
+            loadUserDataOnLogin(user.id, state.username);
+
             if (state.username) {
-                syncUser();
                 closeModal('modal-login');
             } else {
                 if (authView) authView.style.display = 'none';
@@ -732,6 +731,115 @@ function switchTab(tabId) {
 }
 
 // ─── USER & POINTS ─────────────────────────────────────────────
+function loadUserDataOnLogin(userId, username) {
+    const key = userId || (username ? username.toLowerCase() : 'guest');
+    
+    // Points
+    const p1 = parseInt(localStorage.getItem('obs_points') || '0', 10);
+    const p2 = parseInt(localStorage.getItem(`obs_points_${key}`) || '0', 10);
+    const p3 = username ? parseInt(localStorage.getItem(`obs_points_${username.toLowerCase()}`) || '0', 10) : 0;
+    state.points = Math.max(p1, p2, p3);
+
+    // Active Frame
+    state.activeFrame = localStorage.getItem(`obs_active_frame_${key}`) ||
+                        (username ? localStorage.getItem(`obs_active_frame_${username.toLowerCase()}`) : null) ||
+                        localStorage.getItem('obs_active_frame') || '';
+
+    // Unlocked Frames
+    const rawUnlocked = localStorage.getItem(`obs_unlocked_frames_${key}`) ||
+                        (username ? localStorage.getItem(`obs_unlocked_frames_${username.toLowerCase()}`) : null) ||
+                        localStorage.getItem('obs_unlocked_frames') || '[]';
+    try {
+        state.unlockedFrames = JSON.parse(rawUnlocked);
+    } catch(e) {
+        state.unlockedFrames = [];
+    }
+
+    // Last Spin Time
+    const spinTime = localStorage.getItem(`obs_last_spin_time_${key}`) ||
+                     (username ? localStorage.getItem(`obs_last_spin_time_${username.toLowerCase()}`) : null) ||
+                     localStorage.getItem('obs_last_spin_time') || '0';
+    localStorage.setItem('obs_last_spin_time', spinTime);
+
+    // Supabase DB Sync
+    if (supabaseClient && username && username !== 'Invitado') {
+        supabaseClient
+            .from('user_profiles')
+            .select('*')
+            .eq('username', username)
+            .then(({ data }) => {
+                if (data && data.length > 0) {
+                    const prof = data[0];
+                    if (prof.points !== undefined && prof.points > state.points) {
+                        state.points = prof.points;
+                    }
+                    if (prof.active_frame) {
+                        state.activeFrame = prof.active_frame;
+                    }
+                    if (prof.unlocked_frames) {
+                        try {
+                            const dbFrames = typeof prof.unlocked_frames === 'string' ? JSON.parse(prof.unlocked_frames) : prof.unlocked_frames;
+                            if (Array.isArray(dbFrames)) {
+                                state.unlockedFrames = Array.from(new Set([...state.unlockedFrames, ...dbFrames]));
+                            }
+                        } catch(e) {}
+                    }
+                    if (prof.last_spin_time) {
+                        localStorage.setItem('obs_last_spin_time', prof.last_spin_time.toString());
+                        localStorage.setItem(`obs_last_spin_time_${key}`, prof.last_spin_time.toString());
+                    }
+                    saveUserDataToStorage();
+                    syncUser();
+                }
+            })
+            .catch(() => {});
+    }
+
+    saveUserDataToStorage();
+    syncUser();
+}
+
+function saveUserDataToStorage() {
+    const key = state.discordId || (state.username ? state.username.toLowerCase() : null);
+
+    localStorage.setItem('obs_points', state.points);
+    localStorage.setItem('obs_active_frame', state.activeFrame || '');
+    localStorage.setItem('obs_unlocked_frames', JSON.stringify(state.unlockedFrames || []));
+
+    if (key) {
+        localStorage.setItem(`obs_points_${key}`, state.points);
+        localStorage.setItem(`obs_active_frame_${key}`, state.activeFrame || '');
+        localStorage.setItem(`obs_unlocked_frames_${key}`, JSON.stringify(state.unlockedFrames || []));
+        const lastSpin = localStorage.getItem('obs_last_spin_time') || '0';
+        localStorage.setItem(`obs_last_spin_time_${key}`, lastSpin);
+    }
+
+    if (state.username && state.username !== 'Invitado') {
+        const uKey = state.username.toLowerCase();
+        localStorage.setItem(`obs_points_${uKey}`, state.points);
+        localStorage.setItem(`obs_active_frame_${uKey}`, state.activeFrame || '');
+        localStorage.setItem(`obs_unlocked_frames_${uKey}`, JSON.stringify(state.unlockedFrames || []));
+    }
+
+    // Save to Supabase
+    if (supabaseClient && state.username && state.username !== 'Invitado') {
+        const lastSpin = localStorage.getItem('obs_last_spin_time') || '0';
+        try {
+            supabaseClient
+                .from('user_profiles')
+                .upsert({
+                    username: state.username,
+                    points: state.points,
+                    active_frame: state.activeFrame || '',
+                    unlocked_frames: JSON.stringify(state.unlockedFrames || []),
+                    last_spin_time: lastSpin
+                }, { onConflict: 'username' })
+                .then(() => {})
+                .catch(() => {});
+        } catch(e) {}
+    }
+}
+
 function onUserPillClick() {
     if (state.username && state.username !== 'Invitado') {
         openUserProfileModal(state.username);
@@ -1237,25 +1345,7 @@ function prevSuccessStep() {
 
 function saveUserPoints(newAmount) {
     state.points = Math.max(0, parseInt(newAmount, 10) || 0);
-    localStorage.setItem('obs_points', state.points);
-    if (state.username && state.username !== 'Invitado') {
-        localStorage.setItem(`obs_points_${state.username.toLowerCase()}`, state.points);
-    }
-    if (state.discordId) {
-        localStorage.setItem(`obs_points_${state.discordId}`, state.points);
-    }
-    
-    if (supabaseClient && state.username && state.username !== 'Invitado') {
-        try {
-            supabaseClient
-                .from('user_profiles')
-                .update({ points: state.points })
-                .eq('username', state.username)
-                .then(() => {})
-                .catch(() => {});
-        } catch(e) {}
-    }
-
+    saveUserDataToStorage();
     syncUser();
 }
 
@@ -3139,7 +3229,7 @@ function renderProfileFramesGallery() {
 
 function equipFrame(frameId) {
     state.activeFrame = (state.activeFrame === frameId) ? '' : frameId;
-    localStorage.setItem('obs_active_frame', state.activeFrame);
+    saveUserDataToStorage();
     renderProfileFramesGallery();
     renderProfileAvatarPreview(state.username, true);
     syncUser();
