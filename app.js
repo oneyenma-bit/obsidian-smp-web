@@ -677,9 +677,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderCart();
     bindEvents();
     
-    // Obtener el estado del servidor en tiempo real
-    updateServerStatus();
-    setInterval(updateServerStatus, 30000); // Actualizar cada 30 segundos
+    // (Actualización de estado del servidor en tiempo real deshabilitada)
 
     // Interceptor global para reproducir sonido de clic al interactuar
     document.addEventListener('click', (e) => {
