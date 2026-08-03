@@ -3089,30 +3089,72 @@ function renderMarketTicker() {
     }, 15000);
 })();
 
-// ─── DAILY RUNE ROULETTE SYSTEM ────────────────────────────────
+// ─── DAILY RUNE ROULETTE SYSTEM (SECURE ANTI-CHEAT) ────────────
 const ROULETTE_PRIZES = [
-    { name: '10 Gemas', points: 10, type: 'points' },
-    { name: '🍎 x3 Manzanas Doradas', type: 'item', desc: '¡Has ganado 3 Manzanas de Oro!' },
-    { name: '50 Gemas', points: 50, type: 'points' },
-    { name: '🧪 x5 Frascos de Experiencia', type: 'item', desc: '¡Has ganado 5 Frascos de XP!' },
-    { name: '25 Gemas', points: 25, type: 'points' },
-    { name: '🛡️ Marco Obsidian Exclusivo', frame: 'frame-obsidian', type: 'frame', desc: '¡Has desbloqueado el Marco Obsidian!' },
-    { name: '🔥 JACKPOT! 100 GEMAS', points: 100, type: 'points' },
-    { name: '5 Gemas', points: 5, type: 'points' }
+    { name: '10 Gemas', points: 10 },
+    { name: '15 Gemas', points: 15 },
+    { name: '50 Gemas', points: 50 },
+    { name: '25 Gemas', points: 25 },
+    { name: '5 Gemas', points: 5 },
+    { name: '75 Gemas', points: 75 },
+    { name: '150 GEMAS (JACKPOT)', points: 150 },
+    { name: '20 Gemas', points: 20 }
 ];
 
 let isSpinning = false;
 let currentRotation = 0;
+let verifiedServerTimeOffset = 0;
+
+async function syncVerifiedServerTime() {
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2500);
+        const res = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.unixtime) {
+                const trueServerMs = data.unixtime * 1000;
+                verifiedServerTimeOffset = trueServerMs - Date.now();
+                return;
+            }
+        }
+    } catch (e) {}
+
+    try {
+        const res = await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+        const dateHeader = res.headers.get('date');
+        if (dateHeader) {
+            const trueServerMs = new Date(dateHeader).getTime();
+            verifiedServerTimeOffset = trueServerMs - Date.now();
+        }
+    } catch (e) {}
+}
+
+function getSecureTime() {
+    return Date.now() + verifiedServerTimeOffset;
+}
 
 let lastTimerText = '';
 function checkRouletteCooldown() {
     const lastSpin = parseInt(localStorage.getItem('obs_last_spin_time') || '0');
-    const now = Date.now();
+    const now = getSecureTime();
     const cooldown = 24 * 60 * 60 * 1000;
-    const diff = now - lastSpin;
 
     const timerEl = document.getElementById('roulette-countdown-text');
     const spinBtn = document.getElementById('spin-roulette-btn');
+
+    // Anti-cheat detection: if last spin timestamp is far in the future compared to real UTC server time
+    if (lastSpin > now + 300000) {
+        if (timerEl) timerEl.textContent = '🚫 Manipulación de reloj detectada';
+        if (spinBtn) {
+            spinBtn.disabled = true;
+            spinBtn.innerHTML = '<i class="fa-solid fa-ban"></i> HORA INCORRECTA';
+        }
+        return false;
+    }
+
+    const diff = now - lastSpin;
 
     if (diff >= cooldown) {
         if (timerEl && timerEl.textContent !== '¡Giro disponible!') {
@@ -3145,7 +3187,7 @@ function spinDailyRoulette() {
     if (isSpinning) return;
 
     if (!checkRouletteCooldown()) {
-        showToast('⏳ Ya giraste la ruleta hoy. ¡Vuelve mañana!');
+        showToast('⏳ Ya giraste la ruleta hoy o la hora no está sincronizada.');
         return;
     }
 
@@ -3172,29 +3214,38 @@ function spinDailyRoulette() {
 
     playSound('click');
 
-    setTimeout(() => {
+    setTimeout(async () => {
         isSpinning = false;
-        const now = Date.now();
-        localStorage.setItem('obs_last_spin_time', now.toString());
+        const secureNow = getSecureTime();
+        localStorage.setItem('obs_last_spin_time', secureNow.toString());
 
-        let winMessage = `🎉 ¡Ganaste: ${prize.name}!`;
-        if (prize.type === 'points') {
-            state.points = (state.points || 0) + prize.points;
-            syncUser();
-            winMessage = `🎉 ¡Ganaste ${prize.points} Gemas! Saldo actual: ${state.points} Gemas.`;
-        } else if (prize.type === 'frame') {
-            if (!state.unlockedFrames.includes('frame-obsidian')) {
-                state.unlockedFrames.push('frame-obsidian');
-                localStorage.setItem('obs_unlocked_frames', JSON.stringify(state.unlockedFrames));
+        // Grant REAL gems to state, localStorage and database
+        const amount = prize.points;
+        state.points = (state.points || 0) + amount;
+        localStorage.setItem('obs_points', state.points);
+        if (state.username && state.username !== 'Invitado') {
+            localStorage.setItem(`obs_points_${state.username.toLowerCase()}`, state.points);
+            
+            // Database sync
+            if (supabaseClient) {
+                try {
+                    await supabaseClient
+                        .from('user_profiles')
+                        .update({ points: state.points })
+                        .eq('username', state.username);
+                } catch(err) {
+                    console.warn('Error al guardar gemas en DB:', err);
+                }
             }
-            if (!state.activeFrame) {
-                equipFrame('frame-obsidian');
-            }
-            winMessage = `🎉 ¡Ganaste y Desbloqueaste el ${prize.name}!`;
         }
 
+        // Re-render navbar and UI points display
+        syncUser();
+
+        const winMessage = `🎉 ¡Ganaste +${amount} Gemas! Saldo total: ${state.points} Gemas.`;
+
         if (resultBox) {
-            resultBox.innerHTML = winMessage;
+            resultBox.innerHTML = `<strong>${winMessage}</strong>`;
             resultBox.style.display = 'block';
         }
 
@@ -3202,7 +3253,7 @@ function spinDailyRoulette() {
         playSound('purchase');
 
         const user = state.username || 'Invitado';
-        pushMarketActivity(`<strong>${user}</strong> giró la Ruleta Diaria y ganó <strong>${prize.name}</strong>`, 'fa-solid fa-gift', '#f59e0b');
+        pushMarketActivity(`<strong>${user}</strong> giró la Ruleta Diaria y ganó <strong>+${amount} Gemas</strong>`, 'fa-solid fa-gem', '#eab308');
 
         checkRouletteCooldown();
     }, 4600);
@@ -3210,7 +3261,8 @@ function spinDailyRoulette() {
 
 // Init ticker & cooldown timer interval
 (function initRouletteAndTicker() {
-    setTimeout(() => {
+    setTimeout(async () => {
+        await syncVerifiedServerTime();
         renderMarketTicker();
         checkRouletteCooldown();
         setInterval(checkRouletteCooldown, 1000);
