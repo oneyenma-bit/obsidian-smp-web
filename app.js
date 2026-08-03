@@ -1660,9 +1660,11 @@ function renderMarketplace() {
             itemImg = 'img/' + itemImg;
         }
 
-        const isOwner = (pubInfo.discordId 
+        const realOwner = (pubInfo.discordId 
             ? (pubInfo.discordId === state.discordId)
-            : (pubInfo.username === state.username)) || isAdminUser();
+            : (pubInfo.username === state.username));
+        const isAdmin = isAdminUser();
+        const isOwner = realOwner || isAdmin;
 
         // Determine publisher avatar frame
         const isCurrentUser = (pubInfo.discordId ? pubInfo.discordId === state.discordId : pubInfo.username === state.username);
@@ -1697,15 +1699,24 @@ function renderMarketplace() {
                             ${avatarFrameMarkup}
                             <span class="mc-username">${pubInfo.username}</span>
                         </div>
-                        ${isOwner ? `
+                        ${realOwner ? `
                         <button class="btn-contact-listing edit-btn" onclick="event.stopPropagation(); openEditListingModal('${item.id}')" style="background: #f59e0b;">
                             <i class="fa-solid fa-pen"></i> Editar
                         </button>
+                        ` : (isAdmin ? `
+                        <div style="display: flex; gap: 4px; width: 100%;">
+                            <button class="btn-contact-listing" onclick="event.stopPropagation(); openContactModal('${item.publisher.replace(/'/g, "\\'")}', '${item.title.replace(/'/g, "\\'")}', '${item.id}')" style="flex: 1; padding: 0.3rem 0.5rem; font-size: 0.72rem; margin:0;">
+                                <i class="fa-solid fa-message"></i> Contactar
+                            </button>
+                            <button class="btn-contact-listing edit-btn" onclick="event.stopPropagation(); openEditListingModal('${item.id}')" style="background: #ef4444; flex: 1; padding: 0.3rem 0.5rem; font-size: 0.72rem; margin:0;">
+                                <i class="fa-solid fa-shield-halved"></i> Moderar
+                            </button>
+                        </div>
                         ` : `
                         <button class="btn-contact-listing" onclick="event.stopPropagation(); openContactModal('${item.publisher.replace(/'/g, "\\'")}', '${item.title.replace(/'/g, "\\'")}', '${item.id}')">
                             <i class="fa-solid fa-message"></i> Contactar
                         </button>
-                        `}
+                        `)}
                     </div>
                 </div>
             </div>
@@ -1858,9 +1869,10 @@ function openListingDetailModal(listingId) {
         itemImg = 'img/' + itemImg;
     }
 
-    const isOwner = (pubInfo.discordId 
+    const realOwner = (pubInfo.discordId 
         ? (pubInfo.discordId === state.discordId)
-        : (pubInfo.username === state.username)) || isAdminUser();
+        : (pubInfo.username === state.username));
+    const isAdmin = isAdminUser();
 
     detailContainer.innerHTML = `
         <img src="${itemImg}" alt="${item.title}" class="md-img">
@@ -1881,10 +1893,16 @@ function openListingDetailModal(listingId) {
 
             <div class="md-desc">${item.desc}</div>
 
-            ${isOwner
-                ? `<button class="btn-copy-msg edit-btn" onclick="openEditListingModal('${item.id}')" style="background:#f59e0b; border:none; margin-top:1rem; width:100%;"><i class="fa-solid fa-pen"></i> Editar Oferta</button>`
-                : `<button class="btn-copy-msg" onclick="openContactModal('${item.publisher.replace(/'/g, "\\'")}', '${item.title.replace(/'/g, "\\'")}', '${item.id}')" style="margin-top:1rem; width:100%;"><i class="fa-solid fa-message"></i> Enviar Mensaje</button>`
-            }
+            ${realOwner ? `
+                <button class="btn-copy-msg edit-btn" onclick="openEditListingModal('${item.id}')" style="background:#f59e0b; border:none; margin-top:1rem; width:100%;"><i class="fa-solid fa-pen"></i> Editar Oferta</button>
+            ` : (isAdmin ? `
+                <div style="display: flex; gap: 8px; margin-top: 1rem; width: 100%;">
+                    <button class="btn-copy-msg" onclick="openContactModal('${item.publisher.replace(/'/g, "\\'")}', '${item.title.replace(/'/g, "\\'")}', '${item.id}')" style="flex: 1; margin: 0;"><i class="fa-solid fa-message"></i> Enviar Mensaje</button>
+                    <button class="btn-copy-msg edit-btn" onclick="openEditListingModal('${item.id}')" style="background:#ef4444; border:none; flex: 1; margin: 0;"><i class="fa-solid fa-shield-halved"></i> Moderar Oferta</button>
+                </div>
+            ` : `
+                <button class="btn-copy-msg" onclick="openContactModal('${item.publisher.replace(/'/g, "\\'")}', '${item.title.replace(/'/g, "\\'")}', '${item.id}')" style="margin-top:1rem; width:100%;"><i class="fa-solid fa-message"></i> Enviar Mensaje</button>
+            `)}
         </div>
     `;
 
@@ -2527,7 +2545,7 @@ async function handleFactionSubmit(e) {
         category: 'faccion',
         price: tag,
         desc_text: serializedDesc,
-        image: factionUploadedImageBase64,
+        image: factionUploadedImageBase64 || 'img/obsidian.png',
         publisher: state.discordId ? `${publisherVal}|${state.discordId}|${state.discordUser?.avatar || ''}` : publisherVal
     };
     
@@ -2556,6 +2574,7 @@ async function handleFactionSubmit(e) {
         } catch(err) {
             console.error("Error al guardar clan en Supabase:", err);
             showToast('❌ Error de conexión al guardar el clan.');
+            return;
         }
     }
     
