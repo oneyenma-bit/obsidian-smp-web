@@ -1086,7 +1086,7 @@ async function saveUser() {
     localStorage.setItem(`obs_mc_user_${state.discordId}`, v);
     localStorage.setItem('obs_user', v); // compatible fallback
     
-    syncUser();
+    loadUserDataOnLogin(state.discordId, v);
     closeModal('modal-login');
     showToast(`✅ Cuenta vinculada: ¡Bienvenido, ${v}!`);
     loadInitialDatabaseData();
@@ -1494,13 +1494,13 @@ async function redeemPromoCode() {
         const frameId = reward.value;
         if (!state.unlockedFrames.includes(frameId)) {
             state.unlockedFrames.push(frameId);
-            localStorage.setItem('obs_unlocked_frames', JSON.stringify(state.unlockedFrames));
         }
         // Auto-equip if no frame active
         if (!state.activeFrame) {
             state.activeFrame = frameId;
-            localStorage.setItem('obs_active_frame', frameId);
         }
+        saveUserDataToStorage();
+        syncUser();
         showToast(`🛡️ ¡Marco desbloqueado! "${reward.name}" ya está disponible en tu perfil.`);
         renderMarketListings();
     } else if (reward.type === 'kit') {
@@ -2348,7 +2348,6 @@ async function loginWithPasswordOnly() {
                     // Login exitoso!
                     state.username = reg.buyer;
                     state.discordId = reg.seller; // ID de Discord enlazado
-                    state.points = parseInt(localStorage.getItem(`obs_points_${reg.seller}`) || '0', 10);
                     state.discordTag = 'Acceso sin Discord';
                     
                     // Guardamos localmente
@@ -2357,7 +2356,9 @@ async function loginWithPasswordOnly() {
                     localStorage.setItem('obs_logged_without_discord_user', reg.buyer);
                     localStorage.setItem('obs_logged_without_discord_id', reg.seller);
                     
-                    syncUser();
+                    // Cargar perfil completo (gemas, marcos, etc.)
+                    loadUserDataOnLogin(reg.seller, reg.buyer);
+                    
                     closeModal('modal-login');
                     showToast(`✅ Bienvenido de nuevo, ${reg.buyer}!`);
                     loadInitialDatabaseData();
