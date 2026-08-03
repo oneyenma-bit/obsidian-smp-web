@@ -530,9 +530,13 @@ function initParticles() {
     }
     draw();
 
+    let lastWidth = window.innerWidth;
     window.addEventListener('resize', () => {
-        W = canvas.width = window.innerWidth;
-        H = canvas.height = window.innerHeight;
+        if (window.innerWidth !== lastWidth) {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+            lastWidth = window.innerWidth;
+        }
     });
 }
 

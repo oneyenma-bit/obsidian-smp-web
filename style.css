@@ -3812,6 +3812,9 @@ input:focus, textarea:focus, select:focus {
     object-fit: contain;
     z-index: 2;
     filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.6));
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
 }
 
 .bedrock-toggle {
@@ -3906,6 +3909,9 @@ input:focus, textarea:focus, select:focus {
     image-rendering: pixelated;
     object-fit: contain;
     animation: floatIcon 2.2s infinite alternate ease-in-out;
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
 }
 
 .floating-icon.delay-1 {
@@ -4061,6 +4067,9 @@ input:focus, textarea:focus, select:focus {
     image-rendering: pixelated;
     object-fit: contain;
     z-index: 2;
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
 }
 
 .slot-shadow {
