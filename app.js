@@ -725,6 +725,11 @@ function switchTab(tabId) {
         renderFactions();
     }
 
+    const floatCart = document.getElementById('floating-cart');
+    if (floatCart) {
+        floatCart.style.display = (tabId === 'kits') ? 'flex' : 'none';
+    }
+
     const navBar = document.getElementById('main-nav-bar');
     if (navBar && tabId !== 'inicio') {
         const topPos = navBar.getBoundingClientRect().top + window.pageYOffset - 80;
@@ -922,6 +927,39 @@ function syncUser() {
 
     const ls = document.getElementById('login-skin-img');
     if (ls) ls.src = `https://mc-heads.net/head/${encodeURIComponent(u)}`;
+
+    syncProfileModalUI();
+}
+
+function syncProfileModalUI() {
+    if (!state.username || state.username === 'Invitado') return;
+
+    document.querySelectorAll('#profile-discord-avatar').forEach(img => {
+        img.src = state.discordUser?.avatar 
+            ? `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`
+            : "https://cdn.discordapp.com/embed/avatars/0.png";
+    });
+
+    document.querySelectorAll('#profile-discord-tag').forEach(el => {
+        el.textContent = state.discordTag || 'User#0';
+    });
+
+    document.querySelectorAll('#profile-minecraft-skin').forEach(img => {
+        img.src = `https://mc-heads.net/avatar/${encodeURIComponent(state.username)}/60`;
+    });
+
+    document.querySelectorAll('#profile-minecraft-name').forEach(el => {
+        el.textContent = state.username;
+    });
+
+    document.querySelectorAll('#profile-bedrock-badge').forEach(el => {
+        el.style.display = state.isBedrock ? 'inline-block' : 'none';
+    });
+    document.querySelectorAll('#profile-java-badge').forEach(el => {
+        el.style.display = state.isBedrock ? 'none' : 'inline-block';
+    });
+
+    updateSettingsUI();
 }
 
 function bindEvents() {
@@ -1625,6 +1663,26 @@ const CAT_LABELS = {
     cosmeticos: '🎨 Cosméticos & Varios'
 };
 
+const CAT_ICONS = {
+    armadura: 'img/netherite_chestplate.png',
+    armas: 'img/netherite_sword.png',
+    comida: 'img/golden_apple.png',
+    materiales: 'img/obsidian.png',
+    libros: 'img/totem_of_undying.png',
+    shulkers: 'img/shulker_shell.png',
+    cosmeticos: 'img/emerald.png'
+};
+
+const CAT_LABELS_NO_EMOJI = {
+    armadura: 'Armadura',
+    armas: 'Armas & Herramientas',
+    comida: 'Comida & Pociones',
+    materiales: 'Materiales & Bloques',
+    libros: 'Libros & Tótems',
+    shulkers: 'Shulkers & Cajas',
+    cosmeticos: 'Cosméticos & Varios'
+};
+
 function renderMarketplace() {
     const grid = document.getElementById('marketplace-grid');
     if (!grid) return;
@@ -1687,7 +1745,10 @@ function renderMarketplace() {
             <div class="market-card" onclick="openListingDetailModal('${item.id}')">
                 <div class="mc-img-wrap">
                     <img src="${itemImg}" alt="${item.title}" class="mc-img">
-                    <span class="mc-cat-badge">${catLabel}</span>
+                    <span class="mc-cat-badge" style="display: inline-flex; align-items: center; gap: 4px;">
+                        <img src="${CAT_ICONS[item.category] || 'img/obsidian.png'}" style="width: 13px; height: 13px; image-rendering: pixelated; object-fit: contain; vertical-align: middle;">
+                        <span>${CAT_LABELS_NO_EMOJI[item.category] || item.category}</span>
+                    </span>
                     <span class="mc-time-tag">${item.timeAgo || 'Reciente'}</span>
                 </div>
                 <div class="mc-card-body">
@@ -1755,29 +1816,60 @@ function updateDescCharCounter(textarea) {
     }
 }
 
+function compressImage(file, maxWidth, maxHeight, quality, callback) {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width = Math.round((width * maxHeight) / height);
+                    height = maxHeight;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+            callback(compressedDataUrl);
+        };
+    };
+}
+
 function handleListingImageSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-        showToast('⚠️ La imagen excede el límite de 5MB.');
-        return;
-    }
+    showToast('⏳ Procesando y optimizando imagen...');
 
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-        state.uploadedImageBase64 = evt.target.result;
+    compressImage(file, 600, 600, 0.7, (compressedBase64) => {
+        state.uploadedImageBase64 = compressedBase64;
         const preview = document.getElementById('market-img-preview');
         const previewWrap = document.getElementById('upload-preview-wrap');
         const prompt = document.getElementById('upload-prompt');
 
         if (preview && previewWrap && prompt) {
-            preview.src = evt.target.result;
+            preview.src = compressedBase64;
             previewWrap.style.display = 'block';
             prompt.style.display = 'none';
         }
-    };
-    reader.readAsDataURL(file);
+        showToast('📸 Imagen de oferta cargada y optimizada.');
+    });
 }
 
 function removeListingImage(e) {
@@ -1880,7 +1972,10 @@ function openListingDetailModal(listingId) {
     detailContainer.innerHTML = `
         <img src="${itemImg}" alt="${item.title}" class="md-img">
         <div class="md-info">
-            <span class="mc-cat-badge">${catLabel}</span>
+            <span class="mc-cat-badge" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px;">
+                <img src="${CAT_ICONS[item.category] || 'img/obsidian.png'}" style="width: 14px; height: 14px; image-rendering: pixelated; object-fit: contain; vertical-align: middle;">
+                <span>${CAT_LABELS_NO_EMOJI[item.category] || item.category}</span>
+            </span>
             <h3 class="md-title">${item.title}</h3>
             <div class="md-price-box">OFERTA: ${item.price}</div>
             
@@ -2485,20 +2580,14 @@ function uploadFactionImage(input) {
     const file = input.files[0];
     if (!file) return;
     
-    if (file.size > 2 * 1024 * 1024) {
-        showToast('⚠️ La imagen supera el límite de 2MB.');
-        input.value = '';
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        factionUploadedImageBase64 = e.target.result;
+    showToast('⏳ Procesando y optimizando logo del clan...');
+
+    compressImage(file, 400, 400, 0.7, (compressedBase64) => {
+        factionUploadedImageBase64 = compressedBase64;
         document.getElementById('fac-file-name').textContent = file.name;
         document.getElementById('fac-btn-delete-img').style.display = 'inline-flex';
-        showToast('📸 Foto del clan cargada correctamente.');
-    };
-    reader.readAsDataURL(file);
+        showToast('📸 Foto del clan cargada y optimizada.');
+    });
 }
 
 function deleteFactionImage() {
@@ -3203,6 +3292,7 @@ function openUserProfileModal(targetUsername) {
     // Render avatar preview in header
     renderProfileAvatarPreview(targetUsername, isOwnProfile);
 
+    syncProfileModalUI();
     openModal('modal-user-profile');
 }
 

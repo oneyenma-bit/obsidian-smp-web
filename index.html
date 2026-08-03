@@ -606,7 +606,7 @@
                             <img src="img/totem_of_undying.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Libros &amp; Tótems
                         </button>
                         <button class="market-cat-pill" data-cat="shulkers" onclick="setMarketCategory('shulkers')">
-                            <i class="fa-solid fa-box-archive" style="margin-right:4px;"></i> Shulkers &amp; Cajas
+                            <img src="img/shulker_shell.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Shulkers &amp; Cajas
                         </button>
                         <button class="market-cat-pill" data-cat="cosmeticos" onclick="setMarketCategory('cosmeticos')">
                             <img src="img/emerald.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Cosméticos &amp; Varios
@@ -688,15 +688,11 @@
                 <div class="footer-brand-name">OBSIDIAN SMP</div>
                 <div class="footer-copy">© 2026 Obsidian SMP. Servidor Oficial de Minecraft.</div>
             </div>
-            <div class="footer-links">
-                <a href="https://discord.gg/FG6nGuhjw" target="_blank" class="footer-link"><i class="fa-brands fa-discord"></i> Discord</a>
-                <a href="https://www.tiktok.com/@Cowsmall7w7" target="_blank" class="footer-link"><i class="fa-brands fa-tiktok"></i> TikTok: @Cowsmall7w7</a>
-            </div>
         </div>
     </footer>
 
     <!-- Floating Cart Button -->
-    <div class="floating-cart-btn" id="floating-cart" onclick="openCheckoutModal()">
+    <div class="floating-cart-btn" id="floating-cart" onclick="openCheckoutModal()" style="display: none;">
         <i class="fa-solid fa-cart-shopping"></i>
         <span class="fc-count" id="fc-count">0</span>
         <span class="fc-total" id="fc-total">$0.00</span>
@@ -1087,7 +1083,6 @@
                 <div class="checkout-sidebar">
                     <div class="order-header">
                         <span>Orden de <strong id="checkout-username">Invitado</strong></span>
-                        <a href="javascript:void(0)" onclick="openModal('modal-login')" class="change-link">Cambiar</a>
                     </div>
                     <div class="order-items" id="order-items">
                         <div class="empty-cart-msg">Tu carrito está vacío.</div>
@@ -1234,18 +1229,18 @@
                     <div class="form-group f1">
                         <label>Categoría de Minecraft *</label>
                         <select id="market-input-cat" required>
-                            <option value="armadura">🛡️ Armadura</option>
-                            <option value="armas">🗡️ Armas &amp; Herramientas</option>
-                            <option value="comida">🍏 Comida &amp; Pociones</option>
-                            <option value="materiales">🧱 Materiales &amp; Bloques</option>
-                            <option value="libros">📜 Libros &amp; Tótems</option>
-                            <option value="shulkers">📦 Shulkers &amp; Cajas</option>
-                            <option value="cosmeticos">🎨 Cosméticos &amp; Varios</option>
+                            <option value="armadura">Armadura</option>
+                            <option value="armas">Armas &amp; Herramientas</option>
+                            <option value="comida">Comida &amp; Pociones</option>
+                            <option value="materiales">Materiales &amp; Bloques</option>
+                            <option value="libros">Libros &amp; Tótems</option>
+                            <option value="shulkers">Shulkers &amp; Cajas</option>
+                            <option value="cosmeticos">Cosméticos &amp; Varios</option>
                         </select>
                     </div>
                     <div class="form-group f1">
                         <label>Precio / Oferta Solicitada *</label>
-                        <input type="text" id="market-input-price" required placeholder="Ej: Cambio por 32 Diamantes / Ofertas">
+                        <input type="text" id="market-input-price" required placeholder="Ej: Cambio por 32 Diamantes / Ofertas" maxlength="50">
                     </div>
                 </div>
 
@@ -1316,18 +1311,18 @@
                     <div class="form-group f1">
                         <label>Categoría <span class="req">*</span></label>
                         <select id="edit-input-cat" required>
-                            <option value="armadura">🛡️ Armadura</option>
-                            <option value="armas">🗡️ Armas & Herramientas</option>
-                            <option value="comida">🍏 Comida & Pociones</option>
-                            <option value="materiales">🧱 Materiales & Bloques</option>
-                            <option value="libros">📜 Libros & Tótems</option>
-                            <option value="shulkers">📦 Shulkers & Cajas</option>
-                            <option value="cosmeticos">🎨 Cosméticos & Varios</option>
+                            <option value="armadura">Armadura</option>
+                            <option value="armas">Armas &amp; Herramientas</option>
+                            <option value="comida">Comida &amp; Pociones</option>
+                            <option value="materiales">Materiales &amp; Bloques</option>
+                            <option value="libros">Libros &amp; Tótems</option>
+                            <option value="shulkers">Shulkers &amp; Cajas</option>
+                            <option value="cosmeticos">Cosméticos &amp; Varios</option>
                         </select>
                     </div>
                     <div class="form-group f1">
                         <label>Precio / Intercambio <span class="req">*</span></label>
-                        <input type="text" id="edit-input-price" required placeholder="Ej: 32 Diamantes o Ofertas">
+                        <input type="text" id="edit-input-price" required placeholder="Ej: 32 Diamantes o Ofertas" maxlength="50">
                     </div>
                 </div>
                 <div class="form-group">
