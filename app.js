@@ -1136,9 +1136,18 @@ async function redeemPromoCode() {
     
     if (state.redeemedCodes.includes(code)) {
         showToast('❌ Ya has canjeado este código anteriormente.');
+        inputEl.value = '';
         return;
     }
-    
+
+    // ── LOCK INMEDIATO: evita doble clic / carrera async ──────────
+    state.redeemedCodes.push(code);
+    localStorage.setItem('obs_redeemed_codes', JSON.stringify(state.redeemedCodes));
+    const btn = document.querySelector('.mpb-btn');
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+    inputEl.disabled = true;
+    // ──────────────────────────────────────────────────────────────
+
     let reward = null;
     let isSupabaseCode = false;
     
@@ -1202,6 +1211,11 @@ async function redeemPromoCode() {
     }
     
     if (!reward) {
+        // Rollback el lock: el codigo es invalido
+        state.redeemedCodes = state.redeemedCodes.filter(c => c !== code);
+        localStorage.setItem('obs_redeemed_codes', JSON.stringify(state.redeemedCodes));
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+        if (inputEl) inputEl.disabled = false;
         showToast('❌ Código canjeable inválido.');
         return;
     }
@@ -1256,11 +1270,9 @@ async function redeemPromoCode() {
         updateInboxBadge();
     }
     
-    // Record redemption
-    state.redeemedCodes.push(code);
-    localStorage.setItem('obs_redeemed_codes', JSON.stringify(state.redeemedCodes));
+    // (Redemption ya fue registrada antes de las operaciones async)
     
-    // Track in Supabase
+    // Track in Supabase (ya fue registrado localmente al inicio)
     if (supabaseClient) {
         try {
             await supabaseClient
@@ -1272,14 +1284,12 @@ async function redeemPromoCode() {
                 }]);
                 
             if (isSupabaseCode) {
-                // Increment use counter in database
                 const { data: currentInfo } = await supabaseClient
                     .from('promo_codes')
                     .select('current_uses')
                     .eq('code', code)
                     .single();
                 const newUses = (currentInfo?.current_uses || 0) + 1;
-                
                 await supabaseClient
                     .from('promo_codes')
                     .update({ current_uses: newUses })
@@ -1289,6 +1299,8 @@ async function redeemPromoCode() {
     }
     
     inputEl.value = '';
+    inputEl.disabled = false;
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
 }
 
 // ─── IP COPY ──────────────────────────────────────────────────
