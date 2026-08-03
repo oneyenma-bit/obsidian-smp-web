@@ -259,16 +259,31 @@ function loginWithDiscord() {
 }
 
 function logout() {
+    // Clear user tokens & account session
     localStorage.removeItem("obs_discord_token");
     localStorage.removeItem("obs_logged_without_discord_user");
     localStorage.removeItem("obs_logged_without_discord_id");
+    
+    // Clear user customization state & storage
+    localStorage.removeItem("obs_active_frame");
+    localStorage.removeItem("obs_unlocked_frames");
+    localStorage.removeItem("obs_custom_avatar");
+    localStorage.removeItem("obs_avatar_source");
+    localStorage.removeItem("obs_redeemed_codes");
+
     state.username = '';
     state.discordUser = null;
     state.discordId = null;
     state.discordTag = null;
     state.points = 0;
+    state.activeFrame = '';
+    state.unlockedFrames = [];
+    state.customAvatar = '';
+    state.avatarSource = 'discord';
     
     syncUser();
+    renderMarketListings();
+    
     showToast("🚪 Sesión cerrada correctamente.");
     
     const authView = document.getElementById('discord-auth-view');
@@ -280,13 +295,15 @@ function logout() {
     if (passLoginView) passLoginView.style.display = 'none';
     if (profileView) profileView.style.display = 'none';
     
+    closeModal('modal-user-profile');
     openModal('modal-login');
 }
 
 async function unlinkAccount() {
     if (!state.discordId || !state.username) return;
     
-    closeModal('modal-login'); // Close profile modal first so the confirmation modal is clear
+    closeModal('modal-login');
+    closeModal('modal-user-profile');
     
     customConfirm(
         '¿Desvincular cuenta?',
@@ -630,24 +647,52 @@ function switchTab(tabId) {
 }
 
 // ─── USER & POINTS ─────────────────────────────────────────────
+function onUserPillClick() {
+    if (state.username && state.username !== 'Invitado') {
+        openUserProfileModal(state.username);
+    } else {
+        openModal('modal-login');
+    }
+}
+
+function updateNavUserAvatar() {
+    const wrap = document.getElementById('nav-avatar-wrap');
+    if (!wrap) return;
+
+    const isGuest = !state.username || state.username === 'Invitado';
+    if (isGuest) {
+        wrap.innerHTML = `
+            <img id="nav-skin-img" src="https://mc-heads.net/avatar/MHF_Steve/30" alt="Skin" class="user-avatar-small" style="width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid rgba(168,85,247,0.3); image-rendering: pixelated; display: block; object-fit: cover;">
+        `;
+        return;
+    }
+
+    let avatarSrc;
+    if (state.avatarSource === 'custom' && state.customAvatar) {
+        avatarSrc = state.customAvatar;
+    } else if (state.discordId && state.discordUser?.avatar) {
+        avatarSrc = `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`;
+    } else if (state.discordId) {
+        avatarSrc = `https://cdn.discordapp.com/embed/avatars/0.png`;
+    } else {
+        avatarSrc = `https://mc-heads.net/avatar/${encodeURIComponent(state.username || 'Steve')}/40`;
+    }
+
+    const frameId = state.activeFrame || '';
+    wrap.innerHTML = getAvatarFrameHTML(avatarSrc, frameId, {
+        size: '30px',
+        alt: state.username || 'Usuario'
+    });
+}
+
 function syncUser() {
     const u = state.username || 'Invitado';
     const navName = document.getElementById('nav-username');
-    const navSkin = document.getElementById('nav-skin-img');
-    const navStatus = document.getElementById('nav-cart-status');
     const ownerSkin = document.getElementById('owner-skin-img');
     if (navName) navName.textContent = u;
-    if (navSkin) {
-        if (state.discordId) {
-            if (state.discordUser && state.discordUser.avatar) {
-                navSkin.src = `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`;
-            } else {
-                navSkin.src = `https://cdn.discordapp.com/embed/avatars/0.png`;
-            }
-        } else {
-            navSkin.src = `https://mc-heads.net/avatar/${encodeURIComponent(u)}/40`;
-        }
-    }
+
+    updateNavUserAvatar();
+
     if (ownerSkin) ownerSkin.src = `https://mc-heads.net/avatar/MHF_Steve/80`;
 
     const coName = document.getElementById('checkout-username');
@@ -661,8 +706,6 @@ function syncUser() {
     if (navPts) navPts.textContent = state.points;
     if (heroPts) heroPts.textContent = state.points;
     if (pagePts) pagePts.textContent = state.points;
-    if (modalPts) modalPts.textContent = state.points;
-
     // Cart status color
     const total = cartTotal();
     const qty = cartQty();
@@ -1413,15 +1456,19 @@ function renderMarketplace() {
             ? (pubInfo.discordId === state.discordId)
             : (pubInfo.username === state.username)) || isAdminUser();
 
-        // Determine if publisher has obsidian frame
+        // Determine publisher avatar frame
         const isCurrentUser = (pubInfo.discordId ? pubInfo.discordId === state.discordId : pubInfo.username === state.username);
         const pubFrame = isCurrentUser ? state.activeFrame : '';
         const pubAvatarSrc = isCurrentUser && state.avatarSource === 'custom' && state.customAvatar
             ? state.customAvatar
             : pubSkin;
-        const frameImgOverlay = pubFrame === 'frame-obsidian' 
-            ? `<img src="img/frame_obsidian.png" class="pub-frame-img" alt="Marco Obsidian" title="Marco Obsidian">` 
-            : '';
+
+        const avatarFrameMarkup = getAvatarFrameHTML(pubAvatarSrc, pubFrame, {
+            size: '32px',
+            alt: pubInfo.username,
+            onClick: `openUserProfileModal('${pubInfo.username.replace(/'/g, "\\'")}')`,
+            extraWrapStyle: 'cursor:pointer;'
+        });
 
         return `
             <div class="market-card" onclick="openListingDetailModal('${item.id}')">
@@ -1439,10 +1486,7 @@ function renderMarketplace() {
                     <p class="mc-desc">${item.desc}</p>
                     <div class="mc-publisher-row">
                         <div class="mc-user-info">
-                            <div class="pub-avatar-frame-wrap" onclick="event.stopPropagation(); openUserProfileModal('${pubInfo.username}')" style="cursor:pointer; position:relative; display:inline-block;">
-                                <img src="${pubAvatarSrc}" alt="${pubInfo.username}" class="mc-user-avatar" title="Ver perfil de ${pubInfo.username}" style="display:block;">
-                                ${frameImgOverlay}
-                            </div>
+                            ${avatarFrameMarkup}
                             <span class="mc-username">${pubInfo.username}</span>
                         </div>
                         ${isOwner ? `
@@ -2750,13 +2794,94 @@ async function rejectFactionRequest(chatId) {
 
 // ─── USER PROFILE MODAL ───────────────────────────────────────
 const FRAME_CATALOG = {
-    'frame-obsidian': { name: 'Marco Obsidian', img: 'img/frame_obsidian.png', desc: 'Exclusivo · Código OBSIDIANSMP' },
-    'frame-iron':     { name: 'Hierro Forjado',   img: null, cssClass: 'frame-iron', desc: 'Marco de acero steampunk' },
-    'frame-emerald':  { name: 'Esmeralda Celestial', img: null, cssClass: 'frame-emerald', desc: 'Marco de esmeralda mágica' },
-    'frame-netherite':{ name: 'Netherite Ígneo',  img: null, cssClass: 'frame-netherite', desc: 'Marco de lava volcánica' },
-    'frame-netherstar':{ name: 'Estrella del Nether', img: null, cssClass: 'frame-netherstar', desc: 'Marco cósmico de estrella' },
-    'frame-diamond':  { name: 'Diamante Divino',  img: null, cssClass: 'frame-diamond', desc: 'Marco de diamante celestial' }
+    'frame-obsidian':  { name: 'Marco Obsidian',     cssClass: 'frame-obsidian', desc: 'Exclusivo · Código OBSIDIANSMP' },
+    'frame-iron':      { name: 'Hierro Forjado',     cssClass: 'frame-iron', desc: 'Marco de acero steampunk' },
+    'frame-emerald':   { name: 'Esmeralda Celestial', cssClass: 'frame-emerald', desc: 'Marco de esmeralda mágica' },
+    'frame-netherite': { name: 'Netherite Ígneo',    cssClass: 'frame-netherite', desc: 'Marco de lava volcánica' },
+    'frame-netherstar':{ name: 'Estrella del Nether', cssClass: 'frame-netherstar', desc: 'Marco cósmico de estrella' },
+    'frame-diamond':   { name: 'Diamante Divino',    cssClass: 'frame-diamond', desc: 'Marco de diamante celestial' }
 };
+
+function getAvatarFrameHTML(avatarSrc, frameId, options = {}) {
+    const size = options.size || '90px';
+    const alt = options.alt || 'Avatar';
+    const extraWrapClass = options.extraWrapClass || '';
+    const extraWrapStyle = options.extraWrapStyle || '';
+    const onClick = options.onClick ? `onclick="${options.onClick}"` : '';
+
+    if (!frameId || !FRAME_CATALOG[frameId]) {
+        return `
+            <div class="avatar-frame-wrap no-frame ${extraWrapClass}" ${onClick} style="width:${size}; height:${size}; ${extraWrapStyle}">
+                <img src="${avatarSrc}" alt="${alt}" class="avatar-img-inner" onerror="this.src='img/shulker_void_3d.png'">
+            </div>
+        `;
+    }
+
+    const frameInfo = FRAME_CATALOG[frameId];
+    const cssClass = frameInfo.cssClass || frameId;
+    const isObsidian = (frameId === 'frame-obsidian');
+
+    const svgObsidian = isObsidian ? `
+        <svg class="obsidian-svg-frame" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+            <defs>
+                <linearGradient id="obsidianGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="25%" stop-color="#f0abfc" />
+                    <stop offset="55%" stop-color="#c084fc" />
+                    <stop offset="80%" stop-color="#9333ea" />
+                    <stop offset="100%" stop-color="#4c1d95" />
+                </linearGradient>
+                <filter id="obsGlow" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="2" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+            </defs>
+            <!-- Outer Octagon Magical Rune Ring -->
+            <polygon points="50,3 83,17 97,50 83,83 50,97 17,83 3,50 17,17" fill="none" stroke="url(#obsidianGrad)" stroke-width="2.8" stroke-linejoin="round" filter="url(#obsGlow)"/>
+            <!-- Inner Hexagon Accent Seal -->
+            <polygon points="50,9 85,29 85,71 50,91 15,71 15,29" fill="none" stroke="#d8b4fe" stroke-width="1" stroke-dasharray="4 4" opacity="0.65" />
+            <!-- 8 Glowing Crystal Diamonds at Vertices -->
+            <polygon points="50,0 54,3 50,6 46,3" fill="#ffffff" filter="url(#obsGlow)" />
+            <polygon points="83,14 86,17 83,20 80,17" fill="#f0abfc" filter="url(#obsGlow)" />
+            <polygon points="97,47 100,50 97,53 94,50" fill="#ffffff" filter="url(#obsGlow)" />
+            <polygon points="83,80 86,83 83,86 80,83" fill="#f0abfc" filter="url(#obsGlow)" />
+            <polygon points="50,94 54,97 50,100 46,97" fill="#ffffff" filter="url(#obsGlow)" />
+            <polygon points="17,80 20,83 17,86 14,83" fill="#f0abfc" filter="url(#obsGlow)" />
+            <polygon points="3,47 6,50 3,53 0,50" fill="#ffffff" filter="url(#obsGlow)" />
+            <polygon points="17,14 20,17 17,20 14,17" fill="#f0abfc" filter="url(#obsGlow)" />
+            <!-- Ornate Corner Rune Flourishes -->
+            <path d="M 45,6 Q 50,2 55,6" fill="none" stroke="#e9d5ff" stroke-width="1.2" />
+            <path d="M 45,94 Q 50,98 55,94" fill="none" stroke="#e9d5ff" stroke-width="1.2" />
+            <path d="M 6,45 Q 2,50 6,55" fill="none" stroke="#e9d5ff" stroke-width="1.2" />
+            <path d="M 94,45 Q 98,50 94,55" fill="none" stroke="#e9d5ff" stroke-width="1.2" />
+            <!-- Inner Dashed Rotating Magic Rune Ring -->
+            <circle cx="50" cy="50" r="41" fill="none" stroke="#f4e8ff" stroke-width="1.4" stroke-dasharray="4 6" opacity="0.9" class="obsidian-svg-dashed"/>
+        </svg>
+    ` : '';
+
+    return `
+        <div class="avatar-frame-wrap ${cssClass} ${extraWrapClass}" ${onClick} style="width:${size}; height:${size}; ${extraWrapStyle}">
+            <div class="steam-glow"></div>
+            <div class="steam-ring"></div>
+            ${svgObsidian}
+            <div class="steam-particles">
+                <span></span><span></span><span></span>
+            </div>
+            <img src="${avatarSrc}" alt="${alt}" class="avatar-img-inner" onerror="this.src='img/shulker_void_3d.png'">
+        </div>
+    `;
+}
+
+function switchProfileTab(tabName) {
+    const tabs = ['marcos', 'cuenta', 'estilo'];
+    tabs.forEach(t => {
+        const btn = document.getElementById(`prf-tab-${t}`);
+        const panel = document.getElementById(`prf-panel-${t}`);
+        const isActive = (t === tabName);
+        if (btn) btn.classList.toggle('active', isActive);
+        if (panel) panel.style.display = isActive ? 'block' : 'none';
+    });
+}
 
 function openUserProfileModal(targetUsername) {
     const isOwnProfile = (targetUsername === state.username);
@@ -2766,6 +2891,7 @@ function openUserProfileModal(targetUsername) {
     const tagEl = document.getElementById('prf-tag-display');
     const editPanel = document.getElementById('prf-edit-panel');
     const viewPanel = document.getElementById('prf-view-panel');
+    const navTabs = document.getElementById('prf-nav-tabs');
     if (usernameEl) usernameEl.textContent = targetUsername;
 
     if (isOwnProfile) {
@@ -2774,6 +2900,10 @@ function openUserProfileModal(targetUsername) {
         }
         if (editPanel) editPanel.style.display = '';
         if (viewPanel) viewPanel.style.display = 'none';
+        if (navTabs) navTabs.style.display = 'flex';
+
+        // Set default tab to 'marcos'
+        switchProfileTab('marcos');
 
         // Set avatar source radios
         const radios = document.querySelectorAll('input[name="avatar-source"]');
@@ -2792,6 +2922,7 @@ function openUserProfileModal(targetUsername) {
         });
     } else {
         if (editPanel) editPanel.style.display = 'none';
+        if (navTabs) navTabs.style.display = 'none';
         if (viewPanel) viewPanel.style.display = '';
         const viewMsg = document.getElementById('prf-view-msg');
         if (viewMsg) viewMsg.textContent = `Perfil de ${targetUsername}`;
@@ -2823,20 +2954,22 @@ function renderProfileAvatarPreview(username, isOwnProfile) {
         avatarSrc = `https://mc-heads.net/avatar/${encodeURIComponent(username || 'Steve')}/80`;
     }
 
-    const hasFrame = isOwnProfile && state.activeFrame === 'frame-obsidian';
-    wrap.innerHTML = `
-        <div class="prf-avatar-container${hasFrame ? ' has-frame' : ''}">
-            <img src="${avatarSrc}" alt="${username}" class="prf-avatar-img" onerror="this.src='img/shulker_void_3d.png'">
-            ${hasFrame ? '<img src="img/frame_obsidian.png" class="prf-frame-img-overlay" alt="Marco Obsidian">' : ''}
-        </div>
-    `;
+    const frameId = isOwnProfile ? state.activeFrame : '';
+    wrap.innerHTML = getAvatarFrameHTML(avatarSrc, frameId, {
+        size: '90px',
+        alt: username
+    });
 }
 
 function updateProfileAvatarPreview(source) {
     state.avatarSource = source;
+    localStorage.setItem('obs_avatar_source', source);
     const uploadWrap = document.getElementById('prf-custom-upload-wrap');
     if (uploadWrap) uploadWrap.style.display = (source === 'custom') ? 'flex' : 'none';
     renderProfileAvatarPreview(state.username, true);
+    syncUser();
+    renderMarketListings();
+    showToast('🖼️ Foto de perfil guardada');
 }
 
 function onProfileImageUpload(event) {
@@ -2853,10 +2986,14 @@ function onProfileImageUpload(event) {
     reader.onload = (e) => {
         state.customAvatar = e.target.result;
         state.avatarSource = 'custom';
-        // Check custom radio
+        localStorage.setItem('obs_custom_avatar', state.customAvatar);
+        localStorage.setItem('obs_avatar_source', 'custom');
         const radios = document.querySelectorAll('input[name="avatar-source"]');
         radios.forEach(r => { r.checked = (r.value === 'custom'); });
         renderProfileAvatarPreview(state.username, true);
+        syncUser();
+        renderMarketListings();
+        showToast('🖼️ Foto personalizada guardada');
     };
     reader.readAsDataURL(file);
 }
@@ -2871,14 +3008,9 @@ function renderProfileFramesGallery() {
     }
 
     gallery.innerHTML = state.unlockedFrames.map(fId => {
-        const info = FRAME_CATALOG[fId] || { name: fId, img: null, desc: '' };
+        const info = FRAME_CATALOG[fId] || { name: fId, desc: '' };
         const isActive = state.activeFrame === fId;
-        const preview = info.img
-            ? `<div class="prf-gallery-preview-container">
-                 <div class="prf-gallery-mini-avatar"></div>
-                 <img src="${info.img}" alt="${info.name}" class="prf-frame-gallery-img">
-               </div>`
-            : `<div class="prf-frame-css-preview ${info.cssClass || ''}"><div class="steam-ring"></div><div class="steam-glow"></div></div>`;
+        const preview = getAvatarFrameHTML('https://mc-heads.net/avatar/MHF_Steve/40', fId, { size: '42px', alt: info.name });
         return `
             <div class="prf-frame-opt ${isActive ? 'active' : ''}" onclick="equipFrame('${fId}')">
                 ${preview}
@@ -2894,7 +3026,10 @@ function equipFrame(frameId) {
     localStorage.setItem('obs_active_frame', state.activeFrame);
     renderProfileFramesGallery();
     renderProfileAvatarPreview(state.username, true);
+    syncUser();
     renderMarketListings();
+    const frameName = FRAME_CATALOG[frameId]?.name || 'Marco';
+    showToast(state.activeFrame ? `✨ ${frameName} equipado` : 'ℹ️ Marco desequipado');
 }
 
 function applyProfileFont(fontName) {
@@ -2904,32 +3039,7 @@ function applyProfileFont(fontName) {
     document.querySelectorAll('.prf-font-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.font === fontName);
     });
-    showToast(`🔤 Tipografía cambiada a ${fontName}.`);
-}
-
-function saveProfileChanges() {
-    localStorage.setItem('obs_avatar_source', state.avatarSource);
-    localStorage.setItem('obs_custom_avatar', state.customAvatar || '');
-    localStorage.setItem('obs_active_frame', state.activeFrame || '');
-    localStorage.setItem('obs_profile_font', state.profileFont || 'Outfit');
-
-    // Update nav avatar immediately
-    const navSkin = document.getElementById('nav-skin-img');
-    if (navSkin) {
-        if (state.avatarSource === 'custom' && state.customAvatar) {
-            navSkin.src = state.customAvatar;
-        } else if (state.avatarSource === 'discord' && state.discordId) {
-            navSkin.src = state.discordUser?.avatar
-                ? `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`
-                : `https://cdn.discordapp.com/embed/avatars/0.png`;
-        } else {
-            navSkin.src = `https://mc-heads.net/avatar/${encodeURIComponent(state.username || 'Steve')}/40`;
-        }
-    }
-
-    renderMarketListings();
-    closeModal('modal-user-profile');
-    showToast('✅ ¡Perfil guardado exitosamente!');
+    showToast(`🔤 Tipografía guardada: ${fontName}`);
 }
 
 // Apply saved font on page load

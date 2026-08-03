@@ -4001,6 +4001,20 @@ input:focus, textarea:focus, select:focus {
     box-shadow: inset 2px 2px 0px #077853;
 }
 
+.btn-red-mc {
+    background: #ef4444;
+    border: 2px solid #991b1b;
+    box-shadow: inset -2px -2px 0px #991b1b, inset 2px 2px 0px #fca5a5;
+    color: #ffffff !important;
+}
+.btn-red-mc:hover {
+    background: #dc2626;
+}
+.btn-red-mc:active {
+    transform: translateY(2px);
+    box-shadow: inset 2px 2px 0px #991b1b;
+}
+
 .btn-mc-flat {
     background: none;
     border: none;
@@ -4872,7 +4886,17 @@ input:focus, textarea:focus, select:focus {
     }
 }
 
-/* 5 STEAM PROFILE FRAMES VARIABLES SETUP */
+/* 6 STEAM PROFILE FRAMES VARIABLES SETUP */
+
+/* 0. Marco Obsidian (Obsidian Místico Vectorial) */
+.frame-obsidian {
+    --steam-c1: #c084fc;
+    --steam-c2: #fae8ff;
+    --steam-c3: #581c87;
+    --steam-speed: 2.5s;
+    --steam-p-color: #e9d5ff;
+    --steam-float-speed: 1.5s;
+}
 
 /* 1. Hierro Forjado (Steampunk Gear) */
 .frame-iron {
@@ -4922,6 +4946,118 @@ input:focus, textarea:focus, select:focus {
     --steam-speed: 3s;
     --steam-p-color: #e0f2fe;
     --steam-float-speed: 2.2s;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UNIVERSAL AVATAR FRAME WRAPPER & SVG OBSIDIAN FRAME
+   ═══════════════════════════════════════════════════════════ */
+.avatar-frame-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    vertical-align: middle;
+    transition: transform 0.2s ease;
+}
+
+.avatar-frame-wrap:hover {
+    transform: scale(1.06);
+}
+
+.avatar-frame-wrap .avatar-img-inner {
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    border: 2px solid #0c071a;
+    box-sizing: border-box;
+    background: #120a2a;
+}
+
+/* Outer sweeping conic ring */
+.avatar-frame-wrap .steam-ring {
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--steam-c1, #a855f7), var(--steam-c2, #d8b4fe), var(--steam-c3, #4c1d95), var(--steam-c1, #a855f7));
+    animation: steamSpin var(--steam-speed, 3s) linear infinite;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Pulsing backdrop aura glow */
+.avatar-frame-wrap .steam-glow {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--steam-c1, #a855f7), var(--steam-c2, #d8b4fe), var(--steam-c3, #4c1d95), var(--steam-c1, #a855f7));
+    animation: steamSpin var(--steam-speed, 3s) linear infinite;
+    z-index: 1;
+    filter: blur(6px);
+    opacity: 0.85;
+    pointer-events: none;
+}
+
+/* Floating sparks particles */
+.avatar-frame-wrap .steam-particles {
+    position: absolute;
+    inset: -10px;
+    z-index: 4;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.avatar-frame-wrap .steam-particles span {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--steam-p-color, #fff);
+    opacity: 0;
+    box-shadow: 0 0 6px var(--steam-p-color, #fff);
+    animation: steamFloat var(--steam-float-speed, 2s) infinite linear;
+}
+
+.avatar-frame-wrap .steam-particles span:nth-child(1) { left: 20%; animation-delay: 0s; }
+.avatar-frame-wrap .steam-particles span:nth-child(2) { left: 50%; animation-delay: 0.6s; }
+.avatar-frame-wrap .steam-particles span:nth-child(3) { left: 80%; animation-delay: 1.2s; }
+
+/* ── MARCO OBSIDIAN SVG RUNE OVERLAY ── */
+.obsidian-svg-frame {
+    position: absolute;
+    inset: -15%;
+    width: 130%;
+    height: 130%;
+    pointer-events: none;
+    z-index: 3;
+    filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.9));
+}
+
+.obsidian-svg-dashed {
+    transform-origin: 50px 50px;
+    animation: obsidianSvgSpin 14s linear infinite;
+}
+
+@keyframes obsidianSvgSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(-360deg); }
+}
+
+/* No frame fallback */
+.avatar-frame-wrap.no-frame .steam-ring,
+.avatar-frame-wrap.no-frame .steam-glow,
+.avatar-frame-wrap.no-frame .steam-particles {
+    display: none !important;
+}
+
+.avatar-frame-wrap.no-frame .avatar-img-inner {
+    border: 2px solid rgba(139, 92, 246, 0.35);
 }
 
 /* Responsive Promo Codes Card */
@@ -5185,12 +5321,63 @@ input:focus, textarea:focus, select:focus {
     display: flex;
     align-items: center;
     gap: 1.4rem;
-    margin-bottom: 1.8rem;
-    padding-bottom: 1.4rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 1.2rem;
     border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 
-.prf-avatar-wrap { flex-shrink: 0; }
+.prf-autosave-badge {
+    font-size: 0.68rem;
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Sub-tabs inside profile modal */
+.prf-nav-tabs {
+    display: flex;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 1.4rem;
+}
+
+.prf-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    padding: 0.55rem 0.6rem;
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.prf-tab-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.prf-tab-btn.active {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(139, 92, 246, 0.18) 100%);
+    color: #fff;
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+}
 
 /* Fixed container — frame and avatar stack correctly */
 .prf-avatar-container {

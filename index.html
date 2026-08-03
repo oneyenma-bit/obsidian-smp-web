@@ -59,9 +59,16 @@
                     <span class="inbox-badge-floating" id="inbox-badge" style="display: none; position: absolute; top: -3px; right: -3px; background: #ef4444; color: white; font-size: 0.62rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; border: 1.5px solid #0e0a17; line-height: 1;">0</span>
                 </button>
 
+                <!-- Profile Settings & Frame Gear Button -->
+                <button class="nav-icon-btn" id="nav-settings-btn" onclick="openUserProfileModal(state.username || 'Invitado')" title="Configuración de Perfil y Marcos" style="border: 1px solid rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.15); display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; color: #c084fc; font-size: 1.1rem; transition: all 0.3s ease; cursor: pointer; box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);">
+                    <i class="fa-solid fa-gear" style="font-size: 1rem;"></i>
+                </button>
+
                 <!-- Unified Profile & Gems Card -->
-                <div class="user-pill-unified" onclick="openModal('modal-login')" title="Perfil y Configuración de Obsidian SMP" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(255,255,255,0.1); padding: 4px 12px 4px 6px; border-radius: 9999px; cursor: pointer; transition: all 0.3s ease;">
-                    <img id="nav-skin-img" src="https://mc-heads.net/avatar/MHF_Steve/30" alt="Skin" class="user-avatar-small" style="width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid rgba(168,85,247,0.3); image-rendering: pixelated; display: block; object-fit: cover;">
+                <div class="user-pill-unified" id="user-pill-unified" onclick="onUserPillClick()" title="Perfil y Configuración de Obsidian SMP" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(255,255,255,0.1); padding: 4px 12px 4px 6px; border-radius: 9999px; cursor: pointer; transition: all 0.3s ease;">
+                    <div id="nav-avatar-wrap" style="display:inline-flex; align-items:center; justify-content:center;">
+                        <img id="nav-skin-img" src="https://mc-heads.net/avatar/MHF_Steve/30" alt="Skin" class="user-avatar-small" style="width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid rgba(168,85,247,0.3); image-rendering: pixelated; display: block; object-fit: cover;">
+                    </div>
                     <div class="user-details-small" style="display: flex; flex-direction: column; text-align: left; line-height: 1.2;">
                         <span class="user-name-small" id="nav-username" style="font-size: 0.75rem; font-weight: 800; color: #fff; letter-spacing: 0.2px;">Invitado</span>
                         <span class="user-gems-small" style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 3px;"><i class="fa-solid fa-gem" style="color: #fde047; font-size: 0.6rem;"></i> <strong id="nav-points-val">0</strong> Gemas</span>
@@ -1413,7 +1420,7 @@
             </div>
         </div>
     </div>
-    <!-- ===== MODAL: PERFIL DE USUARIO ===== -->
+    <!-- ===== MODAL: PERFIL DE USUARIO Y CONFIGURACIÓN ===== -->
     <div class="modal-bg" id="modal-user-profile">
         <div class="modal-box profile-modal-box">
             <button class="modal-close" onclick="closeModal('modal-user-profile')">&times;</button>
@@ -1424,71 +1431,145 @@
                     <!-- Avatar + frame injected by JS -->
                 </div>
                 <div class="prf-info">
-                    <h3 id="prf-username-display">Jugador</h3>
-                    <span id="prf-tag-display" class="prf-tag"></span>
-                    <div id="prf-owned-frames-row" class="prf-owned-frames-row"></div>
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <h3 id="prf-username-display" style="margin:0;">Jugador</h3>
+                        <span class="prf-autosave-badge" title="Tus cambios se guardan automáticamente al instante"><i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> Auto-guardado</span>
+                    </div>
+                    <span id="prf-tag-display" class="prf-tag" style="margin-top:4px;"></span>
                 </div>
             </div>
 
-            <!-- EDIT MODE (own profile) -->
-            <div id="prf-edit-panel">
-                <div class="prf-section">
-                    <h4><i class="fa-solid fa-image"></i> Foto de Perfil</h4>
-                    <div class="prf-avatar-opts">
-                        <label class="prf-radio-opt" id="prf-opt-discord">
-                            <input type="radio" name="avatar-source" value="discord" onchange="updateProfileAvatarPreview('discord')">
-                            <i class="fa-brands fa-discord" style="color:#7289da"></i> Usar foto de Discord
-                        </label>
-                        <label class="prf-radio-opt" id="prf-opt-mc">
-                            <input type="radio" name="avatar-source" value="minecraft" onchange="updateProfileAvatarPreview('minecraft')">
-                            <i class="fa-solid fa-cube" style="color:#5dbb63"></i> Usar skin de Minecraft
-                        </label>
-                        <label class="prf-radio-opt" id="prf-opt-custom">
-                            <input type="radio" name="avatar-source" value="custom" onchange="updateProfileAvatarPreview('custom')">
-                            <i class="fa-solid fa-upload" style="color:#f59e0b"></i> Subir foto personalizada
-                        </label>
-                    </div>
-                    <div id="prf-custom-upload-wrap" style="display:none; margin-top:12px;">
-                        <label for="prf-file-input" class="prf-upload-label">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> Seleccionar imagen
-                        </label>
-                        <input type="file" id="prf-file-input" accept="image/*" style="display:none" onchange="onProfileImageUpload(event)">
-                        <span id="prf-file-name" style="color:var(--text-dim); font-size:0.8rem; margin-left:8px;">Sin archivo seleccionado</span>
-                    </div>
-                </div>
-
-                <div class="prf-section">
-                    <h4><i class="fa-solid fa-shield-halved"></i> Marco Activo</h4>
-                    <div id="prf-frames-gallery" class="prf-frames-gallery">
-                        <span class="prf-no-frames">Sin marcos desbloqueados aún. <strong>¡Canjea el código OBSIDIANSMP!</strong></span>
-                    </div>
-                </div>
-
-                <div class="prf-section">
-                    <h4><i class="fa-solid fa-font"></i> Tipografía de la Página</h4>
-                    <div class="prf-font-grid">
-                        <button class="prf-font-btn" data-font="Outfit" onclick="applyProfileFont('Outfit')">
-                            <span style="font-family:'Outfit'">Outfit</span>
-                            <small>Moderna · Actual</small>
-                        </button>
-                        <button class="prf-font-btn" data-font="VT323" onclick="applyProfileFont('VT323')">
-                            <span style="font-family:'VT323'; font-size:1.2rem">VT323</span>
-                            <small>Pixelada · Retro MC</small>
-                        </button>
-                        <button class="prf-font-btn" data-font="Rajdhani" onclick="applyProfileFont('Rajdhani')">
-                            <span style="font-family:'Rajdhani'; font-weight:600">Rajdhani</span>
-                            <small>Gaming · Futurista</small>
-                        </button>
-                        <button class="prf-font-btn" data-font="Cinzel" onclick="applyProfileFont('Cinzel')">
-                            <span style="font-family:'Cinzel'">Cinzel</span>
-                            <small>Medieval · Épica</small>
-                        </button>
-                    </div>
-                </div>
-
-                <button class="btn-primary" style="width:100%; margin-top:0.5rem;" onclick="saveProfileChanges()">
-                    <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+            <!-- Profile Nav Sub-Tabs -->
+            <div class="prf-nav-tabs" id="prf-nav-tabs">
+                <button class="prf-tab-btn active" id="prf-tab-marcos" onclick="switchProfileTab('marcos')">
+                    <i class="fa-solid fa-shield-halved"></i> Fotos &amp; Marcos
                 </button>
+                <button class="prf-tab-btn" id="prf-tab-cuenta" onclick="switchProfileTab('cuenta')">
+                    <i class="fa-solid fa-user-gear"></i> Cuenta &amp; Discord
+                </button>
+                <button class="prf-tab-btn" id="prf-tab-estilo" onclick="switchProfileTab('estilo')">
+                    <i class="fa-solid fa-sliders"></i> Estilo &amp; Ajustes
+                </button>
+            </div>
+
+            <!-- EDIT PANELS (own profile) -->
+            <div id="prf-edit-panel">
+                
+                <!-- SUB-TAB 1: MARCOS Y FOTOS -->
+                <div id="prf-panel-marcos" class="prf-tab-content active">
+                    <div class="prf-section">
+                        <h4><i class="fa-solid fa-image"></i> Foto de Perfil</h4>
+                        <div class="prf-avatar-opts">
+                            <label class="prf-radio-opt" id="prf-opt-discord">
+                                <input type="radio" name="avatar-source" value="discord" onchange="updateProfileAvatarPreview('discord')">
+                                <i class="fa-brands fa-discord" style="color:#7289da"></i> Usar foto de Discord
+                            </label>
+                            <label class="prf-radio-opt" id="prf-opt-mc">
+                                <input type="radio" name="avatar-source" value="minecraft" onchange="updateProfileAvatarPreview('minecraft')">
+                                <i class="fa-solid fa-cube" style="color:#5dbb63"></i> Usar skin de Minecraft
+                            </label>
+                            <label class="prf-radio-opt" id="prf-opt-custom">
+                                <input type="radio" name="avatar-source" value="custom" onchange="updateProfileAvatarPreview('custom')">
+                                <i class="fa-solid fa-upload" style="color:#f59e0b"></i> Subir foto personalizada
+                            </label>
+                        </div>
+                        <div id="prf-custom-upload-wrap" style="display:none; margin-top:12px;">
+                            <label for="prf-file-input" class="prf-upload-label">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Seleccionar imagen
+                            </label>
+                            <input type="file" id="prf-file-input" accept="image/*" style="display:none" onchange="onProfileImageUpload(event)">
+                            <span id="prf-file-name" style="color:var(--text-dim); font-size:0.8rem; margin-left:8px;">Sin archivo seleccionado</span>
+                        </div>
+                    </div>
+
+                    <div class="prf-section">
+                        <h4><i class="fa-solid fa-shield-halved"></i> Marcos Rúnicos <small style="color:var(--text-dim); font-weight:normal; text-transform:none;">(Clic para equipar)</small></h4>
+                        <div id="prf-frames-gallery" class="prf-frames-gallery">
+                            <span class="prf-no-frames">Sin marcos desbloqueados aún. <strong>¡Canjea el código OBSIDIANSMP!</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-TAB 2: CUENTA Y DISCORD -->
+                <div id="prf-panel-cuenta" class="prf-tab-content" style="display:none;">
+                    <div class="prf-section">
+                        <h4><i class="fa-solid fa-link"></i> Estado de la Cuenta</h4>
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); padding: 1.2rem; border-radius: 14px; margin-bottom: 1rem;">
+                            <!-- Discord Avatar -->
+                            <div style="text-align: center;">
+                                <img id="profile-discord-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Discord Avatar" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.3);">
+                                <div id="profile-discord-tag" style="font-size: 0.72rem; color: #fff; font-weight: bold; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px;">User#0</div>
+                                <span style="font-size: 0.6rem; color: var(--text-muted);">Discord</span>
+                            </div>
+                            <!-- Connection line -->
+                            <div style="color: var(--primary); font-size: 1.1rem; filter: drop-shadow(0 0 4px var(--primary-glow));">
+                                <i class="fa-solid fa-link"></i>
+                            </div>
+                            <!-- Minecraft Avatar -->
+                            <div style="text-align: center;">
+                                <img id="profile-minecraft-skin" src="https://mc-heads.net/avatar/MHF_Steve/50" alt="Minecraft Skin" style="width: 50px; height: 50px; border-radius: 8px; border: 2px solid var(--primary); image-rendering: pixelated; box-shadow: 0 0 10px var(--primary-glow);">
+                                <div id="profile-minecraft-name" style="font-size: 0.72rem; color: #fff; font-weight: bold; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px;">Player</div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <button class="btn-mc btn-purple-mc" onclick="loginWithDiscord()" style="flex:1; min-width:160px; padding:0.75rem; font-size:0.8rem;">
+                                    <i class="fa-brands fa-discord"></i> CAMBIAR DISCORD
+                                </button>
+                                <button class="btn-mc btn-dark-mc" onclick="closeModal('modal-user-profile'); openModal('modal-login'); showPasswordLoginView();" style="flex:1; min-width:160px; padding:0.75rem; font-size:0.8rem;">
+                                    <i class="fa-solid fa-key" style="color:#eab308"></i> CLAVE 2-PASOS
+                                </button>
+                            </div>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <button class="btn-mc btn-red-mc" onclick="closeModal('modal-user-profile'); unlinkAccount();" style="flex:1; min-width:160px; padding:0.75rem; font-size:0.8rem; background:#dc2626; color:#fff;">
+                                    <i class="fa-solid fa-link-slash"></i> DESVINCULAR DISCORD
+                                </button>
+                                <button class="btn-mc btn-dark-mc" onclick="closeModal('modal-user-profile'); logout();" style="flex:1; min-width:160px; padding:0.75rem; font-size:0.8rem; border-color:rgba(239,68,68,0.3); color:#fca5a5;">
+                                    <i class="fa-solid fa-right-from-bracket" style="color:#ef4444"></i> CERRAR SESIÓN
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-TAB 3: ESTILO Y AJUSTES -->
+                <div id="prf-panel-estilo" class="prf-tab-content" style="display:none;">
+                    <div class="prf-section">
+                        <h4><i class="fa-solid fa-font"></i> Tipografía de la Página <small style="color:var(--text-dim); font-weight:normal; text-transform:none;">(Clic para aplicar)</small></h4>
+                        <div class="prf-font-grid">
+                            <button class="prf-font-btn" data-font="Outfit" onclick="applyProfileFont('Outfit')">
+                                <span style="font-family:'Outfit'">Outfit</span>
+                                <small>Moderna · Actual</small>
+                            </button>
+                            <button class="prf-font-btn" data-font="VT323" onclick="applyProfileFont('VT323')">
+                                <span style="font-family:'VT323'; font-size:1.2rem">VT323</span>
+                                <small>Pixelada · Retro MC</small>
+                            </button>
+                            <button class="prf-font-btn" data-font="Rajdhani" onclick="applyProfileFont('Rajdhani')">
+                                <span style="font-family:'Rajdhani'; font-weight:600">Rajdhani</span>
+                                <small>Gaming · Futurista</small>
+                            </button>
+                            <button class="prf-font-btn" data-font="Cinzel" onclick="applyProfileFont('Cinzel')">
+                                <span style="font-family:'Cinzel'">Cinzel</span>
+                                <small>Medieval · Épica</small>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="prf-section">
+                        <h4><i class="fa-solid fa-sliders"></i> Preferencias de la Aplicación</h4>
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); padding: 0.8rem 1rem; border-radius: 10px; margin-bottom: 0.6rem;">
+                            <span style="font-size:0.83rem; color:var(--text-muted); font-weight:600;"><i class="fa-solid fa-volume-high" style="color: var(--primary); margin-right: 6px;"></i> Sonido de Clics Minecraft</span>
+                            <button class="bedrock-toggle" id="setting-sound-btn" onclick="toggleSetting('sound')" style="padding: 0.2rem 0.8rem; font-size: 0.72rem; width: 50px;">Sí</button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); padding: 0.8rem 1rem; border-radius: 10px;">
+                            <span style="font-size:0.83rem; color:var(--text-muted); font-weight:600;"><i class="fa-solid fa-sparkles" style="color: var(--primary); margin-right: 6px;"></i> Partículas de Fondo</span>
+                            <button class="bedrock-toggle" id="setting-particles-btn" onclick="toggleSetting('particles')" style="padding: 0.2rem 0.8rem; font-size: 0.72rem; width: 50px;">Sí</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- READ-ONLY VIEW (other user) -->
