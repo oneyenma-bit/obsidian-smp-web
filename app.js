@@ -3104,6 +3104,7 @@ const ROULETTE_PRIZES = [
 let isSpinning = false;
 let currentRotation = 0;
 
+let lastTimerText = '';
 function checkRouletteCooldown() {
     const lastSpin = parseInt(localStorage.getItem('obs_last_spin_time') || '0');
     const now = Date.now();
@@ -3114,8 +3115,10 @@ function checkRouletteCooldown() {
     const spinBtn = document.getElementById('spin-roulette-btn');
 
     if (diff >= cooldown) {
-        if (timerEl) timerEl.textContent = '¡Giro disponible!';
-        if (spinBtn) {
+        if (timerEl && timerEl.textContent !== '¡Giro disponible!') {
+            timerEl.textContent = '¡Giro disponible!';
+        }
+        if (spinBtn && spinBtn.disabled && !isSpinning) {
             spinBtn.disabled = false;
             spinBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> ¡GIRAR RULETA AHORA!';
         }
@@ -3125,8 +3128,12 @@ function checkRouletteCooldown() {
         const hours = Math.floor(remaining / (1000 * 60 * 60));
         const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-        if (timerEl) timerEl.textContent = `Próximo giro en ${hours}h ${minutes}m ${seconds}s`;
-        if (spinBtn) {
+        const text = `Próximo giro en ${hours}h ${minutes}m ${seconds}s`;
+        if (timerEl && lastTimerText !== text) {
+            timerEl.textContent = text;
+            lastTimerText = text;
+        }
+        if (spinBtn && !spinBtn.disabled) {
             spinBtn.disabled = true;
             spinBtn.innerHTML = `<i class="fa-solid fa-lock"></i> Disponible en ${hours}h ${minutes}m`;
         }
