@@ -2149,9 +2149,10 @@ function renderFactions() {
     }
     
     const defaultLandscapes = [
-        'img/hero_minecraft_scenery.png',
-        'img/void.jpeg',
-        'img/midnight.png'
+        'img/fac_bg_castle.png',
+        'img/fac_bg_forest.png',
+        'img/fac_bg_survival.png',
+        'img/fac_bg_village.png'
     ];
     
     grid.innerHTML = factions.map((item, index) => {
@@ -2219,6 +2220,16 @@ function openFactionDetailModal(factionId) {
         } catch(e) {}
     }
     
+    const factionsList = state.marketplaceListings.filter(l => l.category === 'faccion');
+    const index = factionsList.findIndex(l => l.id === factionId);
+    const defaultLandscapes = [
+        'img/fac_bg_castle.png',
+        'img/fac_bg_forest.png',
+        'img/fac_bg_survival.png',
+        'img/fac_bg_village.png'
+    ];
+    const bannerUrl = defaultLandscapes[index !== -1 ? (index % defaultLandscapes.length) : 0];
+    
     const detailContainer = document.getElementById('faction-detail-content');
     if (!detailContainer) return;
     
@@ -2255,7 +2266,7 @@ function openFactionDetailModal(factionId) {
     }
 
     detailContainer.innerHTML = `
-        <div class="fd-banner" style="background-image: url('img/hero_minecraft_scenery.png')">
+        <div class="fd-banner" style="background-image: url('${bannerUrl}')">
             <div class="fd-banner-overlay"></div>
             <img src="${logoUrl}" alt="Crest" class="fd-crest">
             <span class="recruitment-badge ${recruitmentClass}" style="position: absolute; bottom: 15px; right: 20px;">${recruitment.toUpperCase()}</span>
