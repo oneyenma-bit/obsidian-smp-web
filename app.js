@@ -1150,16 +1150,47 @@ function prevSuccessStep() {
     if (s2) { s2.style.display = 'none'; s2.classList.remove('active'); }
 }
 
+function saveUserPoints(newAmount) {
+    state.points = Math.max(0, parseInt(newAmount, 10) || 0);
+    localStorage.setItem('obs_points', state.points);
+    if (state.username && state.username !== 'Invitado') {
+        localStorage.setItem(`obs_points_${state.username.toLowerCase()}`, state.points);
+    }
+    if (state.discordId) {
+        localStorage.setItem(`obs_points_${state.discordId}`, state.points);
+    }
+    
+    if (supabaseClient && state.username && state.username !== 'Invitado') {
+        try {
+            supabaseClient
+                .from('user_profiles')
+                .update({ points: state.points })
+                .eq('username', state.username)
+                .then(() => {})
+                .catch(() => {});
+        } catch(e) {}
+    }
+
+    syncUser();
+}
+
 // ─── OBSIDIAN GEMAS REWARDS ───────────────────────────────────
 function redeemReward(rewardId, gemasCost, rewardName) {
     if (state.points < gemasCost) {
         showToast(`⚠️ No tienes suficientes Gemas. Necesitas ${gemasCost} Gemas (tienes ${state.points} Gemas).`);
         return;
     }
-    state.points -= gemasCost;
-    localStorage.setItem('obs_points', state.points);
-    syncUser();
-    showToast(`🎉 ¡Canjeado con éxito! "${rewardName}" ha sido acreditado a tu cuenta de Minecraft.`);
+    
+    saveUserPoints(state.points - gemasCost);
+
+    if (rewardId === 'coupon30') {
+        state.activeCoupon = 30;
+        localStorage.setItem('obs_coupon', '30');
+        renderCart();
+        showToast(`🎉 ¡Canjeado con éxito! Has activado un 🎫 Cupón del 30% de Descuento en la Tienda.`);
+    } else {
+        showToast(`🎉 ¡Canjeado con éxito! "${rewardName}" ha sido acreditado a tu cuenta.`);
+    }
 }
 
 async function redeemPromoCode() {
@@ -3221,26 +3252,7 @@ function spinDailyRoulette() {
 
         // Grant REAL gems to state, localStorage and database
         const amount = prize.points;
-        state.points = (state.points || 0) + amount;
-        localStorage.setItem('obs_points', state.points);
-        if (state.username && state.username !== 'Invitado') {
-            localStorage.setItem(`obs_points_${state.username.toLowerCase()}`, state.points);
-            
-            // Database sync
-            if (supabaseClient) {
-                try {
-                    await supabaseClient
-                        .from('user_profiles')
-                        .update({ points: state.points })
-                        .eq('username', state.username);
-                } catch(err) {
-                    console.warn('Error al guardar gemas en DB:', err);
-                }
-            }
-        }
-
-        // Re-render navbar and UI points display
-        syncUser();
+        saveUserPoints((state.points || 0) + amount);
 
         const winMessage = `🎉 ¡Ganaste +${amount} Gemas! Saldo total: ${state.points} Gemas.`;
 
