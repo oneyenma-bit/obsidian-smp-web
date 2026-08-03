@@ -49,19 +49,24 @@ async function dbFetchConversations() {
     try {
         const { data, error } = await supabaseClient
             .from('conversations')
-            .select('*')
-            .or(`buyer.eq.${state.username},seller.eq.${state.username}`)
-            .order('updated_at', { ascending: false });
+            .select('*');
         if (error) throw error;
         if (data) {
-            state.conversations = data.map(c => ({
-                id: c.id,
-                listingId: c.listing_id,
-                buyer: c.buyer,
-                seller: c.seller,
-                status: c.status,
-                messages: c.messages
-            }));
+            state.conversations = data
+                .filter(c => {
+                    const sellerName = c.seller && c.seller.includes('|') ? c.seller.split('|')[0] : c.seller;
+                    const buyerName = c.buyer && c.buyer.includes('|') ? c.buyer.split('|')[0] : c.buyer;
+                    return sellerName.toLowerCase() === state.username.toLowerCase() || 
+                           buyerName.toLowerCase() === state.username.toLowerCase();
+                })
+                .map(c => ({
+                    id: c.id,
+                    listingId: c.listing_id,
+                    buyer: c.buyer,
+                    seller: c.seller,
+                    status: c.status,
+                    messages: c.messages
+                }));
             localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
         }
     } catch (err) {
@@ -581,7 +586,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ─── MULTI-VIEW NAVIGATION ────────────────────────────────────
 function switchTab(tabId) {
-    const validTabs = ['inicio', 'reglas', 'quienes', 'kits', 'puntos', 'marketplace'];
+    const validTabs = ['inicio', 'reglas', 'quienes', 'kits', 'puntos', 'marketplace', 'facciones'];
     if (!validTabs.includes(tabId)) tabId = 'inicio';
 
     document.querySelectorAll('.view-section').forEach(sec => {
@@ -603,6 +608,9 @@ function switchTab(tabId) {
 
     if (tabId === 'marketplace') {
         renderMarketplace();
+    }
+    if (tabId === 'facciones') {
+        renderFactions();
     }
 
     const navBar = document.getElementById('main-nav-bar');
@@ -1180,7 +1188,7 @@ function renderMarketplace() {
     const query = (state.marketSearchQuery || '').toLowerCase().trim();
 
     const filtered = (state.marketplaceListings || []).filter(item => {
-        const matchesCat = (cat === 'all' || item.category === cat);
+        const matchesCat = (cat === 'all' ? item.category !== 'faccion' : item.category === cat);
         const matchesText = !query || 
             (item.title && item.title.toLowerCase().includes(query)) ||
             (item.desc && item.desc.toLowerCase().includes(query)) ||
@@ -1578,11 +1586,11 @@ function submitFirstMessage() {
             .then(({ error }) => {
                 if (error) showToast('❌ Error de base de datos: ' + error.message);
             });
-    } else {
-        state.conversations.push(newConv);
-        localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
-        updateInboxBadge();
     }
+    
+    state.conversations.push(newConv);
+    localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+    updateInboxBadge();
     
     closeModal('modal-send-message');
     showToast('✅ ¡Mensaje enviado! El vendedor recibirá tu solicitud.');
@@ -1715,14 +1723,14 @@ function replyChat() {
     const c = state.conversations.find(conv => conv.id === activeChatId);
     if (!c) return;
 
+    const newMessages = [...c.messages, {
+        sender: state.username,
+        text,
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    }];
+    const newStatus = (c.status === 'pending' && c.seller === state.username) ? 'active' : c.status;
+
     if (supabaseClient) {
-        const newMessages = [...c.messages, {
-            sender: state.username,
-            text,
-            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-        }];
-        const newStatus = (c.status === 'pending' && c.seller === state.username) ? 'active' : c.status;
-        
         supabaseClient
             .from('conversations')
             .update({ 
@@ -1734,28 +1742,22 @@ function replyChat() {
             .then(({ error }) => {
                 if (error) showToast('❌ Error de base de datos: ' + error.message);
             });
-    } else {
-        if (c.status === 'pending' && c.seller === state.username) {
-            c.status = 'active';
-        }
-        c.messages.push({
-            sender: state.username,
-            text,
-            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-        });
-        localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
-        
-        if (currentInboxTab === 'pending' && c.status === 'active') {
-            activeChatId = c.id; 
-            setInboxTab('active');
-        } else {
-            renderInboxList();
-            renderChatMessages();
-        }
-        updateInboxBadge();
     }
 
+    c.status = newStatus;
+    c.messages = newMessages;
+    localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+    
     inp.value = '';
+    
+    if (currentInboxTab === 'pending' && c.status === 'active') {
+        activeChatId = c.id; 
+        setInboxTab('active');
+    } else {
+        renderInboxList();
+        renderChatMessages();
+    }
+    updateInboxBadge();
 }
 
 // Intercept syncUser to also update badge
@@ -1903,4 +1905,408 @@ async function loginWithPasswordOnly() {
         btn.disabled = false;
         btn.innerHTML = origText;
     }
+}
+
+// ─── FACTIONS (CLANS / TEAMS) SYSTEM ──────────────────────────
+let factionUploadedImageBase64 = null;
+
+function openFactionEditorModal(factionId) {
+    if (!state.username) {
+        showToast('⚠️ Debes iniciar sesión con Discord/Contraseña para registrar un clan.');
+        openModal('modal-login');
+        return;
+    }
+    
+    // Reset form
+    document.getElementById('faction-editor-form').reset();
+    document.getElementById('faction-edit-id').value = '';
+    factionUploadedImageBase64 = null;
+    document.getElementById('fac-file-name').textContent = 'Sin archivo cargado';
+    document.getElementById('fac-btn-delete-img').style.display = 'none';
+    document.getElementById('faction-desc-counter').textContent = '0 / 700 caracteres';
+    
+    const titleEl = document.getElementById('faction-editor-title');
+    const leaderInput = document.getElementById('fac-input-leader');
+    leaderInput.value = state.username;
+    
+    if (factionId) {
+        titleEl.textContent = 'Editar Clan';
+        const item = state.marketplaceListings.find(l => l.id === factionId);
+        if (item && item.desc.startsWith('FACDATA:')) {
+            const data = JSON.parse(item.desc.substring(8));
+            document.getElementById('faction-edit-id').value = item.id;
+            document.getElementById('fac-input-name').value = item.title;
+            document.getElementById('fac-input-tag').value = data.tag || '';
+            document.getElementById('fac-input-type').value = data.type || 'PvP';
+            document.getElementById('fac-input-recruitment').value = data.recruiting || 'Abierto';
+            document.getElementById('fac-input-leader').value = data.leader || item.publisher;
+            document.getElementById('fac-input-officers').value = data.officers || '';
+            document.getElementById('fac-input-members').value = data.memberCount || 1;
+            document.getElementById('fac-input-max').value = data.maxMembers || 15;
+            document.getElementById('fac-input-gear').value = data.minGear || 'Ninguno';
+            document.getElementById('fac-input-coords').value = data.baseCoords || '';
+            document.getElementById('fac-input-discord').value = data.discord || '';
+            document.getElementById('fac-input-diplomacy').value = data.alliesEnemies || '';
+            document.getElementById('fac-input-desc').value = data.description || '';
+            
+            updateFactionDescCharCounter(document.getElementById('fac-input-desc'));
+            
+            if (item.image) {
+                factionUploadedImageBase64 = item.image;
+                document.getElementById('fac-file-name').textContent = 'Foto actual del clan cargada';
+                document.getElementById('fac-btn-delete-img').style.display = 'inline-flex';
+            }
+        }
+    } else {
+        titleEl.textContent = 'Registrar Clan';
+    }
+    
+    openModal('modal-faction-editor');
+}
+
+function uploadFactionImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('⚠️ La imagen supera el límite de 2MB.');
+        input.value = '';
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        factionUploadedImageBase64 = e.target.result;
+        document.getElementById('fac-file-name').textContent = file.name;
+        document.getElementById('fac-btn-delete-img').style.display = 'inline-flex';
+        showToast('📸 Foto del clan cargada correctamente.');
+    };
+    reader.readAsDataURL(file);
+}
+
+function deleteFactionImage() {
+    factionUploadedImageBase64 = null;
+    document.getElementById('fac-input-file').value = '';
+    document.getElementById('fac-file-name').textContent = 'Foto eliminada';
+    document.getElementById('fac-btn-delete-img').style.display = 'none';
+    showToast('🗑️ Foto del clan removida.');
+}
+
+function updateFactionDescCharCounter(textarea) {
+    const len = textarea.value.length;
+    const counter = document.getElementById('faction-desc-counter');
+    if (counter) counter.textContent = `${len} / 700 caracteres`;
+}
+
+async function handleFactionSubmit(e) {
+    e.preventDefault();
+    if (!state.username) return;
+    
+    const id = document.getElementById('faction-edit-id').value;
+    const name = document.getElementById('fac-input-name').value.trim();
+    const tag = document.getElementById('fac-input-tag').value.trim().toUpperCase();
+    const type = document.getElementById('fac-input-type').value;
+    const recruiting = document.getElementById('fac-input-recruitment').value;
+    const leader = document.getElementById('fac-input-leader').value.trim();
+    const officers = document.getElementById('fac-input-officers').value.trim();
+    const memberCount = parseInt(document.getElementById('fac-input-members').value) || 1;
+    const maxMembers = parseInt(document.getElementById('fac-input-max').value) || 15;
+    const minGear = document.getElementById('fac-input-gear').value;
+    const baseCoords = document.getElementById('fac-input-coords').value.trim();
+    const discord = document.getElementById('fac-input-discord').value.trim();
+    const alliesEnemies = document.getElementById('fac-input-diplomacy').value.trim();
+    const description = document.getElementById('fac-input-desc').value.trim();
+    
+    const factionData = {
+        description, tag, type, recruiting, leader, officers,
+        memberCount, maxMembers, minGear, baseCoords, discord, alliesEnemies
+    };
+    
+    const serializedDesc = "FACDATA:" + JSON.stringify(factionData);
+    const publisherVal = leader;
+    const finalId = id || 'fac_' + Date.now();
+    
+    const dbRecord = {
+        id: finalId,
+        title: name,
+        category: 'faccion',
+        price: tag,
+        desc_text: serializedDesc,
+        image: factionUploadedImageBase64,
+        publisher: state.discordId ? `${publisherVal}|${state.discordId}|${state.discordUser?.avatar || ''}` : publisherVal
+    };
+    
+    if (supabaseClient) {
+        try {
+            if (id) {
+                // Update
+                const { error } = await supabaseClient
+                    .from('listings')
+                    .update({
+                        title: dbRecord.title,
+                        desc_text: dbRecord.desc_text,
+                        image: dbRecord.image,
+                        price: dbRecord.price
+                    })
+                    .eq('id', id);
+                if (error) throw error;
+            } else {
+                // Insert
+                const { error } = await supabaseClient
+                    .from('listings')
+                    .insert([dbRecord]);
+                if (error) throw error;
+            }
+            showToast('✅ ¡Clan guardado exitosamente en la nube!');
+        } catch(err) {
+            console.error("Error al guardar clan en Supabase:", err);
+            showToast('❌ Error de conexión al guardar el clan.');
+        }
+    }
+    
+    // Fallback/Local sync
+    const idx = state.marketplaceListings.findIndex(l => l.id === finalId);
+    const localItem = {
+        id: finalId,
+        title: name,
+        category: 'faccion',
+        price: tag,
+        desc: serializedDesc,
+        image: factionUploadedImageBase64,
+        publisher: dbRecord.publisher,
+        timeAgo: 'Hace un momento'
+    };
+    
+    if (idx !== -1) {
+        state.marketplaceListings[idx] = localItem;
+    } else {
+        state.marketplaceListings.unshift(localItem);
+    }
+    
+    localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+    
+    closeModal('modal-faction-editor');
+    renderFactions();
+}
+
+function renderFactions() {
+    const grid = document.getElementById('factions-grid');
+    if (!grid) return;
+    
+    const query = (document.getElementById('faction-search')?.value || '').toLowerCase().trim();
+    
+    const factions = state.marketplaceListings.filter(item => {
+        if (item.category !== 'faccion') return false;
+        
+        if (!query) return true;
+        
+        let matches = item.title.toLowerCase().includes(query) || item.price.toLowerCase().includes(query);
+        if (item.desc && item.desc.startsWith('FACDATA:')) {
+            try {
+                const data = JSON.parse(item.desc.substring(8));
+                matches = matches || 
+                          (data.description && data.description.toLowerCase().includes(query)) ||
+                          (data.type && data.type.toLowerCase().includes(query)) ||
+                          (data.leader && data.leader.toLowerCase().includes(query));
+            } catch(e) {}
+        }
+        return matches;
+    });
+    
+    if (factions.length === 0) {
+        grid.innerHTML = `
+            <div class="market-empty-state" style="grid-column: 1 / -1; padding: 4rem 1rem;">
+                <i class="fa-solid fa-flag-question" style="font-size: 3rem; color: var(--primary); opacity: 0.7; margin-bottom: 1rem;"></i>
+                <h3>No se encontraron clanes</h3>
+                <p>¡Sé el primero en fundar un imperio en el servidor! Haz clic en "Registrar tu Clan".</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const defaultLandscapes = [
+        'https://images.unsplash.com/photo-1607988795691-3d0147b43231?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=600&auto=format&fit=crop&q=60'
+    ];
+    
+    grid.innerHTML = factions.map((item, index) => {
+        let data = {};
+        if (item.desc && item.desc.startsWith('FACDATA:')) {
+            try {
+                data = JSON.parse(item.desc.substring(8));
+            } catch(e) {}
+        }
+        
+        const bannerUrl = defaultLandscapes[index % defaultLandscapes.length];
+        const logoUrl = item.image || 'img/obsidian.png';
+        const specialty = data.type || 'Supervivencia';
+        const members = data.memberCount || 1;
+        const max = data.maxMembers || 15;
+        const recruitment = data.recruiting || 'Abierto';
+        const recruitmentClass = recruitment === 'Abierto' ? 'rec-open' : (recruitment === 'Cerrado' ? 'rec-closed' : 'rec-invite');
+        
+        return `
+            <div class="faction-card" onclick="openFactionDetailModal('${item.id}')">
+                <div class="faction-card-header" style="background-image: url('${bannerUrl}')">
+                    <div class="header-overlay"></div>
+                    <span class="recruitment-badge ${recruitmentClass}">${recruitment.toUpperCase()}</span>
+                </div>
+                <div class="faction-card-crest">
+                    <img src="${logoUrl}" alt="Escudo Clan" class="crest-img">
+                </div>
+                <div class="faction-card-body">
+                    <h4 class="faction-card-title">${item.title} <span class="faction-tag">[${item.price}]</span></h4>
+                    <span class="faction-specialty"><i class="fa-solid fa-khanda"></i> ${specialty}</span>
+                    <p class="faction-summary-desc">${data.description || 'Sin descripción.'}</p>
+                    
+                    <div class="faction-stats-row">
+                        <div class="f-stat-item">
+                            <span class="f-stat-val">${data.leader || 'Nadie'}</span>
+                            <span class="f-stat-lbl">LÍDER</span>
+                        </div>
+                        <div class="f-stat-item">
+                            <span class="f-stat-val">${members}/${max}</span>
+                            <span class="f-stat-lbl">MIEMBROS</span>
+                        </div>
+                        <div class="f-stat-item">
+                            <span class="f-stat-val">${data.minGear || 'Ninguno'}</span>
+                            <span class="f-stat-lbl">EQUIPO MÍN.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function onFactionSearchChange(q) {
+    renderFactions();
+}
+
+function openFactionDetailModal(factionId) {
+    const item = state.marketplaceListings.find(l => l.id === factionId);
+    if (!item) return;
+    
+    let data = {};
+    if (item.desc && item.desc.startsWith('FACDATA:')) {
+        try {
+            data = JSON.parse(item.desc.substring(8));
+        } catch(e) {}
+    }
+    
+    const detailContainer = document.getElementById('faction-detail-content');
+    if (!detailContainer) return;
+    
+    const logoUrl = item.image || 'img/obsidian.png';
+    const recruitment = data.recruiting || 'Abierto';
+    const recruitmentClass = recruitment === 'Abierto' ? 'rec-open' : (recruitment === 'Cerrado' ? 'rec-closed' : 'rec-invite');
+    
+    const pubInfo = parsePublisher(item.publisher);
+    const isOwner = pubInfo.discordId 
+        ? (pubInfo.discordId === state.discordId)
+        : (pubInfo.username === state.username);
+        
+    const isAdmin = isAdminUser();
+    const canManage = isOwner || isAdmin;
+    
+    detailContainer.innerHTML = `
+        <div class="fd-banner" style="background-image: url('https://images.unsplash.com/photo-1607988795691-3d0147b43231?w=800&auto=format&fit=crop')">
+            <div class="fd-banner-overlay"></div>
+            <img src="${logoUrl}" alt="Crest" class="fd-crest">
+            <span class="recruitment-badge ${recruitmentClass}" style="position: absolute; bottom: 15px; right: 20px;">${recruitment.toUpperCase()}</span>
+        </div>
+        
+        <div class="fd-main-body" style="padding: 1.5rem 2rem;">
+            <div class="fd-split-layout">
+                <!-- Left Details Grid -->
+                <div class="fd-details-sidebar">
+                    <h3 class="fd-title">${item.title} <span class="faction-tag">[${item.price}]</span></h3>
+                    <span class="faction-specialty" style="margin-bottom: 1rem; display: inline-block;"><i class="fa-solid fa-khanda"></i> ${data.type || 'Mixto'}</span>
+                    
+                    <div class="fd-spec-grid">
+                        <div class="fd-spec-item">
+                            <strong>Líder:</strong>
+                            <span>${data.leader || 'Nadie'}</span>
+                        </div>
+                        <div class="fd-spec-item">
+                            <strong>Oficiales:</strong>
+                            <span>${data.officers || 'Ninguno'}</span>
+                        </div>
+                        <div class="fd-spec-item">
+                            <strong>Miembros:</strong>
+                            <span>${data.memberCount || 1} / ${data.maxMembers || 15}</span>
+                        </div>
+                        <div class="fd-spec-item">
+                            <strong>Armas Mínimas:</strong>
+                            <span>${data.minGear || 'Ninguno'}</span>
+                        </div>
+                        <div class="fd-spec-item">
+                            <strong>Coordenadas:</strong>
+                            <span>${data.baseCoords || 'Privado'}</span>
+                        </div>
+                    </div>
+                    
+                    ${data.discord ? `
+                    <a href="${data.discord}" target="_blank" class="btn-mc btn-purple-mc width-100" style="margin-top: 1rem; text-decoration: none; padding: 0.6rem; text-align: center;">
+                        <i class="fa-brands fa-discord"></i> DISCORD DEL CLAN
+                    </a>
+                    ` : ''}
+                </div>
+                
+                <!-- Right Main Manifesto -->
+                <div class="fd-manifesto-column">
+                    <h4 class="fd-sub-header">Manifiesto &amp; Objetivos</h4>
+                    <p class="fd-description">${data.description || 'Sin manifiesto cargado.'}</p>
+                    
+                    <h4 class="fd-sub-header" style="margin-top: 1.2rem;">Relaciones Diplomáticas</h4>
+                    <p class="fd-description" style="color: #fda4af; font-weight: 700;">${data.alliesEnemies || 'Manteniendo neutralidad absoluta.'}</p>
+                    
+                    ${canManage ? `
+                    <div style="display: flex; gap: 0.8rem; margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
+                        <button class="btn-mc btn-purple-mc" onclick="closeModal('modal-view-faction'); openFactionEditorModal('${item.id}')" style="flex: 1; padding: 0.6rem;">
+                            <i class="fa-solid fa-pen"></i> Editar Clan
+                        </button>
+                        <button class="btn-mc btn-dark-mc" onclick="deleteFaction('${item.id}')" style="flex: 1; padding: 0.6rem; border-color: #991b1b; color: #f87171;">
+                            <i class="fa-solid fa-trash"></i> Disolver Clan
+                        </button>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    openModal('modal-view-faction');
+}
+
+function deleteFaction(factionId) {
+    customConfirm(
+        '¿Disolver Facción?',
+        '¿Estás seguro de disolver este clan? Se borrará de la base de datos y perderán todas sus diplomacias.',
+        async () => {
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('listings')
+                        .delete()
+                        .eq('id', factionId);
+                    if (error) throw error;
+                    showToast('🗑️ Clan disuelto exitosamente de la base de datos.');
+                } catch(e) {
+                    console.error("Error al borrar clan en Supabase:", e);
+                    showToast('❌ Error de conexión al disolver el clan.');
+                }
+            }
+            
+            state.marketplaceListings = state.marketplaceListings.filter(l => l.id !== factionId);
+            localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+            
+            closeModal('modal-view-faction');
+            renderFactions();
+        }
+    );
 }

@@ -93,6 +93,9 @@
             <button class="cat-tab marketplace-cat-tab" id="tab-marketplace" data-tab="marketplace" onclick="switchTab('marketplace')">
                 <i class="fa-solid fa-store"></i> MARKETPLACE (INTERCAMBIOS)
             </button>
+            <button class="cat-tab factions-cat-tab" id="tab-facciones" data-tab="facciones" onclick="switchTab('facciones')">
+                <i class="fa-solid fa-flag"></i> FACCIONES (CLANES)
+            </button>
         </div>
     </div>
 
@@ -598,6 +601,38 @@
             </div>
         </section>
 
+        <!-- ==================== VISTA 7: FACCIONES ==================== -->
+        <section class="view-section" id="view-facciones" style="display:none;">
+            <div class="marketplace-container" style="max-width: 1240px; margin: 0 auto;">
+                <!-- Factions Hero Header Banner -->
+                <div class="factions-hero-banner">
+                    <div class="fh-overlay"></div>
+                    <div class="fh-content">
+                        <h2><i class="fa-solid fa-flag"></i> CLANES &amp; FACCIONES</h2>
+                        <p>Únete a imperios, declara diplomacias o recluta guerreros en el reino de Obsidian SMP.</p>
+                        <div class="fh-actions">
+                            <button class="btn-mc btn-purple-mc" onclick="openFactionEditorModal()" style="padding: 0.8rem 1.5rem; width: auto; font-size: 0.9rem;">
+                                <i class="fa-solid fa-shield-halved"></i> REGISTRAR TU CLAN
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Factions Search & Filters -->
+                <div class="market-toolbar" style="margin-bottom: 2rem;">
+                    <div class="market-search-wrap">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="faction-search" placeholder="Buscar clan, líder o especialidad..." oninput="onFactionSearchChange(this.value)">
+                    </div>
+                </div>
+
+                <!-- Factions Grid -->
+                <div class="factions-grid" id="factions-grid">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+        </section>
+
     </div>
 
     <!-- ===== FOOTER ===== -->
@@ -619,6 +654,166 @@
         <i class="fa-solid fa-cart-shopping"></i>
         <span class="fc-count" id="fc-count">0</span>
         <span class="fc-total" id="fc-total">$0.00</span>
+    </div>
+
+    <!-- ===== MODAL: VIEW FACTION DETAILS ===== -->
+    <div class="modal-bg" id="modal-view-faction">
+        <div class="modal-box faction-detail-box mc-styled" style="max-width: 780px !important;">
+            <button class="modal-close" onclick="closeModal('modal-view-faction')">&times;</button>
+            <div class="faction-detail-layout" id="faction-detail-content">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: FACTION EDITOR (CREATE/EDIT) ===== -->
+    <div class="modal-bg" id="modal-faction-editor">
+        <div class="modal-box mc-styled" style="max-width: 720px !important; max-height: 90vh; overflow-y: auto;">
+            <button class="modal-close" onclick="closeModal('modal-faction-editor')">&times;</button>
+            <h3 class="form-title-mc" id="faction-editor-title">Registrar Clan</h3>
+            <p class="form-subtitle-mc" id="faction-editor-subtitle">Completa los datos de tu facción en Obsidian SMP</p>
+            
+            <form id="faction-editor-form" onsubmit="handleFactionSubmit(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: left;">
+                <input type="hidden" id="faction-edit-id">
+                
+                <!-- Left Column -->
+                <div>
+                    <div class="mc-field-group">
+                        <label for="fac-input-name">Nombre del Clan</label>
+                        <div class="mc-input-wrap">
+                            <input type="text" id="fac-input-name" placeholder="Ej: Gladiadores" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mc-field-group">
+                        <label for="fac-input-tag">Tag del Clan (3-4 letras)</label>
+                        <div class="mc-input-wrap">
+                            <input type="text" id="fac-input-tag" placeholder="Ej: GLD" maxlength="4" required>
+                        </div>
+                    </div>
+
+                    <div class="mc-field-group">
+                        <label for="fac-input-type">Especialidad del Clan</label>
+                        <div class="mc-input-wrap" style="padding: 0.3rem 0.8rem;">
+                           <select id="fac-input-type" style="background: none; border: none; color: #fff; width: 100%; font-size: 0.95rem; font-weight: 700; outline: none; cursor: pointer;">
+                               <option value="PvP" style="background: #100c1c;">⚔️ Enfoque PvP</option>
+                               <option value="Survival" style="background: #100c1c;">🌲 Enfoque Survival</option>
+                               <option value="Construcción" style="background: #100c1c;">🏰 Enfoque Construcción</option>
+                               <option value="Raids" style="background: #100c1c;">💣 Enfoque Raids/Asedios</option>
+                               <option value="Mixto" style="background: #100c1c;">🤝 Enfoque Mixto/Social</option>
+                           </select>
+                        </div>
+                    </div>
+
+                    <div class="mc-field-group">
+                        <label for="fac-input-recruitment">Reclutamiento</label>
+                        <div class="mc-input-wrap" style="padding: 0.3rem 0.8rem;">
+                           <select id="fac-input-recruitment" style="background: none; border: none; color: #fff; width: 100%; font-size: 0.95rem; font-weight: 700; outline: none; cursor: pointer;">
+                               <option value="Abierto" style="background: #100c1c;">🟢 Abierto (Todos entran)</option>
+                               <option value="Invitación" style="background: #100c1c;">🟡 Por Invitación</option>
+                               <option value="Cerrado" style="background: #100c1c;">🔴 Cerrado</option>
+                           </select>
+                        </div>
+                    </div>
+
+                    <div class="mc-field-group">
+                        <label for="fac-input-leader">Líder del Clan</label>
+                        <div class="mc-input-wrap">
+                            <input type="text" id="fac-input-leader" placeholder="Tu usuario" required>
+                        </div>
+                    </div>
+
+                    <div class="mc-field-group">
+                        <label for="fac-input-officers">Oficiales / Sub-Líderes</label>
+                        <div class="mc-input-wrap">
+                            <input type="text" id="fac-input-officers" placeholder="Ej: Steve, Alex">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div>
+                    <div class="mc-field-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <div>
+                            <label for="fac-input-members">Miembros</label>
+                            <div class="mc-input-wrap">
+                                <input type="number" id="fac-input-members" value="1" min="1" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="fac-input-max">Límite</label>
+                            <div class="mc-input-wrap">
+                                <input type="number" id="fac-input-max" value="15" min="1" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mc-field-group">
+                        <label for="fac-input-gear">Equipamiento Mínimo</label>
+                        <div class="mc-input-wrap" style="padding: 0.3rem 0.8rem;">
+                           <select id="fac-input-gear" style="background: none; border: none; color: #fff; width: 100%; font-size: 0.95rem; font-weight: 700; outline: none; cursor: pointer;">
+                               <option value="Ninguno" style="background: #100c1c;">🛡️ Sin Requisitos</option>
+                               <option value="Hierro+" style="background: #100c1c;">⚔️ Hierro o superior</option>
+                               <option value="Diamante+" style="background: #100c1c;">💎 Diamante o superior</option>
+                               <option value="Netherite" style="background: #100c1c;">🌌 Full Netherite</option>
+                           </select>
+                        </div>
+                    </div>
+
+                    <div class="mc-field-group">
+                        <label for="fac-input-coords">Coordenadas de Base</label>
+                        <div class="mc-input-wrap">
+                            <input type="text" id="fac-input-coords" placeholder="Ej: X: 150 Z: -900 o 'Privadas'">
+                        </div>
+                    </div>
+
+                    <div class="mc-field-group">
+                        <label for="fac-input-discord">Discord del Clan</label>
+                        <div class="mc-input-wrap">
+                            <input type="url" id="fac-input-discord" placeholder="https://discord.gg/invite">
+                        </div>
+                    </div>
+
+                    <div class="mc-field-group">
+                        <label for="fac-input-diplomacy">Diplomacia (Aliados/Enemigos)</label>
+                        <div class="mc-input-wrap">
+                            <input type="text" id="fac-input-diplomacy" placeholder="Ej: Alianzas, rivalidades...">
+                        </div>
+                    </div>
+
+                    <div class="mc-field-group">
+                        <label>Foto / Escudo del Clan</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <label class="btn-mc btn-purple-mc" style="cursor: pointer; padding: 0.6rem; font-size: 0.75rem; width: auto; flex: 1; margin:0;">
+                                <i class="fa-solid fa-upload"></i> SUBIR
+                                <input type="file" id="fac-input-file" accept="image/*" onchange="uploadFactionImage(this)" style="display: none;">
+                            </label>
+                            <button type="button" class="btn-mc btn-dark-mc" id="fac-btn-delete-img" onclick="deleteFactionImage()" style="display: none; padding: 0.6rem; font-size: 0.75rem; width: auto; margin:0;" title="Eliminar Foto">
+                                <i class="fa-solid fa-trash" style="color: #ef4444;"></i>
+                            </button>
+                        </div>
+                        <span id="fac-file-name" style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Sin archivo cargado</span>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div style="grid-column: 1 / -1;" class="mc-field-group">
+                    <label for="fac-input-desc">Descripción / Manifiesto del Clan</label>
+                    <div class="mc-input-wrap" style="padding: 0.6rem;">
+                        <textarea id="fac-input-desc" placeholder="Describe los objetivos de tu clan..." style="background: none; border: none; outline: none; color: #fff; width: 100%; font-size: 0.95rem; font-weight: 700; height: 80px; resize: none; font-family: sans-serif;" maxlength="700" oninput="updateFactionDescCharCounter(this)" required></textarea>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">
+                        <span>Máximo 700 caracteres</span>
+                        <span id="faction-desc-counter">0 / 700 caracteres</span>
+                    </div>
+                </div>
+
+                <div style="grid-column: 1 / -1; display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="submit" class="btn-mc btn-green-mc width-100" id="fac-submit-btn">GUARDAR CLAN</button>
+                    <button type="button" class="btn-mc btn-dark-mc" onclick="closeModal('modal-faction-editor')" style="width: auto;">CANCELAR</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- ===== MODAL: LOGIN / DISCORD AUTH ===== -->
