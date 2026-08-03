@@ -2874,7 +2874,10 @@ function renderProfileFramesGallery() {
         const info = FRAME_CATALOG[fId] || { name: fId, img: null, desc: '' };
         const isActive = state.activeFrame === fId;
         const preview = info.img
-            ? `<img src="${info.img}" alt="${info.name}" class="prf-frame-gallery-img">`
+            ? `<div class="prf-gallery-preview-container">
+                 <div class="prf-gallery-mini-avatar"></div>
+                 <img src="${info.img}" alt="${info.name}" class="prf-frame-gallery-img">
+               </div>`
             : `<div class="prf-frame-css-preview ${info.cssClass || ''}"><div class="steam-ring"></div><div class="steam-glow"></div></div>`;
         return `
             <div class="prf-frame-opt ${isActive ? 'active' : ''}" onclick="equipFrame('${fId}')">
