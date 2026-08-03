@@ -357,20 +357,21 @@ function toggle2FA() {
 }
 
 function updateSettingsUI() {
-    const soundBtn = document.getElementById('setting-sound-btn');
-    const particlesBtn = document.getElementById('setting-particles-btn');
+    const soundButtons = document.querySelectorAll('#setting-sound-btn');
+    const particlesButtons = document.querySelectorAll('#setting-particles-btn');
     
     const soundOn = localStorage.getItem('mc_sound') !== 'false';
     const particlesOn = localStorage.getItem('mc_particles') !== 'false';
     
-    if (soundBtn) {
-        soundBtn.textContent = soundOn ? 'Sí' : 'No';
-        soundBtn.classList.toggle('yes', soundOn);
-    }
-    if (particlesBtn) {
-        particlesBtn.textContent = particlesOn ? 'Sí' : 'No';
-        particlesBtn.classList.toggle('yes', particlesOn);
-    }
+    soundButtons.forEach(btn => {
+        btn.textContent = soundOn ? 'Sí' : 'No';
+        btn.classList.toggle('yes', soundOn);
+    });
+    
+    particlesButtons.forEach(btn => {
+        btn.textContent = particlesOn ? 'Sí' : 'No';
+        btn.classList.toggle('yes', particlesOn);
+    });
 }
 
 function playMcClick() {
@@ -863,10 +864,10 @@ function updateNavUserAvatar() {
     let avatarSrc;
     if (state.avatarSource === 'custom' && state.customAvatar) {
         avatarSrc = state.customAvatar;
-    } else if (state.discordId && state.discordUser?.avatar) {
-        avatarSrc = `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`;
-    } else if (state.discordId) {
-        avatarSrc = `https://cdn.discordapp.com/embed/avatars/0.png`;
+    } else if (state.avatarSource === 'discord' && state.discordId) {
+        avatarSrc = state.discordUser?.avatar
+            ? `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`
+            : `https://cdn.discordapp.com/embed/avatars/0.png`;
     } else {
         avatarSrc = `https://mc-heads.net/avatar/${encodeURIComponent(state.username || 'Steve')}/40`;
     }
