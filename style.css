@@ -2170,6 +2170,11 @@ input { font-family: var(--font); }
     border: 1px solid #38bdf8;
     color: #7dd3fc;
 }
+.mod-badge {
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid #10b981;
+    color: #a7f3d0;
+}
 .staff-bio {
     font-size: .78rem;
     color: var(--text-dim);

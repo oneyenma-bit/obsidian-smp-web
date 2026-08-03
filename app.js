@@ -3265,7 +3265,7 @@ function applyProfileFont(fontName) {
 // ─── LIVE MARKET TICKER SYSTEM ──────────────────────────────────
 const INITIAL_MARKET_ACTIVITIES = [
     { text: '<strong>pablitorey_</strong> publicó Pechera de Netherite Ígnea', icon: 'fa-solid fa-fire', color: '#f97316' },
-    { text: '<strong>fabiann</strong> compró Kit Shulker Vorágine', icon: 'fa-solid fa-gem', color: '#38bdf8' },
+    { text: '<strong>mootz</strong> compró Kit Shulker Vorágine', icon: 'fa-solid fa-gem', color: '#38bdf8' },
     { text: '<strong>Steve</strong> intercambió 64 Bloques de Obsidiana', icon: 'fa-solid fa-box', color: '#a855f7' },
     { text: '<strong>elpayasowtf123</strong> equipó el Marco Obsidian Místico', icon: 'fa-solid fa-shield-halved', color: '#c084fc' }
 ];
