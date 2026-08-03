@@ -395,6 +395,91 @@ function playMcClick() {
     } catch (e) {}
 }
 
+function playVictoryFanfare() {
+    if (localStorage.getItem('mc_sound') === 'false') return;
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+        notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.type = 'sine';
+            const startTime = ctx.currentTime + idx * 0.08;
+            osc.frequency.setValueAtTime(freq, startTime);
+            
+            gain.gain.setValueAtTime(0.2, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+            
+            osc.start(startTime);
+            osc.stop(startTime + 0.35);
+        });
+    } catch (e) {}
+}
+
+function triggerConfetti(targetContainer = document.body) {
+    const confettiColors = ['#f59e0b', '#a855f7', '#10b981', '#06b6d4', '#ec4899', '#fde047'];
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.inset = '0';
+    container.style.pointerEvents = 'none';
+    container.style.zIndex = '999999';
+    container.style.overflow = 'hidden';
+    targetContainer.appendChild(container);
+
+    const particleCount = 75;
+    const originX = window.innerWidth / 2;
+    const originY = window.innerHeight / 2;
+
+    for (let i = 0; i < particleCount; i++) {
+        const p = document.createElement('div');
+        const color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+        const size = Math.random() * 8 + 6;
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = Math.random() * 12 + 6;
+        const vx = Math.cos(angle) * velocity;
+        const vy = Math.sin(angle) * velocity - 4;
+
+        p.style.position = 'absolute';
+        p.style.left = `${originX}px`;
+        p.style.top = `${originY}px`;
+        p.style.width = `${size}px`;
+        p.style.height = `${size * (Math.random() > 0.5 ? 1 : 2)}px`;
+        p.style.background = color;
+        p.style.borderRadius = Math.random() > 0.5 ? '50%' : '3px';
+        p.style.boxShadow = `0 0 8px ${color}`;
+        p.style.transform = `rotate(${Math.random() * 360}deg)`;
+        container.appendChild(p);
+
+        let posX = originX;
+        let posY = originY;
+        let curVx = vx;
+        let curVy = vy;
+        let opacity = 1;
+
+        const anim = setInterval(() => {
+            posX += curVx;
+            posY += curVy;
+            curVy += 0.4;
+            curVx *= 0.98;
+            opacity -= 0.018;
+
+            p.style.left = `${posX}px`;
+            p.style.top = `${posY}px`;
+            p.style.opacity = opacity;
+
+            if (opacity <= 0 || posY > window.innerHeight) {
+                clearInterval(anim);
+                p.remove();
+            }
+        }, 16);
+    }
+
+    setTimeout(() => container.remove(), 2500);
+}
+
 function customConfirm(title, msg, onOk) {
     const titleEl = document.getElementById('confirm-modal-title');
     const msgEl = document.getElementById('confirm-modal-msg');
@@ -3243,7 +3328,14 @@ function spinDailyRoulette() {
         wheel.style.transform = `rotate(${currentRotation}deg)`;
     }
 
-    playSound('click');
+    // Play tick sounds while wheel spins
+    let tickCount = 0;
+    const maxTicks = 18;
+    const tickInterval = setInterval(() => {
+        tickCount++;
+        playMcClick();
+        if (tickCount >= maxTicks) clearInterval(tickInterval);
+    }, 220);
 
     setTimeout(async () => {
         isSpinning = false;
@@ -3254,15 +3346,20 @@ function spinDailyRoulette() {
         const amount = prize.points;
         saveUserPoints((state.points || 0) + amount);
 
-        const winMessage = `🎉 ¡Ganaste +${amount} Gemas! Saldo total: ${state.points} Gemas.`;
+        // Sound & Confetti Explosions!
+        playVictoryFanfare();
+        triggerConfetti();
 
         if (resultBox) {
-            resultBox.innerHTML = `<strong>${winMessage}</strong>`;
+            resultBox.innerHTML = `
+                <div style="font-size: 1.1rem; color: #fef08a; margin-bottom: 4px; text-shadow: 0 0 10px rgba(254,240,138,0.5);">🎉 ¡ENHORABUENA!</div>
+                <div style="font-size: 1.35rem; color: #4ade80; font-weight: 800; text-shadow: 0 0 12px rgba(74,222,128,0.5);">+${amount} GEMAS AÑADIDAS</div>
+                <div style="font-size: 0.8rem; color: #e2e8f0; margin-top: 4px;">Tu saldo actual es de <strong>${state.points} Gemas</strong></div>
+            `;
             resultBox.style.display = 'block';
         }
 
-        showToast(winMessage);
-        playSound('purchase');
+        showToast(`🎉 ¡+${amount} Gemas acreditadas! Saldo: ${state.points} Gemas.`);
 
         const user = state.username || 'Invitado';
         pushMarketActivity(`<strong>${user}</strong> giró la Ruleta Diaria y ganó <strong>+${amount} Gemas</strong>`, 'fa-solid fa-gem', '#eab308');
