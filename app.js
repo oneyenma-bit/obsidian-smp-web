@@ -1971,7 +1971,7 @@ function updateInboxBadge() {
     const badge = document.getElementById('inbox-badge');
     if (!badge || !state.username) return;
 
-    const pendingChats = state.conversations.filter(c => c.seller === state.username && c.status === 'pending');
+    const pendingChats = state.conversations.filter(c => parsePublisher(c.seller).username.toLowerCase() === state.username.toLowerCase() && c.status === 'pending');
     if (pendingChats.length > 0) {
         badge.textContent = pendingChats.length;
         badge.style.display = 'inline-block';
@@ -1986,19 +1986,20 @@ function openContactModal(publisher, title, listingId) {
         openModal('modal-login');
         return;
     }
-    if (publisher === state.username) {
+    const pubName = parsePublisher(publisher).username;
+    if (pubName.toLowerCase() === state.username.toLowerCase()) {
         showToast('⚠️ No puedes enviarte un mensaje a ti mismo.');
         return;
     }
     
     // Check if conversation already exists
-    const existing = state.conversations.find(c => c.listingId === listingId && c.buyer === state.username && c.seller === publisher);
+    const existing = state.conversations.find(c => c.listingId === listingId && parsePublisher(c.buyer).username.toLowerCase() === state.username.toLowerCase() && parsePublisher(c.seller).username.toLowerCase() === pubName.toLowerCase());
     if (existing) {
         showToast('💬 Ya tienes una conversación sobre esta oferta. Revisa tu Buzón.');
         return;
     }
 
-    document.getElementById('send-msg-subtitle').textContent = `Enviar mensaje a ${publisher} por "${title}"`;
+    document.getElementById('send-msg-subtitle').textContent = `Enviar mensaje a ${pubName} por "${title}"`;
     document.getElementById('send-msg-listing-id').value = listingId;
     document.getElementById('send-msg-receiver').value = publisher;
     document.getElementById('send-msg-text').value = '';
@@ -2091,7 +2092,10 @@ function renderInboxList() {
     const list = document.getElementById('inbox-list');
     
     const chats = state.conversations.filter(c => {
-        const isParticipant = (c.buyer === state.username || c.seller === state.username);
+        const buyerName = parsePublisher(c.buyer).username.toLowerCase();
+        const sellerName = parsePublisher(c.seller).username.toLowerCase();
+        const userClean = state.username.toLowerCase();
+        const isParticipant = (buyerName === userClean || sellerName === userClean);
         if (!isParticipant) return false;
         return currentInboxTab === 'pending' ? c.status === 'pending' : c.status === 'active';
     });
@@ -2102,7 +2106,9 @@ function renderInboxList() {
     }
 
     list.innerHTML = chats.map(c => {
-        const otherUser = c.buyer === state.username ? c.seller : c.buyer;
+        const buyerName = parsePublisher(c.buyer).username;
+        const sellerName = parsePublisher(c.seller).username;
+        const otherUser = buyerName.toLowerCase() === state.username.toLowerCase() ? sellerName : buyerName;
         const lastMsg = c.messages[c.messages.length - 1];
         const isActive = c.id === activeChatId ? 'background:rgba(255,255,255,0.1);' : '';
         const item = state.marketplaceListings.find(l => l.id === c.listingId);
@@ -2141,7 +2147,9 @@ function renderChatMessages() {
     const c = state.conversations.find(conv => conv.id === activeChatId);
     if (!c) return;
 
-    const otherUser = c.buyer === state.username ? c.seller : c.buyer;
+    const buyerName = parsePublisher(c.buyer).username;
+    const sellerName = parsePublisher(c.seller).username;
+    const otherUser = buyerName.toLowerCase() === state.username.toLowerCase() ? sellerName : buyerName;
     header.innerHTML = `
         <img src="https://mc-heads.net/avatar/${encodeURIComponent(otherUser)}/32" style="border-radius:4px; width:32px; height:32px;">
         <strong style="color:white; font-size:1.1rem;">${otherUser}</strong>
@@ -2163,7 +2171,7 @@ function renderChatMessages() {
     msgsBox.scrollTop = msgsBox.scrollHeight;
 
     if (c.status === 'pending') {
-        if (c.buyer === state.username) {
+        if (buyerName.toLowerCase() === state.username.toLowerCase()) {
             inputArea.style.display = 'none';
             msgsBox.innerHTML += `<div style="text-align:center; color:var(--text-muted); font-size:0.85rem; margin-top:1rem;">Esperando a que el líder responda...</div>`;
         } else if (c.listingId && c.listingId.startsWith('fac_')) {
@@ -2201,7 +2209,8 @@ function replyChat() {
         text,
         time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
     }];
-    const newStatus = (c.status === 'pending' && c.seller === state.username) ? 'active' : c.status;
+    const sellerName = parsePublisher(c.seller).username;
+    const newStatus = (c.status === 'pending' && sellerName.toLowerCase() === state.username.toLowerCase()) ? 'active' : c.status;
 
     if (supabaseClient) {
         supabaseClient
@@ -2420,7 +2429,8 @@ function openFactionEditorModal(factionId) {
             document.getElementById('fac-input-max').value = data.maxMembers || 8;
             document.getElementById('fac-input-gear').value = data.minGear || 'Ninguno';
             document.getElementById('fac-input-discord').value = data.discord || '';
-            document.getElementById('fac-input-diplomacy').value = data.alliesEnemies || '';
+            document.getElementById('fac-input-allies').value = data.allies || data.alliesEnemies || '';
+            document.getElementById('fac-input-enemies').value = data.enemies || '';
             document.getElementById('fac-input-frame').value = data.frame || 'frame-iron';
             document.getElementById('fac-input-desc').value = data.description || '';
             
@@ -2488,7 +2498,8 @@ async function handleFactionSubmit(e) {
     const maxMembers = parseInt(document.getElementById('fac-input-max').value) || 8;
     const minGear = document.getElementById('fac-input-gear').value;
     const discord = document.getElementById('fac-input-discord').value.trim();
-    const alliesEnemies = document.getElementById('fac-input-diplomacy').value.trim();
+    const allies = document.getElementById('fac-input-allies').value.trim();
+    const enemies = document.getElementById('fac-input-enemies').value.trim();
     const frame = document.getElementById('fac-input-frame').value;
     const description = document.getElementById('fac-input-desc').value.trim();
     
@@ -2503,7 +2514,7 @@ async function handleFactionSubmit(e) {
     
     const factionData = {
         description, tag, type, recruiting, leader, officers,
-        memberCount, maxMembers, minGear, discord, alliesEnemies, frame
+        memberCount, maxMembers, minGear, discord, allies, enemies, frame
     };
     
     const serializedDesc = "FACDATA:" + JSON.stringify(factionData);
@@ -2775,8 +2786,22 @@ function openFactionDetailModal(factionId) {
                     <h4 class="fd-sub-header">Manifiesto &amp; Objetivos</h4>
                     <p class="fd-description">${data.description || 'Sin manifiesto cargado.'}</p>
                     
-                    <h4 class="fd-sub-header" style="margin-top: 1.2rem;">Relaciones Diplomáticas</h4>
-                    <p class="fd-description" style="color: #fda4af; font-weight: 700;">${data.alliesEnemies || 'Manteniendo neutralidad absoluta.'}</p>
+                    ${(data.allies !== undefined || data.enemies !== undefined) ? `
+                        <h4 class="fd-sub-header" style="margin-top: 1.2rem; color: #4ade80;"><i class="fa-solid fa-handshake"></i> Aliados del Clan</h4>
+                        <p class="fd-description" style="color: #a7f3d0; font-weight: 700; background: rgba(74,222,128,0.06); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(74,222,128,0.15); margin-bottom: 0.8rem;">
+                            ${data.allies || 'Ninguno (Neutral)'}
+                        </p>
+                        
+                        <h4 class="fd-sub-header" style="color: #f87171;"><i class="fa-solid fa-skull-crossbones"></i> Enemigos del Clan</h4>
+                        <p class="fd-description" style="color: #fca5a5; font-weight: 700; background: rgba(248,113,113,0.06); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(248,113,113,0.15);">
+                            ${data.enemies || 'Ninguno (Pacífico)'}
+                        </p>
+                    ` : `
+                        <h4 class="fd-sub-header" style="margin-top: 1.2rem; color: #fda4af;"><i class="fa-solid fa-shield-halved"></i> Relaciones Diplomáticas</h4>
+                        <p class="fd-description" style="color: #fda4af; font-weight: 700; background: rgba(168,85,247,0.06); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(168,85,247,0.15);">
+                            ${data.alliesEnemies || 'Manteniendo neutralidad absoluta.'}
+                        </p>
+                    `}
                     
                     ${canManage ? `
                     <div style="display: flex; gap: 0.8rem; margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
