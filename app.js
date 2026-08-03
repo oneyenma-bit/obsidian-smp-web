@@ -515,6 +515,7 @@ function loadInitialDatabaseData() {
     if (supabaseClient) {
         dbFetchListings().then(() => {
             if (state.activeMarketCategory) renderMarketplace();
+            renderFactions();
         });
         dbFetchConversations().then(() => {
             updateInboxBadge();
@@ -522,6 +523,7 @@ function loadInitialDatabaseData() {
     } else {
         setTimeout(() => {
             if (state.activeMarketCategory) renderMarketplace();
+            renderFactions();
             updateInboxBadge();
         }, 100);
     }
@@ -2570,73 +2572,13 @@ async function handleFactionSubmit(e) {
     renderFactions();
 }
 
-const DEFAULT_FACTIONS = [
-    {
-        id: 'fac_obsidian_imperium',
-        title: 'Imperio Obsidian',
-        category: 'faccion',
-        price: 'OBS',
-        publisher: 'Pablitorey_',
-        image: 'img/obsidian.png',
-        desc: 'FACDATA:' + JSON.stringify({
-            leader: 'Pablitorey_',
-            tag: 'OBS',
-            type: 'Conquista & Factions',
-            memberCount: 8,
-            maxMembers: 15,
-            recruiting: 'Abierto',
-            description: 'El imperio supremo de Obsidian SMP. Dominantes en la zona de guerra y fortaleza rúnica principal.',
-            frame: 'frame-obsidian'
-        })
-    },
-    {
-        id: 'fac_sombras',
-        title: 'Los Sombríos',
-        category: 'faccion',
-        price: 'SHD',
-        publisher: 'ShadowKits',
-        image: 'img/netherite_helmet.png',
-        desc: 'FACDATA:' + JSON.stringify({
-            leader: 'ShadowKits',
-            tag: 'SHD',
-            type: 'PvP & Incursiones',
-            memberCount: 5,
-            maxMembers: 10,
-            recruiting: 'Abierto',
-            description: 'Gremio de asesinos y especialistas en emboscadas nocturnas y saqueos de bases enemigas.',
-            frame: 'frame-netherite'
-        })
-    },
-    {
-        id: 'fac_gladiadores',
-        title: 'Gladiadores de Esmeralda',
-        category: 'faccion',
-        price: 'GLD',
-        publisher: 'VortexPlayer',
-        image: 'img/emerald.png',
-        desc: 'FACDATA:' + JSON.stringify({
-            leader: 'VortexPlayer',
-            tag: 'GLD',
-            type: 'Comercio & Construcción',
-            memberCount: 12,
-            maxMembers: 20,
-            recruiting: 'Invitación',
-            description: 'Constructores de megabase defensiva y comerciantes principales del servidor.',
-            frame: 'frame-emerald'
-        })
-    }
-];
-
 function renderFactions() {
     const grid = document.getElementById('factions-grid');
     if (!grid) return;
     
-    // Auto-populate default sample factions if no factions exist
-    const hasFactions = state.marketplaceListings.some(item => item.category === 'faccion');
-    if (!hasFactions) {
-        state.marketplaceListings.push(...DEFAULT_FACTIONS);
-        localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
-    }
+    // Purge mock demo factions if present in local state
+    state.marketplaceListings = (state.marketplaceListings || []).filter(item => !/^fac_(obsidian_imperium|sombras|gladiadores)$/.test(item.id));
+    localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
 
     const query = (document.getElementById('faction-search')?.value || '').toLowerCase().trim();
     
