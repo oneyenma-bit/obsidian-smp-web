@@ -130,7 +130,8 @@ const state = {
     avatarSource: localStorage.getItem('obs_avatar_source') || 'discord',
     customAvatar: localStorage.getItem('obs_custom_avatar') || '',
     profileFont: localStorage.getItem('obs_profile_font') || 'Outfit',
-    redeemedCodes: JSON.parse(localStorage.getItem('obs_redeemed_codes') || '[]')
+    redeemedCodes: JSON.parse(localStorage.getItem('obs_redeemed_codes') || '[]'),
+    adminOverride: undefined // Can be true/false/undefined for testing
 };
 
 function parsePublisher(pubStr) {
@@ -143,6 +144,9 @@ function parsePublisher(pubStr) {
 }
 
 function isAdminUser() {
+    if (state.adminOverride !== undefined) {
+        return state.adminOverride;
+    }
     const isDiscordAdmin = state.discordTag && state.discordTag.toLowerCase() === 'pablitorey_';
     const isMcAdmin = state.username && state.username.toLowerCase() === 'elpayasowtf123';
     return !!(isDiscordAdmin || isMcAdmin);
@@ -2836,20 +2840,31 @@ function openFactionDetailModal(factionId) {
     const canManage = isOwner || isAdmin;
     
     let joinBtnHtml = '';
-    if (state.username && !canManage) {
+    if (state.username && !isOwner) {
         const applicantName = state.username.toLowerCase();
         const existingRequest = state.conversations.find(c => c.listingId === item.id && c.buyer.toLowerCase() === applicantName);
         
+        let adminBtn = isAdmin ? `<button class="btn-mc btn-purple-mc width-100" onclick="joinFactionDirectly('${item.id}')" style="margin-top: 0.5rem; padding: 0.6rem; background:#8b5cf6;"><i class="fa-solid fa-bolt"></i> UNIRSE AL INSTANTE (ADMIN)</button>` : '';
+
         if (existingRequest) {
             if (existingRequest.status === 'pending') {
-                joinBtnHtml = `<button class="btn-mc btn-dark-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-spinner fa-spin"></i> SOLICITUD PENDIENTE</button>`;
+                joinBtnHtml = `
+                    <button class="btn-mc btn-dark-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-spinner fa-spin"></i> SOLICITUD PENDIENTE</button>
+                    ${adminBtn}
+                `;
             } else if (existingRequest.status === 'accepted') {
                 joinBtnHtml = `<button class="btn-mc btn-green-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-check"></i> YA ERES MIEMBRO</button>`;
             } else if (existingRequest.status === 'rejected') {
-                joinBtnHtml = `<button class="btn-mc btn-dark-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-xmark" style="color:#ef4444;"></i> SOLICITUD RECHAZADA</button>`;
+                joinBtnHtml = `
+                    <button class="btn-mc btn-dark-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-xmark" style="color:#ef4444;"></i> SOLICITUD RECHAZADA</button>
+                    ${adminBtn}
+                `;
             }
         } else {
-            joinBtnHtml = `<button class="btn-mc btn-green-mc width-100" onclick="sendJoinRequest('${item.id}')" style="margin-top: 1rem; padding: 0.6rem;"><i class="fa-solid fa-plus"></i> ENVIAR SOLICITUD</button>`;
+            joinBtnHtml = `
+                <button class="btn-mc btn-green-mc width-100" onclick="sendJoinRequest('${item.id}')" style="margin-top: 1rem; padding: 0.6rem;"><i class="fa-solid fa-plus"></i> ENVIAR SOLICITUD</button>
+                ${adminBtn}
+            `;
         }
     } else if (!state.username) {
         joinBtnHtml = `<button class="btn-mc btn-purple-mc width-100" onclick="openModal('modal-login')" style="margin-top: 1rem; padding: 0.6rem;"><i class="fa-solid fa-right-to-bracket"></i> LOGUEATE PARA UNIRTE</button>`;
@@ -3031,6 +3046,146 @@ async function sendJoinRequest(factionId) {
     closeModal('modal-view-faction');
     openInboxModal();
 }
+
+async function joinFactionDirectly(factionId) {
+    if (!state.username) return;
+    const faction = state.marketplaceListings.find(l => l.id === factionId);
+    if (!faction) return;
+
+    let factionData = {};
+    try {
+        if (faction.desc && faction.desc.startsWith('FACDATA:')) {
+            factionData = JSON.parse(faction.desc.substring(8));
+        }
+    } catch(e) {}
+
+    const currentCount = parseInt(factionData.memberCount || 1);
+    factionData.memberCount = currentCount + 1;
+    const newDesc = "FACDATA:" + JSON.stringify(factionData);
+
+    if (supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('listings')
+                .update({ desc_text: newDesc })
+                .eq('id', faction.id);
+            if (error) throw error;
+        } catch(err) {
+            console.error("Error al unirse al clan:", err);
+            showToast('❌ Error de conexión al unirse al clan.');
+            return;
+        }
+    }
+
+    faction.desc = newDesc;
+    localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+
+    // Also register a conversation so UI knows we are a member
+    const requestConvId = 'req_' + Date.now();
+    const mockRequest = {
+        id: requestConvId,
+        listingId: faction.id,
+        buyer: state.username,
+        seller: faction.publisher,
+        status: 'accepted',
+        messages: [{
+            sender: state.username,
+            text: `[ADMIN] Se ha unido directamente al clan.`,
+            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        }]
+    };
+
+    if (supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('conversations')
+                .insert([{
+                    id: mockRequest.id,
+                    listing_id: mockRequest.listingId,
+                    buyer: mockRequest.buyer,
+                    seller: mockRequest.seller,
+                    status: mockRequest.status,
+                    messages: mockRequest.messages
+                }]);
+            if (error) throw error;
+        } catch(e) {
+            console.error("Error al registrar unión en conversaciones:", e);
+        }
+    }
+
+    state.conversations.push(mockRequest);
+    localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+    updateInboxBadge();
+
+    showToast(`🟢 ¡Te has unido directamente al clan ${faction.title}!`);
+    closeModal('modal-view-faction');
+    renderFactions();
+}
+
+function toggleDevAdminOverride() {
+    const btn = document.getElementById('dev-admin-toggle-btn');
+    if (!btn) return;
+
+    if (state.adminOverride === undefined) {
+        state.adminOverride = true;
+        btn.textContent = 'Admin (ON)';
+        btn.style.background = '#8b5cf6';
+        btn.style.borderColor = '#c084fc';
+        btn.style.color = '#fff';
+        showToast('⚙️ Modo Administrador forzado (Bypass activado).');
+    } else if (state.adminOverride === true) {
+        state.adminOverride = false;
+        btn.textContent = 'User (ON)';
+        btn.style.background = '#10b981';
+        btn.style.borderColor = '#34d399';
+        btn.style.color = '#fff';
+        showToast('⚙️ Modo Usuario Estándar forzado.');
+    } else {
+        state.adminOverride = undefined;
+        btn.textContent = 'Normal';
+        btn.style.background = 'rgba(255,255,255,0.06)';
+        btn.style.borderColor = 'rgba(255,255,255,0.12)';
+        btn.style.color = 'var(--text-muted)';
+        showToast('⚙️ Bypass dev desactivado. Roles normales aplicados.');
+    }
+
+    syncUser();
+}
+
+function devLoginAs(username, tag) {
+    if (username === 'Invitado') {
+        state.username = '';
+        state.discordId = null;
+        state.discordTag = null;
+        state.discordUser = null;
+        localStorage.removeItem('obs_user');
+        localStorage.removeItem('obs_discord_user');
+        localStorage.removeItem('obs_discord_tag');
+        localStorage.removeItem('obs_discord_id');
+        showToast('🚪 Has cerrado sesión de pruebas (Modo Invitado).');
+    } else {
+        state.username = username;
+        state.discordId = tag ? 'dev_id_' + username : null;
+        state.discordTag = tag || null;
+        state.discordUser = tag ? { avatar: 'default_dev_avatar' } : null;
+        
+        localStorage.setItem('obs_user', username);
+        if (tag) {
+            localStorage.setItem('obs_discord_user', JSON.stringify({ avatar: 'default_dev_avatar' }));
+            localStorage.setItem('obs_discord_tag', tag);
+            localStorage.setItem('obs_discord_id', 'dev_id_' + username);
+        } else {
+            localStorage.removeItem('obs_discord_user');
+            localStorage.removeItem('obs_discord_tag');
+            localStorage.removeItem('obs_discord_id');
+        }
+        showToast(`🔑 Sesión simulada como: ${username} (${tag ? 'Discord enlazado' : 'Sin Discord'}).`);
+    }
+
+    syncUser();
+    closeModal('modal-user-profile');
+}
+
 
 async function acceptFactionRequest(chatId) {
     const c = state.conversations.find(conv => conv.id === chatId);

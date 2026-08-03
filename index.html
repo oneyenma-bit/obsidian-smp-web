@@ -1582,6 +1582,25 @@
                             <button class="bedrock-toggle" id="setting-particles-btn" onclick="toggleSetting('particles')" style="padding: 0.2rem 0.8rem; font-size: 0.72rem; width: 50px;">Sí</button>
                         </div>
                     </div>
+
+                    <div class="prf-section" style="border-top: 1px solid rgba(255,255,255,0.08); margin-top: 1.2rem; padding-top: 1.2rem;">
+                        <h4><i class="fa-solid fa-code"></i> Herramientas de Desarrollo y Pruebas</h4>
+                        <p style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.8rem; line-height: 1.3;">Utiliza estas opciones para simular diferentes roles o cambiar de usuario instantáneamente y buscar fallos.</p>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); padding: 0.8rem 1rem; border-radius: 10px; margin-bottom: 0.8rem;">
+                            <span style="font-size:0.83rem; color:var(--text-muted); font-weight:600;"><i class="fa-solid fa-user-shield" style="color: var(--primary); margin-right: 6px;"></i> Forzar Rol de Administrador</span>
+                            <button class="bedrock-toggle" id="dev-admin-toggle-btn" onclick="toggleDevAdminOverride()" style="padding: 0.2rem 0.8rem; font-size: 0.72rem; width: 80px; background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12);">Normal</button>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); padding: 0.8rem 1rem; border-radius: 10px;">
+                            <span style="font-size:0.83rem; color:var(--text-muted); font-weight:600; margin-bottom: 0.3rem;"><i class="fa-solid fa-users-gear" style="color: var(--primary); margin-right: 6px;"></i> Cambiar Usuario de Prueba</span>
+                            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                <button class="btn-mc btn-purple-mc" onclick="devLoginAs('Pablitorey_', 'pablitorey_')" style="padding: 0.35rem 0.6rem; font-size: 0.72rem; flex: 1; margin: 0; min-width: 80px;">Admin (Pablito)</button>
+                                <button class="btn-mc btn-green-mc" onclick="devLoginAs('TestPlayer', 'test_player_tag')" style="padding: 0.35rem 0.6rem; font-size: 0.72rem; flex: 1; margin: 0; min-width: 80px;">Usuario Normal</button>
+                                <button class="btn-mc btn-dark-mc" onclick="devLoginAs('Invitado', '')" style="padding: 0.35rem 0.6rem; font-size: 0.72rem; flex: 1; margin: 0; min-width: 80px; color: #fca5a5; border-color: rgba(239,68,68,0.2);">Invitado</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
             </div>
