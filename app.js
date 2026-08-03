@@ -2823,15 +2823,11 @@ function renderProfileAvatarPreview(username, isOwnProfile) {
         avatarSrc = `https://mc-heads.net/avatar/${encodeURIComponent(username || 'Steve')}/80`;
     }
 
-    const frame = isOwnProfile ? state.activeFrame : '';
-    const frameOverlay = frame === 'frame-obsidian'
-        ? `<img src="img/frame_obsidian.png" class="prf-frame-img-overlay" alt="Marco Obsidian">`
-        : '';
-
+    const hasFrame = isOwnProfile && state.activeFrame === 'frame-obsidian';
     wrap.innerHTML = `
-        <div style="position:relative; display:inline-block;">
+        <div class="prf-avatar-container${hasFrame ? ' has-frame' : ''}">
             <img src="${avatarSrc}" alt="${username}" class="prf-avatar-img" onerror="this.src='img/shulker_void_3d.png'">
-            ${frameOverlay}
+            ${hasFrame ? '<img src="img/frame_obsidian.png" class="prf-frame-img-overlay" alt="Marco Obsidian">' : ''}
         </div>
     `;
 }
