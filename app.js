@@ -904,6 +904,7 @@ function syncUser() {
     // Cart status color
     const total = cartTotal();
     const qty = cartQty();
+    const navStatus = document.getElementById('nav-cart-status') || document.querySelector('.cart-status');
     if (navStatus) {
         if (qty === 0) {
             navStatus.textContent = 'HAZ CLIC PARA INICIAR';
