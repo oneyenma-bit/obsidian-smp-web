@@ -1937,6 +1937,7 @@ function openFactionEditorModal(factionId) {
     // Reset form
     document.getElementById('faction-editor-form').reset();
     document.getElementById('faction-edit-id').value = '';
+    document.getElementById('fac-input-frame').value = 'frame-iron';
     factionUploadedImageBase64 = null;
     document.getElementById('fac-file-name').textContent = 'Sin archivo cargado';
     document.getElementById('fac-btn-delete-img').style.display = 'none';
@@ -1963,6 +1964,7 @@ function openFactionEditorModal(factionId) {
             document.getElementById('fac-input-gear').value = data.minGear || 'Ninguno';
             document.getElementById('fac-input-discord').value = data.discord || '';
             document.getElementById('fac-input-diplomacy').value = data.alliesEnemies || '';
+            document.getElementById('fac-input-frame').value = data.frame || 'frame-iron';
             document.getElementById('fac-input-desc').value = data.description || '';
             
             updateFactionDescCharCounter(document.getElementById('fac-input-desc'));
@@ -2030,6 +2032,7 @@ async function handleFactionSubmit(e) {
     const minGear = document.getElementById('fac-input-gear').value;
     const discord = document.getElementById('fac-input-discord').value.trim();
     const alliesEnemies = document.getElementById('fac-input-diplomacy').value.trim();
+    const frame = document.getElementById('fac-input-frame').value;
     const description = document.getElementById('fac-input-desc').value.trim();
     
     if (maxMembers > 8) {
@@ -2043,7 +2046,7 @@ async function handleFactionSubmit(e) {
     
     const factionData = {
         description, tag, type, recruiting, leader, officers,
-        memberCount, maxMembers, minGear, discord, alliesEnemies
+        memberCount, maxMembers, minGear, discord, alliesEnemies, frame
     };
     
     const serializedDesc = "FACDATA:" + JSON.stringify(factionData);
@@ -2148,12 +2151,7 @@ function renderFactions() {
         return;
     }
     
-    const defaultLandscapes = [
-        'img/fac_bg_castle.png',
-        'img/fac_bg_forest.png',
-        'img/fac_bg_survival.png',
-        'img/fac_bg_village.png'
-    ];
+    const bannerUrl = 'img/fondo1.jpg';
     
     grid.innerHTML = factions.map((item, index) => {
         let data = {};
@@ -2163,13 +2161,13 @@ function renderFactions() {
             } catch(e) {}
         }
         
-        const bannerUrl = defaultLandscapes[index % defaultLandscapes.length];
         const logoUrl = item.image || 'img/obsidian.png';
         const specialty = data.type || 'Supervivencia';
         const members = data.memberCount || 1;
         const max = data.maxMembers || 15;
         const recruitment = data.recruiting || 'Abierto';
         const recruitmentClass = recruitment === 'Abierto' ? 'rec-open' : (recruitment === 'Cerrado' ? 'rec-closed' : 'rec-invite');
+        const frameClass = data.frame || 'frame-iron';
         
         return `
             <div class="faction-card" onclick="openFactionDetailModal('${item.id}')">
@@ -2177,7 +2175,7 @@ function renderFactions() {
                     <div class="header-overlay"></div>
                     <span class="recruitment-badge ${recruitmentClass}">${recruitment.toUpperCase()}</span>
                 </div>
-                <div class="faction-card-crest">
+                <div class="faction-card-crest ${frameClass}">
                     <img src="${logoUrl}" alt="Escudo Clan" class="crest-img">
                 </div>
                 <div class="faction-card-body">
@@ -2220,15 +2218,7 @@ function openFactionDetailModal(factionId) {
         } catch(e) {}
     }
     
-    const factionsList = state.marketplaceListings.filter(l => l.category === 'faccion');
-    const index = factionsList.findIndex(l => l.id === factionId);
-    const defaultLandscapes = [
-        'img/fac_bg_castle.png',
-        'img/fac_bg_forest.png',
-        'img/fac_bg_survival.png',
-        'img/fac_bg_village.png'
-    ];
-    const bannerUrl = defaultLandscapes[index !== -1 ? (index % defaultLandscapes.length) : 0];
+    const bannerUrl = 'img/fondo1.jpg';
     
     const detailContainer = document.getElementById('faction-detail-content');
     if (!detailContainer) return;
@@ -2236,6 +2226,7 @@ function openFactionDetailModal(factionId) {
     const logoUrl = item.image || 'img/obsidian.png';
     const recruitment = data.recruiting || 'Abierto';
     const recruitmentClass = recruitment === 'Abierto' ? 'rec-open' : (recruitment === 'Cerrado' ? 'rec-closed' : 'rec-invite');
+    const frameClass = data.frame || 'frame-iron';
     
     const pubInfo = parsePublisher(item.publisher);
     const isOwner = pubInfo.discordId 
@@ -2268,7 +2259,7 @@ function openFactionDetailModal(factionId) {
     detailContainer.innerHTML = `
         <div class="fd-banner" style="background-image: url('${bannerUrl}')">
             <div class="fd-banner-overlay"></div>
-            <img src="${logoUrl}" alt="Crest" class="fd-crest">
+            <img src="${logoUrl}" alt="Crest" class="fd-crest ${frameClass}">
             <span class="recruitment-badge ${recruitmentClass}" style="position: absolute; bottom: 15px; right: 20px;">${recruitment.toUpperCase()}</span>
         </div>
         

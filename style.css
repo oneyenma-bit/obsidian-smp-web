@@ -4227,7 +4227,7 @@ input:focus, textarea:focus, select:focus {
     border-radius: 24px;
     overflow: hidden;
     margin-bottom: 2.5rem;
-    background: url('img/hero_minecraft_scenery.png') no-repeat center center;
+    background: url('img/gatos.jpg') no-repeat center center;
     background-size: cover;
     border: 3px solid #000;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7), 0 0 35px rgba(168, 85, 247, 0.25);
@@ -4748,6 +4748,59 @@ input:focus, textarea:focus, select:focus {
     background: linear-gradient(135deg, rgba(20, 15, 36, 0.4) 0%, rgba(10, 8, 18, 0.6) 100%) !important;
     border: 1px solid rgba(168, 85, 247, 0.15) !important;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* 5 Steam-like Profile Frames */
+.faction-card-crest.frame-iron,
+.fd-crest.frame-iron {
+    border: 3px solid #57534e !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.65), inset 0 0 10px rgba(255, 255, 255, 0.15) !important;
+}
+
+.faction-card-crest.frame-emerald,
+.fd-crest.frame-emerald {
+    border: 3px solid #10b981 !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.65), 0 0 15px rgba(16, 185, 129, 0.75), inset 0 0 10px rgba(16, 185, 129, 0.4) !important;
+    animation: emeraldGlow 3s infinite alternate ease-in-out;
+}
+@keyframes emeraldGlow {
+    0% { box-shadow: 0 8px 20px rgba(0,0,0,0.65), 0 0 10px rgba(16, 185, 129, 0.5); }
+    100% { box-shadow: 0 8px 20px rgba(0,0,0,0.65), 0 0 25px rgba(16, 185, 129, 0.95); }
+}
+
+.faction-card-crest.frame-netherite,
+.fd-crest.frame-netherite {
+    border: 3px solid #ea580c !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.65), 0 0 18px rgba(234, 88, 12, 0.75), inset 0 0 10px rgba(234, 88, 12, 0.4) !important;
+    animation: netheriteGlow 2.5s infinite alternate ease-in-out;
+}
+@keyframes netheriteGlow {
+    0% { box-shadow: 0 8px 20px rgba(0,0,0,0.65), 0 0 10px rgba(234, 88, 12, 0.5); }
+    100% { box-shadow: 0 8px 20px rgba(0,0,0,0.65), 0 0 30px rgba(234, 88, 12, 0.95); }
+}
+
+.faction-card-crest.frame-netherstar,
+.fd-crest.frame-netherstar {
+    background: linear-gradient(135deg, #a855f7 0%, #06b6d4 100%) !important;
+    padding: 3px !important;
+    border: none !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.65), 0 0 22px rgba(168, 85, 247, 0.85), inset 0 0 10px rgba(6, 182, 212, 0.4) !important;
+    animation: starGlow 4s infinite alternate ease-in-out;
+}
+@keyframes starGlow {
+    0% { box-shadow: 0 8px 20px rgba(0,0,0,0.65), 0 0 15px rgba(168, 85, 247, 0.6); transform: scale(1); }
+    100% { box-shadow: 0 8px 20px rgba(0,0,0,0.65), 0 0 30px rgba(6, 182, 212, 0.95); transform: scale(1.04); }
+}
+
+.faction-card-crest.frame-diamond,
+.fd-crest.frame-diamond {
+    border: 3px solid #06b6d4 !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.65), 0 0 18px rgba(6, 182, 212, 0.75), inset 0 0 10px rgba(6, 182, 212, 0.4) !important;
+    animation: diamondGlow 3.5s infinite alternate ease-in-out;
+}
+@keyframes diamondGlow {
+    0% { box-shadow: 0 8px 20px rgba(0,0,0,0.65), 0 0 10px rgba(6, 182, 212, 0.5); }
+    100% { box-shadow: 0 8px 20px rgba(0,0,0,0.65), 0 0 26px rgba(6, 182, 212, 0.9); }
 }
 
 

@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=4.5">
+    <link rel="stylesheet" href="style.css?v=4.6">
 </head>
 <body>
 
@@ -775,6 +775,19 @@
                     </div>
 
                     <div class="mc-field-group">
+                        <label for="fac-input-frame">Marco del Escudo (Estilo Steam)</label>
+                        <div class="mc-input-wrap" style="padding: 0.3rem 0.8rem;">
+                           <select id="fac-input-frame" style="background: none; border: none; color: #fff; width: 100%; font-size: 0.95rem; font-weight: 700; outline: none; cursor: pointer;">
+                               <option value="frame-iron" style="background: #100c1c;">🔘 Hierro (Estándar)</option>
+                               <option value="frame-emerald" style="background: #100c1c;">🟢 Esmeralda Celestial (Glow Verde)</option>
+                               <option value="frame-netherite" style="background: #100c1c;">🔥 Netherite Ígneo (Glow Fuego)</option>
+                               <option value="frame-netherstar" style="background: #100c1c;">🌌 Estrella del Nether (Gradiente Neón)</option>
+                               <option value="frame-diamond" style="background: #100c1c;">💎 Diamante Divino (Glow Cósmico)</option>
+                           </select>
+                        </div>
+                    </div>
+
+                    <div class="mc-field-group">
                         <label>Foto / Escudo del Clan</label>
                         <div style="display: flex; gap: 8px; align-items: center;">
                             <label class="btn-mc btn-purple-mc" style="cursor: pointer; padding: 0.6rem; font-size: 0.75rem; width: auto; flex: 1; margin:0;">
@@ -1375,6 +1388,6 @@
 
     <!-- Supabase JS Client for Realtime Database -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js?v=4.5"></script>
+    <script src="app.js?v=4.6"></script>
 </body>
 </html>
