@@ -1377,37 +1377,37 @@
 
     <!-- ===== MODAL: INBOX & CHAT ===== -->
     <div class="modal-bg" id="modal-inbox">
-        <div class="modal-box checkout-box" style="max-width: 900px; display: flex; flex-direction: column;">
+        <div class="modal-box checkout-box" style="max-width: 900px; height: 600px; display: flex; flex-direction: column; overflow: hidden;">
             <button class="modal-close" onclick="closeModal('modal-inbox')">&times;</button>
-            <div class="market-modal-header" style="padding: 1.5rem 1.5rem 0.5rem 1.5rem; margin-bottom: 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <div class="market-modal-header" style="padding: 1.2rem 1.5rem 0.5rem 1.5rem; margin-bottom: 0; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;">
                 <h3><i class="fa-solid fa-envelope" style="color:var(--primary);"></i> Buzón de Mensajes</h3>
                 <p style="margin-top: 2px; color: var(--text-dim);">Negocia e intercambia con otros jugadores de Obsidian SMP</p>
             </div>
-            <div class="checkout-layout" style="display: grid; grid-template-columns: 280px 1fr; gap: 0; min-height: 500px; padding: 0;">
+            <div class="checkout-layout" style="display: grid; grid-template-columns: 280px 1fr; gap: 0; flex: 1; overflow: hidden; padding: 0;">
                 
                 <!-- Sidebar: Chat List -->
-                <div class="checkout-sidebar" style="border-radius: 0; border-right: 1px solid rgba(255,255,255,0.1); padding: 1rem;">
-                    <div style="display:flex; gap:.5rem; margin-bottom: 1rem; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 8px;">
+                <div class="checkout-sidebar" style="border-radius: 0; border-right: 1px solid rgba(255,255,255,0.1); padding: 1rem; display: flex; flex-direction: column; overflow: hidden;">
+                    <div style="display:flex; gap:.5rem; margin-bottom: 1rem; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 8px; flex-shrink: 0;">
                         <button id="tab-inbox-pending" style="flex:1; padding:.5rem; border-radius: 6px; border:none; background:rgba(168,85,247,0.35); color:#fff; font-weight:bold; cursor:pointer; font-size:0.85rem;" onclick="setInboxTab('pending')">Pendientes</button>
                         <button id="tab-inbox-active" style="flex:1; padding:.5rem; border-radius: 6px; border:none; background:transparent; color:var(--text-muted); font-weight:bold; cursor:pointer; font-size:0.85rem;" onclick="setInboxTab('active')">Activos</button>
                     </div>
-                    <div id="inbox-list" style="overflow-y: auto; max-height: 400px;">
+                    <div id="inbox-list" style="flex: 1; overflow-y: auto;">
                         <!-- List of chats injected here -->
                     </div>
                 </div>
 
                 <!-- Main Area: Chat View -->
-                <div class="checkout-main" style="border-radius: 0; padding: 0; display: flex; flex-direction: column; flex: 1;">
-                    <div id="chat-header" style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); display: flex; align-items: center; gap: 1rem;">
+                <div class="checkout-main" style="border-radius: 0; padding: 0; display: flex; flex-direction: column; flex: 1; height: 100%; overflow: hidden;">
+                    <div id="chat-header" style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); display: flex; align-items: center; gap: 1rem; flex-shrink: 0;">
                         <!-- Selected chat info here -->
                         <span style="color: var(--text-muted);">Selecciona una conversación para empezar a chatear.</span>
                     </div>
                     
-                    <div id="chat-messages" style="flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; max-height: 380px;">
+                    <div id="chat-messages" style="flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;">
                         <!-- Chat messages -->
                     </div>
 
-                    <div id="chat-input-area" style="padding: 1rem; border-top: 1px solid rgba(255,255,255,0.1); display: none; gap: .5rem;">
+                    <div id="chat-input-area" style="padding: 1rem; border-top: 1px solid rgba(255,255,255,0.1); display: none; gap: .5rem; flex-shrink: 0;">
                         <input type="text" id="chat-reply-text" placeholder="Escribe un mensaje..." style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: .8rem; border-radius: 8px;" onkeypress="if(event.key === 'Enter') replyChat()">
                         <button class="btn-primary" onclick="replyChat()" style="padding: 0 1.5rem;"><i class="fa-solid fa-paper-plane"></i></button>
                     </div>

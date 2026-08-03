@@ -90,7 +90,10 @@ if (supabaseClient) {
     supabaseClient
         .channel('schema-db-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'listings' }, () => {
-            dbFetchListings().then(() => renderMarketplace());
+            dbFetchListings().then(() => {
+                renderMarketplace();
+                renderFactions();
+            });
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {
             dbFetchConversations().then(() => {
@@ -2010,10 +2013,21 @@ function openContactModal(publisher, title, listingId) {
         return;
     }
     
-    // Check if conversation already exists
-    const existing = state.conversations.find(c => c.listingId === listingId && parsePublisher(c.buyer).username.toLowerCase() === state.username.toLowerCase() && parsePublisher(c.seller).username.toLowerCase() === pubName.toLowerCase());
+    // Check if conversation already exists (excluding faction requests)
+    const existing = state.conversations.find(c => {
+        if (c.listingId && c.listingId.startsWith('fac_')) return false;
+        if (listingId && listingId.startsWith('fac_')) return false;
+        
+        const b = parsePublisher(c.buyer).username.toLowerCase();
+        const s = parsePublisher(c.seller).username.toLowerCase();
+        const u = state.username.toLowerCase();
+        const p = pubName.toLowerCase();
+        return (b === u && s === p) || (b === p && s === u);
+    });
     if (existing) {
-        showToast('💬 Ya tienes una conversación sobre esta oferta. Revisa tu Buzón.');
+        openInboxModal();
+        openChat(existing.id);
+        showToast('💬 Cargando conversación existente...');
         return;
     }
 
