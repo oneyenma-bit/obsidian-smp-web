@@ -2692,6 +2692,13 @@ input { font-family: var(--font); }
     font-weight: 800;
     color: #ffffff;
     line-height: 1.3;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .mc-price-row {
@@ -2703,9 +2710,17 @@ input { font-family: var(--font); }
     padding: .4rem .8rem;
     border-radius: 10px;
     width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 .mc-price-label { font-size: .7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-.mc-price-val { font-size: .95rem; font-weight: 900; color: #4ade80; }
+.mc-price-val { 
+    font-size: .95rem; 
+    font-weight: 900; 
+    color: #4ade80; 
+    word-break: break-all;
+    overflow-wrap: break-word;
+}
 
 .mc-desc {
     font-size: .82rem;
@@ -2887,8 +2902,21 @@ input { font-family: var(--font); }
     border: 1.5px solid var(--border);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
 }
-.md-info { display: flex; flex-direction: column; gap: .75rem; }
-.md-title { font-size: 1.4rem; font-weight: 900; color: #fff; line-height: 1.25; }
+.md-info { 
+    display: flex; 
+    flex-direction: column; 
+    gap: .75rem; 
+    min-width: 0; 
+    overflow: hidden; 
+}
+.md-title { 
+    font-size: 1.4rem; 
+    font-weight: 900; 
+    color: #fff; 
+    line-height: 1.25; 
+    word-break: break-word; 
+    overflow-wrap: break-word; 
+}
 .md-price-box {
     background: rgba(74, 222, 128, 0.12);
     border: 1.5px solid rgba(74, 222, 128, 0.4);
@@ -2898,6 +2926,10 @@ input { font-family: var(--font); }
     font-weight: 900;
     font-size: 1.05rem;
     width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
+    word-break: break-all;
+    overflow-wrap: break-word;
 }
 .md-desc {
     font-size: .88rem;
@@ -2910,6 +2942,8 @@ input { font-family: var(--font); }
     max-height: 200px;
     overflow-y: auto;
     white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 .btn-copy-msg {
     width: 100%;
