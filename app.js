@@ -2176,7 +2176,12 @@ function renderFactions() {
                     <span class="recruitment-badge ${recruitmentClass}">${recruitment.toUpperCase()}</span>
                 </div>
                 <div class="faction-card-crest ${frameClass}">
+                    <div class="steam-ring"></div>
+                    <div class="steam-glow"></div>
                     <img src="${logoUrl}" alt="Escudo Clan" class="crest-img">
+                    <div class="steam-particles">
+                        <span></span><span></span><span></span>
+                    </div>
                 </div>
                 <div class="faction-card-body">
                     <h4 class="faction-card-title">${item.title} <span class="faction-tag">[${item.price}]</span></h4>
@@ -2259,7 +2264,14 @@ function openFactionDetailModal(factionId) {
     detailContainer.innerHTML = `
         <div class="fd-banner" style="background-image: url('${bannerUrl}')">
             <div class="fd-banner-overlay"></div>
-            <img src="${logoUrl}" alt="Crest" class="fd-crest ${frameClass}">
+            <div class="fd-crest ${frameClass}">
+                <div class="steam-ring"></div>
+                <div class="steam-glow"></div>
+                <img src="${logoUrl}" alt="Crest">
+                <div class="steam-particles">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
             <span class="recruitment-badge ${recruitmentClass}" style="position: absolute; bottom: 15px; right: 20px;">${recruitment.toUpperCase()}</span>
         </div>
         
