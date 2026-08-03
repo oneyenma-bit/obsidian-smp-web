@@ -3049,3 +3049,163 @@ function applyProfileFont(fontName) {
         document.body.style.fontFamily = `'${savedFont}', sans-serif`;
     }
 })();
+
+// ─── LIVE MARKET TICKER SYSTEM ──────────────────────────────────
+const INITIAL_MARKET_ACTIVITIES = [
+    { text: '<strong>pablitorey_</strong> publicó Pechera de Netherite Ígnea', icon: 'fa-solid fa-fire', color: '#f97316' },
+    { text: '<strong>fabiann</strong> compró Kit Shulker Vorágine', icon: 'fa-solid fa-gem', color: '#38bdf8' },
+    { text: '<strong>Steve</strong> intercambió 64 Bloques de Obsidiana', icon: 'fa-solid fa-box', color: '#a855f7' },
+    { text: '<strong>elpayasowtf123</strong> equipó el Marco Obsidian Místico', icon: 'fa-solid fa-shield-halved', color: '#c084fc' }
+];
+
+let marketActivities = [...INITIAL_MARKET_ACTIVITIES];
+
+function pushMarketActivity(text, iconClass = 'fa-solid fa-store', color = '#a855f7') {
+    marketActivities.unshift({ text, icon: iconClass, color });
+    if (marketActivities.length > 10) marketActivities.pop();
+    renderMarketTicker();
+}
+
+function renderMarketTicker() {
+    const tickerEl = document.getElementById('market-live-ticker');
+    if (!tickerEl) return;
+
+    tickerEl.innerHTML = marketActivities.map(act => `
+        <div class="ticker-item">
+            <i class="${act.icon}" style="color:${act.color};"></i>
+            <span>${act.text}</span>
+        </div>
+    `).join('');
+}
+
+// Auto simulate market activity periodically
+(function initMarketTickerAuto() {
+    setInterval(() => {
+        const randomItems = ['Espada de Netherite', 'Manzana de Oro', 'Elitros Encantados', 'Tótem de la Inmortalidad', 'Libro de Reparación', 'Palo de Blaze'];
+        const randomUsers = ['Alex_MC', 'DragonSlayer', 'MinerPro99', 'ShadowKits', 'VortexPlayer'];
+        const item = randomItems[Math.floor(Math.random() * randomItems.length)];
+        const user = randomUsers[Math.floor(Math.random() * randomUsers.length)];
+        pushMarketActivity(`<strong>${user}</strong> compró ${item}`, 'fa-solid fa-cart-shopping', '#4ade80');
+    }, 15000);
+})();
+
+// ─── DAILY RUNE ROULETTE SYSTEM ────────────────────────────────
+const ROULETTE_PRIZES = [
+    { name: '10 Gemas', points: 10, type: 'points' },
+    { name: '🍎 x3 Manzanas Doradas', type: 'item', desc: '¡Has ganado 3 Manzanas de Oro!' },
+    { name: '50 Gemas', points: 50, type: 'points' },
+    { name: '🧪 x5 Frascos de Experiencia', type: 'item', desc: '¡Has ganado 5 Frascos de XP!' },
+    { name: '25 Gemas', points: 25, type: 'points' },
+    { name: '🛡️ Marco Obsidian Exclusivo', frame: 'frame-obsidian', type: 'frame', desc: '¡Has desbloqueado el Marco Obsidian!' },
+    { name: '🔥 JACKPOT! 100 GEMAS', points: 100, type: 'points' },
+    { name: '5 Gemas', points: 5, type: 'points' }
+];
+
+let isSpinning = false;
+let currentRotation = 0;
+
+function checkRouletteCooldown() {
+    const lastSpin = parseInt(localStorage.getItem('obs_last_spin_time') || '0');
+    const now = Date.now();
+    const cooldown = 24 * 60 * 60 * 1000;
+    const diff = now - lastSpin;
+
+    const timerEl = document.getElementById('roulette-countdown-text');
+    const spinBtn = document.getElementById('spin-roulette-btn');
+
+    if (diff >= cooldown) {
+        if (timerEl) timerEl.textContent = '¡Giro disponible!';
+        if (spinBtn) {
+            spinBtn.disabled = false;
+            spinBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> ¡GIRAR RULETA AHORA!';
+        }
+        return true;
+    } else {
+        const remaining = cooldown - diff;
+        const hours = Math.floor(remaining / (1000 * 60 * 60));
+        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+        if (timerEl) timerEl.textContent = `Próximo giro en ${hours}h ${minutes}m ${seconds}s`;
+        if (spinBtn) {
+            spinBtn.disabled = true;
+            spinBtn.innerHTML = `<i class="fa-solid fa-lock"></i> Disponible en ${hours}h ${minutes}m`;
+        }
+        return false;
+    }
+}
+
+function spinDailyRoulette() {
+    if (isSpinning) return;
+
+    if (!checkRouletteCooldown()) {
+        showToast('⏳ Ya giraste la ruleta hoy. ¡Vuelve mañana!');
+        return;
+    }
+
+    isSpinning = true;
+    const wheel = document.getElementById('roulette-wheel');
+    const spinBtn = document.getElementById('spin-roulette-btn');
+    const resultBox = document.getElementById('roulette-prize-result');
+    if (resultBox) resultBox.style.display = 'none';
+
+    if (spinBtn) spinBtn.disabled = true;
+
+    // Pick random prize index (0 to 7)
+    const prizeIndex = Math.floor(Math.random() * ROULETTE_PRIZES.length);
+    const prize = ROULETTE_PRIZES[prizeIndex];
+
+    const degreesPerSeg = 45;
+    const targetDegree = 360 - (prizeIndex * degreesPerSeg + degreesPerSeg / 2);
+    const extraSpins = 6 * 360;
+    currentRotation += extraSpins + (targetDegree - (currentRotation % 360));
+
+    if (wheel) {
+        wheel.style.transform = `rotate(${currentRotation}deg)`;
+    }
+
+    playSound('click');
+
+    setTimeout(() => {
+        isSpinning = false;
+        const now = Date.now();
+        localStorage.setItem('obs_last_spin_time', now.toString());
+
+        let winMessage = `🎉 ¡Ganaste: ${prize.name}!`;
+        if (prize.type === 'points') {
+            state.points = (state.points || 0) + prize.points;
+            syncUser();
+            winMessage = `🎉 ¡Ganaste ${prize.points} Gemas! Saldo actual: ${state.points} Gemas.`;
+        } else if (prize.type === 'frame') {
+            if (!state.unlockedFrames.includes('frame-obsidian')) {
+                state.unlockedFrames.push('frame-obsidian');
+                localStorage.setItem('obs_unlocked_frames', JSON.stringify(state.unlockedFrames));
+            }
+            if (!state.activeFrame) {
+                equipFrame('frame-obsidian');
+            }
+            winMessage = `🎉 ¡Ganaste y Desbloqueaste el ${prize.name}!`;
+        }
+
+        if (resultBox) {
+            resultBox.innerHTML = winMessage;
+            resultBox.style.display = 'block';
+        }
+
+        showToast(winMessage);
+        playSound('purchase');
+
+        const user = state.username || 'Invitado';
+        pushMarketActivity(`<strong>${user}</strong> giró la Ruleta Diaria y ganó <strong>${prize.name}</strong>`, 'fa-solid fa-gift', '#f59e0b');
+
+        checkRouletteCooldown();
+    }, 4600);
+}
+
+// Init ticker & cooldown timer interval
+(function initRouletteAndTicker() {
+    setTimeout(() => {
+        renderMarketTicker();
+        checkRouletteCooldown();
+        setInterval(checkRouletteCooldown, 1000);
+    }, 500);
+})();

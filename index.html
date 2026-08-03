@@ -103,6 +103,9 @@
             <button class="cat-tab factions-cat-tab" id="tab-facciones" data-tab="facciones" onclick="switchTab('facciones')">
                 <i class="fa-solid fa-flag"></i> FACCIONES (CLANES)
             </button>
+            <button class="cat-tab roulette-cat-tab" id="tab-ruleta" onclick="openModal('modal-daily-roulette')" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.15) 100%); border: 1px solid rgba(245, 158, 11, 0.5); color: #fef08a;">
+                <i class="fa-solid fa-gift" style="color: #f59e0b; font-size: 1rem; animation: pulseLogo 2s infinite;"></i> RULETA DIARIA
+            </button>
         </div>
     </div>
 
@@ -566,6 +569,16 @@
                     <button class="btn-create-listing" onclick="openModal('modal-create-listing')">
                         <i class="fa-solid fa-plus-circle"></i> Publicar Oferta de Intercambio
                     </button>
+                </div>
+
+                <!-- LIVE ACTIVITY MARKET TICKER BAR -->
+                <div class="market-live-ticker-wrap">
+                    <div class="ticker-badge">
+                        <span class="live-indicator-dot"></span> EN VIVO
+                    </div>
+                    <div class="ticker-content" id="market-live-ticker">
+                        <!-- Ticker items dynamically injected by JS -->
+                    </div>
                 </div>
 
                 <!-- Search and Categories Filter Bar -->
@@ -1577,6 +1590,50 @@
                 <div class="prf-section">
                     <p id="prf-view-msg" style="color:var(--text-dim); text-align:center; padding:1rem 0;">Perfil del jugador</p>
                 </div>
+            </div>
+        </div>
+    <!-- ===== MODAL: RULETA RÚNICA DIARIA ===== -->
+    <div class="modal-bg" id="modal-daily-roulette">
+        <div class="modal-box roulette-modal-box">
+            <button class="modal-close" onclick="closeModal('modal-daily-roulette')">&times;</button>
+
+            <div class="roulette-header">
+                <div class="roulette-title-wrap">
+                    <i class="fa-solid fa-gift roulette-header-icon"></i>
+                    <div>
+                        <h3>RULETA RÚNICA DIARIA</h3>
+                        <p>Gira la ruleta mística cada 24 horas y gana Gemas, Objetos o Marcos Exclusivos</p>
+                    </div>
+                </div>
+                <div class="roulette-timer-badge" id="roulette-timer-display">
+                    <i class="fa-solid fa-clock"></i> <span id="roulette-countdown-text">¡Giro disponible!</span>
+                </div>
+            </div>
+
+            <!-- Wheel Container -->
+            <div class="wheel-stage">
+                <div class="wheel-pointer"></div>
+                <div class="wheel-container" id="roulette-wheel">
+                    <div class="wheel-segment seg-0" style="--i:0; --seg-color: #9333ea;"><span>💎 10 Gemas</span></div>
+                    <div class="wheel-segment seg-1" style="--i:1; --seg-color: #06b6d4;"><span>🍎 x3 Manzanas</span></div>
+                    <div class="wheel-segment seg-2" style="--i:2; --seg-color: #eab308;"><span>💎 50 Gemas</span></div>
+                    <div class="wheel-segment seg-3" style="--i:3; --seg-color: #ef4444;"><span>🧪 x5 XP Bott.</span></div>
+                    <div class="wheel-segment seg-4" style="--i:4; --seg-color: #a855f7;"><span>💎 25 Gemas</span></div>
+                    <div class="wheel-segment seg-5" style="--i:5; --seg-color: #10b981;"><span>🛡️ Marco Obs.</span></div>
+                    <div class="wheel-segment seg-6" style="--i:6; --seg-color: #f59e0b;"><span>🔥 100 GEMAS</span></div>
+                    <div class="wheel-segment seg-7" style="--i:7; --seg-color: #ec4899;"><span>💎 5 Gemas</span></div>
+                    <div class="wheel-center-cap">
+                        <i class="fa-solid fa-gem"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Button & Prize Result Box -->
+            <div class="roulette-actions">
+                <div id="roulette-prize-result" class="roulette-result-box" style="display:none;"></div>
+                <button class="btn-mc btn-green-mc spin-btn" id="spin-roulette-btn" onclick="spinDailyRoulette()" style="width:100%; padding:0.9rem; font-size:0.95rem;">
+                    <i class="fa-solid fa-rotate-right"></i> ¡GIRAR RULETA AHORA!
+                </button>
             </div>
         </div>
     </div>

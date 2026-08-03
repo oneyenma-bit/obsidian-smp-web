@@ -5595,3 +5595,230 @@ input:focus, textarea:focus, select:focus {
 .prf-font-btn:hover { border-color: rgba(139, 92, 246, 0.4); background: rgba(139, 92, 246, 0.06); }
 .prf-font-btn.active { border-color: #a855f7; background: rgba(168, 85, 247, 0.1); }
 .prf-font-btn.active::after { content: '✓'; color: #a855f7; font-size: 0.8rem; }
+
+/* ═══════════════════════════════════════════════════════════
+   LIVE MARKETPLACE ACTIVITY TICKER BAR
+   ═══════════════════════════════════════════════════════════ */
+.market-live-ticker-wrap {
+    display: flex;
+    align-items: center;
+    background: rgba(14, 8, 32, 0.75);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    border-radius: 12px;
+    padding: 8px 14px;
+    margin-bottom: 1.2rem;
+    overflow: hidden;
+    gap: 12px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.ticker-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(168, 85, 247, 0.2);
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #c084fc;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.live-indicator-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 8px #22c55e;
+    animation: blink 1.2s infinite;
+}
+
+.ticker-content {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.ticker-content::-webkit-scrollbar { display: none; }
+
+.ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.76rem;
+    color: #e2e8f0;
+    animation: popIn 0.3s ease;
+    flex-shrink: 0;
+}
+
+.ticker-item strong {
+    color: #c084fc;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DAILY RUNE ROULETTE MODAL & WHEEL
+   ═══════════════════════════════════════════════════════════ */
+.roulette-modal-box {
+    max-width: 480px;
+    width: 95%;
+    padding: 1.8rem;
+    background: radial-gradient(circle at 50% 30%, #1e0b3d 0%, #0d061e 100%);
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    box-shadow: 0 0 35px rgba(168, 85, 247, 0.3);
+    text-align: center;
+}
+
+.roulette-header {
+    margin-bottom: 1rem;
+}
+
+.roulette-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+}
+
+.roulette-header-icon {
+    font-size: 2rem;
+    color: #f59e0b;
+    filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.6));
+}
+
+.roulette-title-wrap h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #fff;
+    font-weight: 800;
+}
+
+.roulette-title-wrap p {
+    margin: 2px 0 0;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+}
+
+.roulette-timer-badge {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    color: #fef08a;
+    font-weight: 700;
+}
+
+/* WHEEL STAGE */
+.wheel-stage {
+    position: relative;
+    width: 270px;
+    height: 270px;
+    margin: 1.2rem auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wheel-pointer {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 24px solid #f59e0b;
+    z-index: 10;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.8));
+}
+
+.wheel-container {
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    border: 6px solid #1a0f35;
+    box-shadow: 0 0 25px rgba(168, 85, 247, 0.5), inset 0 0 15px rgba(0, 0, 0, 0.6);
+    transition: transform 4.5s cubic-bezier(0.15, 0.9, 0.15, 1);
+    background: conic-gradient(
+        #9333ea 0deg 45deg,
+        #06b6d4 45deg 90deg,
+        #eab308 90deg 135deg,
+        #ef4444 135deg 180deg,
+        #a855f7 180deg 225deg,
+        #10b981 225deg 270deg,
+        #f59e0b 270deg 315deg,
+        #ec4899 315deg 360deg
+    );
+}
+
+.wheel-segment {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(calc(var(--i) * 45deg + 22.5deg));
+    pointer-events: none;
+}
+
+.wheel-segment span {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+    white-space: nowrap;
+}
+
+.wheel-center-cap {
+    position: absolute;
+    inset: calc(50% - 25px);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #a855f7, #3b0764);
+    border: 3px solid #fef08a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.2rem;
+    z-index: 5;
+    box-shadow: 0 0 14px rgba(168, 85, 247, 0.9);
+}
+
+.roulette-result-box {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #a7f3d0;
+    padding: 0.8rem 1rem;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+    animation: popIn 0.3s ease;
+}
