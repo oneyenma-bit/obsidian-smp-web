@@ -1706,9 +1706,26 @@ function renderChatMessages() {
 
     msgsBox.scrollTop = msgsBox.scrollHeight;
 
-    if (c.status === 'pending' && c.buyer === state.username) {
-        inputArea.style.display = 'none';
-        msgsBox.innerHTML += `<div style="text-align:center; color:var(--text-muted); font-size:0.85rem; margin-top:1rem;">Esperando a que el vendedor responda...</div>`;
+    if (c.status === 'pending') {
+        if (c.buyer === state.username) {
+            inputArea.style.display = 'none';
+            msgsBox.innerHTML += `<div style="text-align:center; color:var(--text-muted); font-size:0.85rem; margin-top:1rem;">Esperando a que el líder responda...</div>`;
+        } else if (c.listingId && c.listingId.startsWith('fac_')) {
+            inputArea.style.display = 'none';
+            msgsBox.innerHTML += `
+                <div id="faction-request-actions" style="text-align:center; padding:1.2rem; background:rgba(255,255,255,0.03); border:1.5px dashed rgba(255,255,255,0.1); border-radius:12px; margin-top:1.5rem;">
+                    <h4 style="color:white; font-family:'Outfit', sans-serif; margin-bottom:0.4rem;"><i class="fa-solid fa-shield-halved" style="color:var(--primary);"></i> Solicitud de Unión a tu Clan</h4>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Esta persona quiere unirse a tu facción. El límite de miembros aumentará si aceptas (máx 8).</p>
+                    <div style="display:flex; gap:0.8rem; justify-content:center;">
+                        <button class="btn-mc btn-green-mc" onclick="acceptFactionRequest('${c.id}')" style="padding:0.5rem 1.2rem; font-size:0.8rem; width:auto; margin:0; cursor:pointer;"><i class="fa-solid fa-check"></i> ACEPTAR</button>
+                        <button class="btn-mc btn-dark-mc" onclick="rejectFactionRequest('${c.id}')" style="padding:0.5rem 1.2rem; font-size:0.8rem; width:auto; margin:0; border-color:#991b1b; color:#f87171; cursor:pointer;"><i class="fa-solid fa-xmark"></i> RECHAZAR</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            inputArea.style.display = 'flex';
+            setTimeout(() => document.getElementById('chat-reply-text').focus(), 100);
+        }
     } else {
         inputArea.style.display = 'flex';
         setTimeout(() => document.getElementById('chat-reply-text').focus(), 100);
@@ -1942,9 +1959,8 @@ function openFactionEditorModal(factionId) {
             document.getElementById('fac-input-leader').value = data.leader || item.publisher;
             document.getElementById('fac-input-officers').value = data.officers || '';
             document.getElementById('fac-input-members').value = data.memberCount || 1;
-            document.getElementById('fac-input-max').value = data.maxMembers || 15;
+            document.getElementById('fac-input-max').value = data.maxMembers || 8;
             document.getElementById('fac-input-gear').value = data.minGear || 'Ninguno';
-            document.getElementById('fac-input-coords').value = data.baseCoords || '';
             document.getElementById('fac-input-discord').value = data.discord || '';
             document.getElementById('fac-input-diplomacy').value = data.alliesEnemies || '';
             document.getElementById('fac-input-desc').value = data.description || '';
@@ -2010,16 +2026,24 @@ async function handleFactionSubmit(e) {
     const leader = document.getElementById('fac-input-leader').value.trim();
     const officers = document.getElementById('fac-input-officers').value.trim();
     const memberCount = parseInt(document.getElementById('fac-input-members').value) || 1;
-    const maxMembers = parseInt(document.getElementById('fac-input-max').value) || 15;
+    const maxMembers = parseInt(document.getElementById('fac-input-max').value) || 8;
     const minGear = document.getElementById('fac-input-gear').value;
-    const baseCoords = document.getElementById('fac-input-coords').value.trim();
     const discord = document.getElementById('fac-input-discord').value.trim();
     const alliesEnemies = document.getElementById('fac-input-diplomacy').value.trim();
     const description = document.getElementById('fac-input-desc').value.trim();
     
+    if (maxMembers > 8) {
+        showToast('⚠️ El límite máximo es de 8 miembros.');
+        return;
+    }
+    if (memberCount > maxMembers) {
+        showToast('⚠️ El número de miembros actual no puede superar el límite.');
+        return;
+    }
+    
     const factionData = {
         description, tag, type, recruiting, leader, officers,
-        memberCount, maxMembers, minGear, baseCoords, discord, alliesEnemies
+        memberCount, maxMembers, minGear, discord, alliesEnemies
     };
     
     const serializedDesc = "FACDATA:" + JSON.stringify(factionData);
@@ -2125,12 +2149,9 @@ function renderFactions() {
     }
     
     const defaultLandscapes = [
-        'https://images.unsplash.com/photo-1607988795691-3d0147b43231?w=600&auto=format&fit=crop&q=60',
-        'https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&auto=format&fit=crop&q=60',
-        'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=60',
-        'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&auto=format&fit=crop&q=60',
-        'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&auto=format&fit=crop&q=60',
-        'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=600&auto=format&fit=crop&q=60'
+        'img/hero_minecraft_scenery.png',
+        'img/void.jpeg',
+        'img/midnight.png'
     ];
     
     grid.innerHTML = factions.map((item, index) => {
@@ -2213,8 +2234,28 @@ function openFactionDetailModal(factionId) {
     const isAdmin = isAdminUser();
     const canManage = isOwner || isAdmin;
     
+    let joinBtnHtml = '';
+    if (state.username && !canManage) {
+        const applicantName = state.username.toLowerCase();
+        const existingRequest = state.conversations.find(c => c.listingId === item.id && c.buyer.toLowerCase() === applicantName);
+        
+        if (existingRequest) {
+            if (existingRequest.status === 'pending') {
+                joinBtnHtml = `<button class="btn-mc btn-dark-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-spinner fa-spin"></i> SOLICITUD PENDIENTE</button>`;
+            } else if (existingRequest.status === 'accepted') {
+                joinBtnHtml = `<button class="btn-mc btn-green-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-check"></i> YA ERES MIEMBRO</button>`;
+            } else if (existingRequest.status === 'rejected') {
+                joinBtnHtml = `<button class="btn-mc btn-dark-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-xmark" style="color:#ef4444;"></i> SOLICITUD RECHAZADA</button>`;
+            }
+        } else {
+            joinBtnHtml = `<button class="btn-mc btn-green-mc width-100" onclick="sendJoinRequest('${item.id}')" style="margin-top: 1rem; padding: 0.6rem;"><i class="fa-solid fa-plus"></i> ENVIAR SOLICITUD</button>`;
+        }
+    } else if (!state.username) {
+        joinBtnHtml = `<button class="btn-mc btn-purple-mc width-100" onclick="openModal('modal-login')" style="margin-top: 1rem; padding: 0.6rem;"><i class="fa-solid fa-right-to-bracket"></i> LOGUEATE PARA UNIRTE</button>`;
+    }
+
     detailContainer.innerHTML = `
-        <div class="fd-banner" style="background-image: url('https://images.unsplash.com/photo-1607988795691-3d0147b43231?w=800&auto=format&fit=crop')">
+        <div class="fd-banner" style="background-image: url('img/hero_minecraft_scenery.png')">
             <div class="fd-banner-overlay"></div>
             <img src="${logoUrl}" alt="Crest" class="fd-crest">
             <span class="recruitment-badge ${recruitmentClass}" style="position: absolute; bottom: 15px; right: 20px;">${recruitment.toUpperCase()}</span>
@@ -2238,15 +2279,11 @@ function openFactionDetailModal(factionId) {
                         </div>
                         <div class="fd-spec-item">
                             <strong>Miembros:</strong>
-                            <span>${data.memberCount || 1} / ${data.maxMembers || 15}</span>
+                            <span>${data.memberCount || 1} / ${data.maxMembers || 8}</span>
                         </div>
                         <div class="fd-spec-item">
                             <strong>Armas Mínimas:</strong>
                             <span>${data.minGear || 'Ninguno'}</span>
-                        </div>
-                        <div class="fd-spec-item">
-                            <strong>Coordenadas:</strong>
-                            <span>${data.baseCoords || 'Privado'}</span>
                         </div>
                     </div>
                     
@@ -2255,6 +2292,7 @@ function openFactionDetailModal(factionId) {
                         <i class="fa-brands fa-discord"></i> DISCORD DEL CLAN
                     </a>
                     ` : ''}
+                    ${joinBtnHtml}
                 </div>
                 
                 <!-- Right Main Manifesto -->
@@ -2309,4 +2347,185 @@ function deleteFaction(factionId) {
             renderFactions();
         }
     );
+}
+
+async function sendJoinRequest(factionId) {
+    if (!state.username) {
+        showToast('⚠️ Debes iniciar sesión para enviar una solicitud de unión.');
+        openModal('modal-login');
+        return;
+    }
+    
+    const faction = state.marketplaceListings.find(l => l.id === factionId);
+    if (!faction) return;
+    
+    const leaderInfo = parsePublisher(faction.publisher);
+    const leaderName = leaderInfo.username;
+    
+    if (leaderName.toLowerCase() === state.username.toLowerCase()) {
+        showToast('⚠️ No puedes unirte a tu propio clan.');
+        return;
+    }
+    
+    const requestConvId = 'req_' + Date.now();
+    const newRequestConv = {
+        id: requestConvId,
+        listingId: factionId,
+        buyer: state.username,
+        seller: faction.publisher,
+        status: 'pending',
+        messages: [{
+            sender: state.username,
+            text: `¡Hola! Me gustaría unirme a tu clan ${faction.title}.`,
+            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        }]
+    };
+    
+    if (supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('conversations')
+                .insert([{
+                    id: newRequestConv.id,
+                    listing_id: newRequestConv.listingId,
+                    buyer: newRequestConv.buyer,
+                    seller: newRequestConv.seller,
+                    status: newRequestConv.status,
+                    messages: newRequestConv.messages
+                }]);
+            if (error) throw error;
+            showToast('✉️ Solicitud de unión enviada al líder.');
+        } catch(err) {
+            console.error("Error al enviar solicitud de unión:", err);
+            showToast('❌ Error de conexión al enviar la solicitud.');
+            return;
+        }
+    }
+    
+    state.conversations.push(newRequestConv);
+    localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+    updateInboxBadge();
+    
+    closeModal('modal-view-faction');
+    openInboxModal();
+}
+
+async function acceptFactionRequest(chatId) {
+    const c = state.conversations.find(conv => conv.id === chatId);
+    if (!c) return;
+    
+    const faction = state.marketplaceListings.find(l => l.id === c.listingId);
+    if (!faction) {
+        showToast('❌ No se encontró el clan.');
+        return;
+    }
+    
+    let factionData = {};
+    try {
+        if (faction.desc && faction.desc.startsWith('FACDATA:')) {
+            factionData = JSON.parse(faction.desc.substring(8));
+        }
+    } catch(e) {}
+    
+    const currentCount = parseInt(factionData.memberCount || 1);
+    const maxLimit = parseInt(factionData.maxMembers || 8);
+    
+    if (currentCount >= 8) {
+        showToast('⚠️ El clan ya ha alcanzado el límite máximo de 8 miembros.');
+        return;
+    }
+    
+    factionData.memberCount = currentCount + 1;
+    const newDesc = "FACDATA:" + JSON.stringify(factionData);
+    
+    if (supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('listings')
+                .update({ desc_text: newDesc })
+                .eq('id', faction.id);
+            if (error) throw error;
+        } catch(err) {
+            console.error("Error al actualizar miembros del clan en Supabase:", err);
+            showToast('❌ Error al actualizar los miembros en el servidor.');
+            return;
+        }
+    }
+    
+    faction.desc = newDesc;
+    localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+    
+    const acceptanceMsg = {
+        sender: state.username,
+        text: `🟢 ¡Solicitud Aceptada! Bienvenido al clan ${faction.title}.`,
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    };
+    const newMessages = [...c.messages, acceptanceMsg];
+    
+    if (supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('conversations')
+                .update({ 
+                    status: 'accepted',
+                    messages: newMessages,
+                    updated_at: new Date()
+                })
+                .eq('id', c.id);
+            if (error) throw error;
+        } catch(err) {
+            console.error("Error al aceptar solicitud en Supabase:", err);
+            showToast('❌ Error de conexión al guardar el chat.');
+            return;
+        }
+    }
+    
+    c.status = 'accepted';
+    c.messages = newMessages;
+    localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+    
+    showToast(`🟢 Has aceptado a ${c.buyer} en tu clan!`);
+    
+    renderChatMessages();
+    renderInboxList();
+    renderFactions();
+}
+
+async function rejectFactionRequest(chatId) {
+    const c = state.conversations.find(conv => conv.id === chatId);
+    if (!c) return;
+    
+    const rejectionMsg = {
+        sender: state.username,
+        text: `🔴 Solicitud Rechazada.`,
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    };
+    const newMessages = [...c.messages, rejectionMsg];
+    
+    if (supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('conversations')
+                .update({ 
+                    status: 'rejected',
+                    messages: newMessages,
+                    updated_at: new Date()
+                })
+                .eq('id', c.id);
+            if (error) throw error;
+        } catch(err) {
+            console.error("Error al rechazar solicitud en Supabase:", err);
+            showToast('❌ Error de conexión al guardar el chat.');
+            return;
+        }
+    }
+    
+    c.status = 'rejected';
+    c.messages = newMessages;
+    localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+    
+    showToast(`🔴 Has rechazado la solicitud de ${c.buyer}.`);
+    
+    renderChatMessages();
+    renderInboxList();
 }

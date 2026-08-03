@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=4.3">
+    <link rel="stylesheet" href="style.css?v=4.4">
 </head>
 <body>
 
@@ -741,9 +741,9 @@
                             </div>
                         </div>
                         <div>
-                            <label for="fac-input-max">Límite</label>
+                            <label for="fac-input-max">Límite (Máx 8)</label>
                             <div class="mc-input-wrap">
-                                <input type="number" id="fac-input-max" value="15" min="1" required>
+                                <input type="number" id="fac-input-max" value="8" min="1" max="8" required>
                             </div>
                         </div>
                     </div>
@@ -757,13 +757,6 @@
                                <option value="Diamante+" style="background: #100c1c;">💎 Diamante o superior</option>
                                <option value="Netherite" style="background: #100c1c;">🌌 Full Netherite</option>
                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mc-field-group">
-                        <label for="fac-input-coords">Coordenadas de Base</label>
-                        <div class="mc-input-wrap">
-                            <input type="text" id="fac-input-coords" placeholder="Ej: X: 150 Z: -900 o 'Privadas'">
                         </div>
                     </div>
 
@@ -1382,6 +1375,6 @@
 
     <!-- Supabase JS Client for Realtime Database -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js?v=4.3"></script>
+    <script src="app.js?v=4.4"></script>
 </body>
 </html>
