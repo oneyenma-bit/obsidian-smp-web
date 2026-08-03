@@ -3516,6 +3516,29 @@ input:focus, textarea:focus, select:focus {
         font-size: 0.9rem;
     }
     
+    /* General containers responsive padding (facebook cards flow) */
+    .store-main,
+    .marketplace-container,
+    .about-container,
+    .points-page-container,
+    .rules-container {
+        padding: 1.2rem 0.8rem 3rem !important;
+        margin-top: 0.5rem !important;
+        margin-bottom: 2rem !important;
+    }
+    
+    /* Section Headings */
+    .section-heading {
+        margin-bottom: 1.5rem !important;
+    }
+    .section-heading h2 {
+        font-size: 1.35rem !important;
+        gap: 0.4rem !important;
+    }
+    .section-heading p {
+        font-size: 0.76rem !important;
+    }
+
     /* Main Hero Card fix for vertical squishing */
     .home-hero-card { 
         grid-template-columns: 1fr !important; 
@@ -3544,6 +3567,41 @@ input:focus, textarea:focus, select:focus {
         text-align: center; 
         padding: 1.2rem !important;
         gap: 1rem !important;
+    }
+    
+    /* Marketplace Hero Header Stack */
+    .marketplace-hero-card {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        text-align: center !important;
+        padding: 1.5rem !important;
+        gap: 1.2rem !important;
+        border-radius: 18px !important;
+    }
+    .marketplace-hero-card .btn-create-listing {
+        width: 100% !important;
+    }
+    
+    /* Marketplace Detail layout */
+    .market-detail-layout {
+        grid-template-columns: 1fr !important;
+        gap: 1.2rem !important;
+    }
+    .md-img {
+        max-height: 220px !important;
+        width: 100% !important;
+        object-fit: contain !important;
+        background: rgba(0, 0, 0, 0.4) !important;
+        border-radius: 14px !important;
+    }
+    
+    /* Grid spacing optimizations */
+    .kits-grid, .rules-grid, .about-grid, .features-grid, .rewards-grid {
+        gap: 1rem !important;
+    }
+    .kit-card {
+        padding: 1.2rem 1rem !important;
+        border-radius: 18px !important;
     }
     
     .mc-decor-sticker, .mc-sticker { display: none !important; }
