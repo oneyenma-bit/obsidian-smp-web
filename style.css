@@ -5137,13 +5137,14 @@ input:focus, textarea:focus, select:focus {
 
 .pub-frame-img {
     position: absolute;
-    inset: -6px;
-    width: calc(100% + 12px);
-    height: calc(100% + 12px);
+    inset: -10px;
+    width: calc(100% + 20px);
+    height: calc(100% + 20px);
     object-fit: contain;
     pointer-events: none;
     z-index: 2;
-    filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.7));
+    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.9)) drop-shadow(0 0 3px rgba(80, 0, 180, 0.7));
+    mix-blend-mode: normal;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -5177,24 +5178,17 @@ input:focus, textarea:focus, select:focus {
     object-fit: cover;
     border: 3px solid rgba(139, 92, 246, 0.4);
     display: block;
-    position: relative;
-    z-index: 1;
 }
 
 .prf-frame-img-overlay {
     position: absolute;
-    /* Center the ring over the circular avatar */
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    /* Ring is ~40% larger than avatar to form a proper surrounding ring */
-    width: 170%;
-    height: 170%;
+    inset: -14px;
+    width: calc(100% + 28px);
+    height: calc(100% + 28px);
     object-fit: contain;
     pointer-events: none;
+    filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.9)) drop-shadow(0 0 5px rgba(80, 0, 200, 0.7));
     z-index: 2;
-    filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.9)) drop-shadow(0 0 25px rgba(100, 20, 200, 0.6));
-    animation: obsidianRingPulse 3s ease-in-out infinite;
 }
 
 .prf-info h3 {
@@ -5308,13 +5302,10 @@ input:focus, textarea:focus, select:focus {
 .prf-frame-opt.active { border-color: #a855f7; background: rgba(168, 85, 247, 0.1); color: #fff; }
 
 .prf-frame-gallery-img {
-    width: 64px;
-    height: 64px;
+    width: 56px;
+    height: 56px;
     object-fit: contain;
-    /* PNG has transparent bg so this just shows the ring */
-    background: transparent;
-    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.8)) drop-shadow(0 0 20px rgba(100, 20, 200, 0.4));
-    animation: obsidianRingPulse 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.6));
 }
 
 .prf-frame-css-preview {
