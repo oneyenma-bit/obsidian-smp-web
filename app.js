@@ -1112,6 +1112,175 @@ function redeemReward(rewardId, gemasCost, rewardName) {
     showToast(`🎉 ¡Canjeado con éxito! "${rewardName}" ha sido acreditado a tu cuenta de Minecraft.`);
 }
 
+async function redeemPromoCode() {
+    if (!state.username) {
+        showToast('⚠️ Debes iniciar sesión para canjear códigos.');
+        openModal('modal-login');
+        return;
+    }
+    
+    const inputEl = document.getElementById('promo-code-input');
+    if (!inputEl) return;
+    const code = inputEl.value.trim().toUpperCase();
+    if (!code) {
+        showToast('⚠️ Por favor ingresa un código.');
+        return;
+    }
+    
+    // Check if already redeemed in local state
+    if (!state.redeemedCodes) {
+        try {
+            state.redeemedCodes = JSON.parse(localStorage.getItem(`obs_redeemed_${state.username.toLowerCase()}`) || '[]');
+        } catch(e) {
+            state.redeemedCodes = [];
+        }
+    }
+    
+    if (state.redeemedCodes.includes(code)) {
+        showToast('❌ Ya has canjeado este código anteriormente.');
+        return;
+    }
+    
+    let reward = null;
+    let isSupabaseCode = false;
+    
+    // Try to check Supabase
+    if (supabaseClient) {
+        try {
+            // First check if already redeemed in Supabase
+            const { data: existingRedemption, error: checkErr } = await supabaseClient
+                .from('redeemed_codes')
+                .select('*')
+                .eq('username', state.username.toLowerCase())
+                .eq('code', code)
+                .maybeSingle();
+                
+            if (checkErr && checkErr.code !== 'PGRST116') {
+                console.warn("Supabase check error:", checkErr);
+            } else if (existingRedemption) {
+                showToast('❌ Ya has canjeado este código anteriormente.');
+                return;
+            } else {
+                // Fetch code from promo_codes table
+                const { data: dbCode, error: fetchErr } = await supabaseClient
+                    .from('promo_codes')
+                    .select('*')
+                    .eq('code', code)
+                    .maybeSingle();
+                    
+                if (dbCode) {
+                    if (dbCode.max_uses && dbCode.current_uses >= dbCode.max_uses) {
+                        showToast('❌ Este código ha alcanzado el límite máximo de usos.');
+                        return;
+                    }
+                    if (dbCode.expires_at && new Date(dbCode.expires_at) < new Date()) {
+                        showToast('❌ Este código ha expirado.');
+                        return;
+                    }
+                    
+                    reward = {
+                        type: dbCode.reward_type,
+                        value: dbCode.reward_value,
+                        name: dbCode.reward_name || 'Recompensa de Código'
+                    };
+                    isSupabaseCode = true;
+                }
+            }
+        } catch(err) {
+            console.warn("Supabase promo codes error:", err);
+        }
+    }
+    
+    // Fallback to local codes
+    if (!reward) {
+        const localPromoCodes = {
+            'BIENVENIDA': { type: 'gems', value: 150, name: 'Bono de Bienvenida' },
+            'PABLITOOP': { type: 'gems', value: 500, name: 'Regalo del Admin Pablito' },
+            'OBSIDIAN500': { type: 'gems', value: 500, name: 'Gemas de Obsidian' },
+            'KITVIP': { type: 'kit', value: 'Kit VIP Obsidian', name: 'Kit VIP de Regalo' }
+        };
+        reward = localPromoCodes[code];
+    }
+    
+    if (!reward) {
+        showToast('❌ Código canjeable inválido.');
+        return;
+    }
+    
+    // Apply reward
+    if (reward.type === 'gems') {
+        const amount = parseInt(reward.value) || 0;
+        state.points = (state.points || 0) + amount;
+        localStorage.setItem('obs_points', state.points);
+        localStorage.setItem(`obs_points_${state.username.toLowerCase()}`, state.points);
+        
+        if (supabaseClient) {
+            try {
+                // Try updating user profile points in Supabase if profile table has it
+                await supabaseClient
+                    .from('user_profiles')
+                    .update({ points: state.points })
+                    .eq('username', state.username);
+            } catch(e) {}
+        }
+        
+        showToast(`🎉 ¡Código canjeado! Recibiste +${amount} Gemas (${reward.name}).`);
+        syncUser();
+    } else if (reward.type === 'kit') {
+        showToast(`🎉 ¡Código canjeado! Has obtenido: ${reward.value}.`);
+        
+        // Push a confirmation system message to their inbox
+        const sysMessage = {
+            id: 'sys_' + Date.now(),
+            buyer: 'Sistema',
+            seller: state.username,
+            status: 'accepted',
+            messages: [{
+                sender: 'Sistema',
+                text: `🎁 Recompensa Canjeada: **${reward.value}** (${reward.name}). Ponte en contacto con el administrador Pablitorey_ para recibir tu recompensa in-game.`,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            }]
+        };
+        state.conversations.push(sysMessage);
+        localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+        updateInboxBadge();
+    }
+    
+    // Record redemption
+    state.redeemedCodes.push(code);
+    localStorage.setItem(`obs_redeemed_${state.username.toLowerCase()}`, JSON.stringify(state.redeemedCodes));
+    
+    // Track in Supabase
+    if (supabaseClient) {
+        try {
+            await supabaseClient
+                .from('redeemed_codes')
+                .insert([{
+                    username: state.username.toLowerCase(),
+                    code: code,
+                    reward_details: JSON.stringify(reward)
+                }]);
+                
+            if (isSupabaseCode) {
+                // Increment use counter in database
+                const { data: currentInfo } = await supabaseClient
+                    .from('promo_codes')
+                    .select('current_uses')
+                    .eq('code', code)
+                    .single();
+                const newUses = (currentInfo?.current_uses || 0) + 1;
+                
+                await supabaseClient
+                    .from('promo_codes')
+                    .update({ current_uses: newUses })
+                    .eq('code', code);
+            }
+        } catch(e) {}
+    }
+    
+    inputEl.value = '';
+}
+
 // ─── IP COPY ──────────────────────────────────────────────────
 function copyIP() {
     const ip = 'PICOLANDNEWWORLD.aternos.me:51309';

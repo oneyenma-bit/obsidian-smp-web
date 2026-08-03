@@ -4924,4 +4924,24 @@ input:focus, textarea:focus, select:focus {
     --steam-float-speed: 2.2s;
 }
 
+/* Responsive Promo Codes Card */
+@media (max-width: 680px) {
+    .promo-redeem-card {
+        flex-direction: column !important;
+        text-align: center !important;
+        padding: 1.2rem 1.5rem !important;
+        gap: 1.2rem !important;
+    }
+    .promo-redeem-card div {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+    .promo-redeem-card .mc-input-wrap {
+        width: 100% !important;
+    }
+    .promo-redeem-card button {
+        width: 100% !important;
+    }
+}
+
 
