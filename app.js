@@ -2570,10 +2570,74 @@ async function handleFactionSubmit(e) {
     renderFactions();
 }
 
+const DEFAULT_FACTIONS = [
+    {
+        id: 'fac_obsidian_imperium',
+        title: 'Imperio Obsidian',
+        category: 'faccion',
+        price: 'OBS',
+        publisher: 'Pablitorey_',
+        image: 'img/obsidian.png',
+        desc: 'FACDATA:' + JSON.stringify({
+            leader: 'Pablitorey_',
+            tag: 'OBS',
+            type: 'Conquista & Factions',
+            memberCount: 8,
+            maxMembers: 15,
+            recruiting: 'Abierto',
+            description: 'El imperio supremo de Obsidian SMP. Dominantes en la zona de guerra y fortaleza rúnica principal.',
+            frame: 'frame-obsidian'
+        })
+    },
+    {
+        id: 'fac_sombras',
+        title: 'Los Sombríos',
+        category: 'faccion',
+        price: 'SHD',
+        publisher: 'ShadowKits',
+        image: 'img/netherite_helmet.png',
+        desc: 'FACDATA:' + JSON.stringify({
+            leader: 'ShadowKits',
+            tag: 'SHD',
+            type: 'PvP & Incursiones',
+            memberCount: 5,
+            maxMembers: 10,
+            recruiting: 'Abierto',
+            description: 'Gremio de asesinos y especialistas en emboscadas nocturnas y saqueos de bases enemigas.',
+            frame: 'frame-netherite'
+        })
+    },
+    {
+        id: 'fac_gladiadores',
+        title: 'Gladiadores de Esmeralda',
+        category: 'faccion',
+        price: 'GLD',
+        publisher: 'VortexPlayer',
+        image: 'img/emerald.png',
+        desc: 'FACDATA:' + JSON.stringify({
+            leader: 'VortexPlayer',
+            tag: 'GLD',
+            type: 'Comercio & Construcción',
+            memberCount: 12,
+            maxMembers: 20,
+            recruiting: 'Invitación',
+            description: 'Constructores de megabase defensiva y comerciantes principales del servidor.',
+            frame: 'frame-emerald'
+        })
+    }
+];
+
 function renderFactions() {
     const grid = document.getElementById('factions-grid');
     if (!grid) return;
     
+    // Auto-populate default sample factions if no factions exist
+    const hasFactions = state.marketplaceListings.some(item => item.category === 'faccion');
+    if (!hasFactions) {
+        state.marketplaceListings.push(...DEFAULT_FACTIONS);
+        localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+    }
+
     const query = (document.getElementById('faction-search')?.value || '').toLowerCase().trim();
     
     const factions = state.marketplaceListings.filter(item => {
@@ -2596,10 +2660,10 @@ function renderFactions() {
     
     if (factions.length === 0) {
         grid.innerHTML = `
-            <div class="market-empty-state" style="grid-column: 1 / -1; padding: 4rem 1rem;">
+            <div class="market-empty-state" style="grid-column: 1 / -1; padding: 4rem 1rem; text-align: center;">
                 <i class="fa-solid fa-flag-question" style="font-size: 3rem; color: var(--primary); opacity: 0.7; margin-bottom: 1rem;"></i>
-                <h3>No se encontraron clanes</h3>
-                <p>¡Sé el primero en fundar un imperio en el servidor! Haz clic en "Registrar tu Clan".</p>
+                <h3 style="color: #fff; margin-bottom: 0.5rem;">No se encontraron clanes</h3>
+                <p style="color: var(--text-dim);">¡Sé el primero en fundar un imperio en el servidor! Haz clic en <strong>"REGISTRAR TU CLAN"</strong> arriba.</p>
             </div>
         `;
         return;
