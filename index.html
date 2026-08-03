@@ -7,9 +7,9 @@
     <meta name="description" content="Tienda oficial del servidor Obsidian SMP. Adquiere kits exclusivos y rangos dentro de Shulker Boxes. Pagos seguros con Visa, Google Pay y PayPal.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=VT323&family=Rajdhani:wght@400;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=4.8">
+    <link rel="stylesheet" href="style.css?v=4.9">
 </head>
 <body>
 
@@ -494,19 +494,7 @@
                     </div>
                 </div>
 
-                <!-- CANJEAR CÓDIGO DE REGALO -->
-                <div class="promo-redeem-card" style="margin-bottom: 2.2rem; background: linear-gradient(135deg, rgba(20, 15, 36, 0.75) 0%, rgba(10, 8, 18, 0.95) 100%); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 16px; padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; gap: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 15px rgba(168, 85, 247, 0.1);">
-                    <div style="flex: 1;">
-                        <h3 style="margin: 0 0 0.4rem; color: #fff; font-family: 'Outfit', sans-serif; font-size: 1.25rem; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-gift" style="color: var(--primary);"></i> ¿Tienes un código promocional?</h3>
-                        <p style="margin: 0; color: var(--text-muted); font-size: 0.85rem;">Ingresa tu cupón o código canjeable para reclamar gemas gratis, kits especiales o recompensas exclusivas in-game.</p>
-                    </div>
-                    <div style="display: flex; gap: 12px; align-items: center; min-width: 320px; flex-wrap: wrap;">
-                        <div class="mc-input-wrap" style="flex: 1; padding: 0.5rem 0.8rem; background: rgba(0, 0, 0, 0.45); border-color: rgba(168, 85, 247, 0.25); min-width: 180px;">
-                            <input type="text" id="promo-code-input" placeholder="Escribe aquí tu código" style="font-family: 'VT323', monospace; text-transform: uppercase; font-size: 1.25rem; letter-spacing: 1px; color: #fbbf24; font-weight: bold; width: 100%; text-align: center;">
-                        </div>
-                        <button class="btn-mc btn-purple-mc" onclick="redeemPromoCode()" style="padding: 0.6rem 1.5rem; margin: 0; width: auto; font-size: 0.85rem;"><i class="fa-solid fa-ticket-simple"></i> CANJEAR</button>
-                    </div>
-                </div>
+
 
                 <div class="rewards-grid page-rewards-grid">
                     <!-- Reward 1: 3x Manzanas de Notch -->
@@ -605,6 +593,30 @@
                         <button class="market-cat-pill" data-cat="cosmeticos" onclick="setMarketCategory('cosmeticos')">
                             <img src="img/emerald.png" style="width:18px; height:18px; image-rendering:pixelated; object-fit:contain; margin-right:4px;"> Cosméticos &amp; Varios
                         </button>
+                    </div>
+                </div>
+
+                <!-- BANNER: CANJEAR CÓDIGO OBSIDIAN -->
+                <div class="market-promo-banner" id="market-promo-banner">
+                    <div class="mpb-obsidian-decor"></div>
+                    <div class="mpb-left">
+                        <div class="mpb-icon-wrap">
+                            <img src="img/obsidian.png" alt="Obsidian" class="mpb-obs-img">
+                            <div class="mpb-sparkle mpb-sparkle-1"></div>
+                            <div class="mpb-sparkle mpb-sparkle-2"></div>
+                            <div class="mpb-sparkle mpb-sparkle-3"></div>
+                        </div>
+                        <div class="mpb-text">
+                            <h3><i class="fa-solid fa-ticket-simple"></i> ¿Tienes un código de regalo?</h3>
+                            <p>Canjea el código secreto del servidor para obtener el exclusivo <strong>Marco de Obsidian</strong> para tu perfil.</p>
+                        </div>
+                    </div>
+                    <div class="mpb-right">
+                        <div class="mpb-input-group">
+                            <input type="text" id="promo-code-input" placeholder="INGRESA TU CÓDIGO" autocomplete="off" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter') redeemPromoCode()">
+                            <button onclick="redeemPromoCode()" class="mpb-btn"><i class="fa-solid fa-bolt"></i> CANJEAR</button>
+                        </div>
+                        <span class="mpb-hint"><i class="fa-solid fa-shield-halved"></i> Código de un solo uso · Recompensa cosmética exclusiva</span>
                     </div>
                 </div>
 
@@ -1399,9 +1411,95 @@
             </div>
         </div>
     </div>
+    <!-- ===== MODAL: PERFIL DE USUARIO ===== -->
+    <div class="modal-bg" id="modal-user-profile">
+        <div class="modal-box profile-modal-box">
+            <button class="modal-close" onclick="closeModal('modal-user-profile')">&times;</button>
+            
+            <!-- Profile Header -->
+            <div class="prf-header">
+                <div class="prf-avatar-wrap" id="prf-avatar-wrap">
+                    <!-- Avatar + frame injected by JS -->
+                </div>
+                <div class="prf-info">
+                    <h3 id="prf-username-display">Jugador</h3>
+                    <span id="prf-tag-display" class="prf-tag"></span>
+                    <div id="prf-owned-frames-row" class="prf-owned-frames-row"></div>
+                </div>
+            </div>
+
+            <!-- EDIT MODE (own profile) -->
+            <div id="prf-edit-panel">
+                <div class="prf-section">
+                    <h4><i class="fa-solid fa-image"></i> Foto de Perfil</h4>
+                    <div class="prf-avatar-opts">
+                        <label class="prf-radio-opt" id="prf-opt-discord">
+                            <input type="radio" name="avatar-source" value="discord" onchange="updateProfileAvatarPreview('discord')">
+                            <i class="fa-brands fa-discord" style="color:#7289da"></i> Usar foto de Discord
+                        </label>
+                        <label class="prf-radio-opt" id="prf-opt-mc">
+                            <input type="radio" name="avatar-source" value="minecraft" onchange="updateProfileAvatarPreview('minecraft')">
+                            <i class="fa-solid fa-cube" style="color:#5dbb63"></i> Usar skin de Minecraft
+                        </label>
+                        <label class="prf-radio-opt" id="prf-opt-custom">
+                            <input type="radio" name="avatar-source" value="custom" onchange="updateProfileAvatarPreview('custom')">
+                            <i class="fa-solid fa-upload" style="color:#f59e0b"></i> Subir foto personalizada
+                        </label>
+                    </div>
+                    <div id="prf-custom-upload-wrap" style="display:none; margin-top:12px;">
+                        <label for="prf-file-input" class="prf-upload-label">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Seleccionar imagen
+                        </label>
+                        <input type="file" id="prf-file-input" accept="image/*" style="display:none" onchange="onProfileImageUpload(event)">
+                        <span id="prf-file-name" style="color:var(--text-dim); font-size:0.8rem; margin-left:8px;">Sin archivo seleccionado</span>
+                    </div>
+                </div>
+
+                <div class="prf-section">
+                    <h4><i class="fa-solid fa-shield-halved"></i> Marco Activo</h4>
+                    <div id="prf-frames-gallery" class="prf-frames-gallery">
+                        <span class="prf-no-frames">Sin marcos desbloqueados aún. <strong>¡Canjea el código OBSIDIANSMP!</strong></span>
+                    </div>
+                </div>
+
+                <div class="prf-section">
+                    <h4><i class="fa-solid fa-font"></i> Tipografía de la Página</h4>
+                    <div class="prf-font-grid">
+                        <button class="prf-font-btn" data-font="Outfit" onclick="applyProfileFont('Outfit')">
+                            <span style="font-family:'Outfit'">Outfit</span>
+                            <small>Moderna · Actual</small>
+                        </button>
+                        <button class="prf-font-btn" data-font="VT323" onclick="applyProfileFont('VT323')">
+                            <span style="font-family:'VT323'; font-size:1.2rem">VT323</span>
+                            <small>Pixelada · Retro MC</small>
+                        </button>
+                        <button class="prf-font-btn" data-font="Rajdhani" onclick="applyProfileFont('Rajdhani')">
+                            <span style="font-family:'Rajdhani'; font-weight:600">Rajdhani</span>
+                            <small>Gaming · Futurista</small>
+                        </button>
+                        <button class="prf-font-btn" data-font="Cinzel" onclick="applyProfileFont('Cinzel')">
+                            <span style="font-family:'Cinzel'">Cinzel</span>
+                            <small>Medieval · Épica</small>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn-primary" style="width:100%; margin-top:0.5rem;" onclick="saveProfileChanges()">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                </button>
+            </div>
+
+            <!-- READ-ONLY VIEW (other user) -->
+            <div id="prf-view-panel" style="display:none;">
+                <div class="prf-section">
+                    <p id="prf-view-msg" style="color:var(--text-dim); text-align:center; padding:1rem 0;">Perfil del jugador</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Supabase JS Client for Realtime Database -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js?v=4.8"></script>
+    <script src="app.js?v=4.9"></script>
 </body>
 </html>

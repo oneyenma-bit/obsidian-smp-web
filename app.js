@@ -120,7 +120,14 @@ const state = {
     marketSearchQuery: '',
     uploadedImageBase64: null,
     marketplaceListings: JSON.parse(localStorage.getItem('obs_market_listings') || '[]'),
-    conversations: JSON.parse(localStorage.getItem('obs_conversations') || '[]')
+    conversations: JSON.parse(localStorage.getItem('obs_conversations') || '[]'),
+    // Profile customization
+    unlockedFrames: JSON.parse(localStorage.getItem('obs_unlocked_frames') || '[]'),
+    activeFrame: localStorage.getItem('obs_active_frame') || '',
+    avatarSource: localStorage.getItem('obs_avatar_source') || 'discord',
+    customAvatar: localStorage.getItem('obs_custom_avatar') || '',
+    profileFont: localStorage.getItem('obs_profile_font') || 'Outfit',
+    redeemedCodes: JSON.parse(localStorage.getItem('obs_redeemed_codes') || '[]')
 };
 
 function parsePublisher(pubStr) {
@@ -1127,15 +1134,6 @@ async function redeemPromoCode() {
         return;
     }
     
-    // Check if already redeemed in local state
-    if (!state.redeemedCodes) {
-        try {
-            state.redeemedCodes = JSON.parse(localStorage.getItem(`obs_redeemed_${state.username.toLowerCase()}`) || '[]');
-        } catch(e) {
-            state.redeemedCodes = [];
-        }
-    }
-    
     if (state.redeemedCodes.includes(code)) {
         showToast('❌ Ya has canjeado este código anteriormente.');
         return;
@@ -1197,7 +1195,8 @@ async function redeemPromoCode() {
             'BIENVENIDA': { type: 'gems', value: 150, name: 'Bono de Bienvenida' },
             'PABLITOOP': { type: 'gems', value: 500, name: 'Regalo del Admin Pablito' },
             'OBSIDIAN500': { type: 'gems', value: 500, name: 'Gemas de Obsidian' },
-            'KITVIP': { type: 'kit', value: 'Kit VIP Obsidian', name: 'Kit VIP de Regalo' }
+            'KITVIP': { type: 'kit', value: 'Kit VIP Obsidian', name: 'Kit VIP de Regalo' },
+            'OBSIDIANSMP': { type: 'frame', value: 'frame-obsidian', name: 'Marco de Obsidian Exclusivo' }
         };
         reward = localPromoCodes[code];
     }
@@ -1216,7 +1215,6 @@ async function redeemPromoCode() {
         
         if (supabaseClient) {
             try {
-                // Try updating user profile points in Supabase if profile table has it
                 await supabaseClient
                     .from('user_profiles')
                     .update({ points: state.points })
@@ -1226,10 +1224,22 @@ async function redeemPromoCode() {
         
         showToast(`🎉 ¡Código canjeado! Recibiste +${amount} Gemas (${reward.name}).`);
         syncUser();
+    } else if (reward.type === 'frame') {
+        const frameId = reward.value;
+        if (!state.unlockedFrames.includes(frameId)) {
+            state.unlockedFrames.push(frameId);
+            localStorage.setItem('obs_unlocked_frames', JSON.stringify(state.unlockedFrames));
+        }
+        // Auto-equip if no frame active
+        if (!state.activeFrame) {
+            state.activeFrame = frameId;
+            localStorage.setItem('obs_active_frame', frameId);
+        }
+        showToast(`🛡️ ¡Marco desbloqueado! "${reward.name}" ya está disponible en tu perfil.`);
+        renderMarketListings();
     } else if (reward.type === 'kit') {
         showToast(`🎉 ¡Código canjeado! Has obtenido: ${reward.value}.`);
         
-        // Push a confirmation system message to their inbox
         const sysMessage = {
             id: 'sys_' + Date.now(),
             buyer: 'Sistema',
@@ -1248,7 +1258,7 @@ async function redeemPromoCode() {
     
     // Record redemption
     state.redeemedCodes.push(code);
-    localStorage.setItem(`obs_redeemed_${state.username.toLowerCase()}`, JSON.stringify(state.redeemedCodes));
+    localStorage.setItem('obs_redeemed_codes', JSON.stringify(state.redeemedCodes));
     
     // Track in Supabase
     if (supabaseClient) {
@@ -1391,6 +1401,16 @@ function renderMarketplace() {
             ? (pubInfo.discordId === state.discordId)
             : (pubInfo.username === state.username)) || isAdminUser();
 
+        // Determine if publisher has obsidian frame
+        const isCurrentUser = (pubInfo.discordId ? pubInfo.discordId === state.discordId : pubInfo.username === state.username);
+        const pubFrame = isCurrentUser ? state.activeFrame : '';
+        const pubAvatarSrc = isCurrentUser && state.avatarSource === 'custom' && state.customAvatar
+            ? state.customAvatar
+            : pubSkin;
+        const frameImgOverlay = pubFrame === 'frame-obsidian' 
+            ? `<img src="img/frame_obsidian.png" class="pub-frame-img" alt="Marco Obsidian" title="Marco Obsidian">` 
+            : '';
+
         return `
             <div class="market-card" onclick="openListingDetailModal('${item.id}')">
                 <div class="mc-img-wrap">
@@ -1407,7 +1427,10 @@ function renderMarketplace() {
                     <p class="mc-desc">${item.desc}</p>
                     <div class="mc-publisher-row">
                         <div class="mc-user-info">
-                            <img src="${pubSkin}" alt="${pubInfo.username}" class="mc-user-avatar">
+                            <div class="pub-avatar-frame-wrap" onclick="event.stopPropagation(); openUserProfileModal('${pubInfo.username}')" style="cursor:pointer; position:relative; display:inline-block;">
+                                <img src="${pubAvatarSrc}" alt="${pubInfo.username}" class="mc-user-avatar" title="Ver perfil de ${pubInfo.username}" style="display:block;">
+                                ${frameImgOverlay}
+                            </div>
                             <span class="mc-username">${pubInfo.username}</span>
                         </div>
                         ${isOwner ? `
@@ -2712,3 +2735,196 @@ async function rejectFactionRequest(chatId) {
     renderChatMessages();
     renderInboxList();
 }
+
+// ─── USER PROFILE MODAL ───────────────────────────────────────
+const FRAME_CATALOG = {
+    'frame-obsidian': { name: 'Marco Obsidian', img: 'img/frame_obsidian.png', desc: 'Exclusivo · Código OBSIDIANSMP' },
+    'frame-iron':     { name: 'Hierro Forjado',   img: null, cssClass: 'frame-iron', desc: 'Marco de acero steampunk' },
+    'frame-emerald':  { name: 'Esmeralda Celestial', img: null, cssClass: 'frame-emerald', desc: 'Marco de esmeralda mágica' },
+    'frame-netherite':{ name: 'Netherite Ígneo',  img: null, cssClass: 'frame-netherite', desc: 'Marco de lava volcánica' },
+    'frame-netherstar':{ name: 'Estrella del Nether', img: null, cssClass: 'frame-netherstar', desc: 'Marco cósmico de estrella' },
+    'frame-diamond':  { name: 'Diamante Divino',  img: null, cssClass: 'frame-diamond', desc: 'Marco de diamante celestial' }
+};
+
+function openUserProfileModal(targetUsername) {
+    const isOwnProfile = (targetUsername === state.username);
+
+    // Header
+    const usernameEl = document.getElementById('prf-username-display');
+    const tagEl = document.getElementById('prf-tag-display');
+    const editPanel = document.getElementById('prf-edit-panel');
+    const viewPanel = document.getElementById('prf-view-panel');
+    if (usernameEl) usernameEl.textContent = targetUsername;
+
+    if (isOwnProfile) {
+        if (tagEl) {
+            tagEl.textContent = state.discordTag ? `@${state.discordTag}` : (state.discordId ? 'Discord conectado' : 'Sin Discord');
+        }
+        if (editPanel) editPanel.style.display = '';
+        if (viewPanel) viewPanel.style.display = 'none';
+
+        // Set avatar source radios
+        const radios = document.querySelectorAll('input[name="avatar-source"]');
+        radios.forEach(r => { r.checked = (r.value === (state.avatarSource || 'discord')); });
+
+        // Show/hide custom upload
+        const uploadWrap = document.getElementById('prf-custom-upload-wrap');
+        if (uploadWrap) uploadWrap.style.display = (state.avatarSource === 'custom') ? 'flex' : 'none';
+
+        // Frames gallery
+        renderProfileFramesGallery();
+
+        // Font buttons active state
+        document.querySelectorAll('.prf-font-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.font === (state.profileFont || 'Outfit'));
+        });
+    } else {
+        if (editPanel) editPanel.style.display = 'none';
+        if (viewPanel) viewPanel.style.display = '';
+        const viewMsg = document.getElementById('prf-view-msg');
+        if (viewMsg) viewMsg.textContent = `Perfil de ${targetUsername}`;
+        if (tagEl) tagEl.textContent = '';
+    }
+
+    // Render avatar preview in header
+    renderProfileAvatarPreview(targetUsername, isOwnProfile);
+
+    openModal('modal-user-profile');
+}
+
+function renderProfileAvatarPreview(username, isOwnProfile) {
+    const wrap = document.getElementById('prf-avatar-wrap');
+    if (!wrap) return;
+
+    let avatarSrc;
+    if (isOwnProfile) {
+        if (state.avatarSource === 'custom' && state.customAvatar) {
+            avatarSrc = state.customAvatar;
+        } else if (state.avatarSource === 'discord' && state.discordId) {
+            avatarSrc = state.discordUser?.avatar
+                ? `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`
+                : `https://cdn.discordapp.com/embed/avatars/0.png`;
+        } else {
+            avatarSrc = `https://mc-heads.net/avatar/${encodeURIComponent(username || 'Steve')}/80`;
+        }
+    } else {
+        avatarSrc = `https://mc-heads.net/avatar/${encodeURIComponent(username || 'Steve')}/80`;
+    }
+
+    const frame = isOwnProfile ? state.activeFrame : '';
+    const frameOverlay = frame === 'frame-obsidian'
+        ? `<img src="img/frame_obsidian.png" class="prf-frame-img-overlay" alt="Marco Obsidian">`
+        : '';
+
+    wrap.innerHTML = `
+        <div style="position:relative; display:inline-block;">
+            <img src="${avatarSrc}" alt="${username}" class="prf-avatar-img" onerror="this.src='img/shulker_void_3d.png'">
+            ${frameOverlay}
+        </div>
+    `;
+}
+
+function updateProfileAvatarPreview(source) {
+    state.avatarSource = source;
+    const uploadWrap = document.getElementById('prf-custom-upload-wrap');
+    if (uploadWrap) uploadWrap.style.display = (source === 'custom') ? 'flex' : 'none';
+    renderProfileAvatarPreview(state.username, true);
+}
+
+function onProfileImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('⚠️ La imagen no debe superar los 2 MB.');
+        return;
+    }
+    const nameEl = document.getElementById('prf-file-name');
+    if (nameEl) nameEl.textContent = file.name;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        state.customAvatar = e.target.result;
+        state.avatarSource = 'custom';
+        // Check custom radio
+        const radios = document.querySelectorAll('input[name="avatar-source"]');
+        radios.forEach(r => { r.checked = (r.value === 'custom'); });
+        renderProfileAvatarPreview(state.username, true);
+    };
+    reader.readAsDataURL(file);
+}
+
+function renderProfileFramesGallery() {
+    const gallery = document.getElementById('prf-frames-gallery');
+    if (!gallery) return;
+
+    if (!state.unlockedFrames || state.unlockedFrames.length === 0) {
+        gallery.innerHTML = `<span class="prf-no-frames">Sin marcos desbloqueados aún. <strong>¡Canjea el código OBSIDIANSMP en el Marketplace!</strong></span>`;
+        return;
+    }
+
+    gallery.innerHTML = state.unlockedFrames.map(fId => {
+        const info = FRAME_CATALOG[fId] || { name: fId, img: null, desc: '' };
+        const isActive = state.activeFrame === fId;
+        const preview = info.img
+            ? `<img src="${info.img}" alt="${info.name}" class="prf-frame-gallery-img">`
+            : `<div class="prf-frame-css-preview ${info.cssClass || ''}"><div class="steam-ring"></div><div class="steam-glow"></div></div>`;
+        return `
+            <div class="prf-frame-opt ${isActive ? 'active' : ''}" onclick="equipFrame('${fId}')">
+                ${preview}
+                <span>${info.name}</span>
+                ${isActive ? '<i class="fa-solid fa-check-circle prf-equip-check"></i>' : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+function equipFrame(frameId) {
+    state.activeFrame = (state.activeFrame === frameId) ? '' : frameId;
+    localStorage.setItem('obs_active_frame', state.activeFrame);
+    renderProfileFramesGallery();
+    renderProfileAvatarPreview(state.username, true);
+    renderMarketListings();
+}
+
+function applyProfileFont(fontName) {
+    state.profileFont = fontName;
+    localStorage.setItem('obs_profile_font', fontName);
+    document.body.style.fontFamily = `'${fontName}', sans-serif`;
+    document.querySelectorAll('.prf-font-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.font === fontName);
+    });
+    showToast(`🔤 Tipografía cambiada a ${fontName}.`);
+}
+
+function saveProfileChanges() {
+    localStorage.setItem('obs_avatar_source', state.avatarSource);
+    localStorage.setItem('obs_custom_avatar', state.customAvatar || '');
+    localStorage.setItem('obs_active_frame', state.activeFrame || '');
+    localStorage.setItem('obs_profile_font', state.profileFont || 'Outfit');
+
+    // Update nav avatar immediately
+    const navSkin = document.getElementById('nav-skin-img');
+    if (navSkin) {
+        if (state.avatarSource === 'custom' && state.customAvatar) {
+            navSkin.src = state.customAvatar;
+        } else if (state.avatarSource === 'discord' && state.discordId) {
+            navSkin.src = state.discordUser?.avatar
+                ? `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`
+                : `https://cdn.discordapp.com/embed/avatars/0.png`;
+        } else {
+            navSkin.src = `https://mc-heads.net/avatar/${encodeURIComponent(state.username || 'Steve')}/40`;
+        }
+    }
+
+    renderMarketListings();
+    closeModal('modal-user-profile');
+    showToast('✅ ¡Perfil guardado exitosamente!');
+}
+
+// Apply saved font on page load
+(function initProfileSettings() {
+    const savedFont = localStorage.getItem('obs_profile_font');
+    if (savedFont && savedFont !== 'Outfit') {
+        document.body.style.fontFamily = `'${savedFont}', sans-serif`;
+    }
+})();
