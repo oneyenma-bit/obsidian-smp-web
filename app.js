@@ -532,7 +532,6 @@ function initParticles() {
 // ─── INIT ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
     initParticles();
-    checkDiscordCallback();
     
     // Configuración inicial de partículas
     const canvas = document.getElementById('particles-canvas');
@@ -541,11 +540,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         canvas.style.display = particlesOn ? 'block' : 'none';
     }
     
-    const isLogged = await verifyDiscordLogin();
+    const isLogged = await verifyLocalLogin();
     loadInitialDatabaseData();
     
     if (!isLogged) {
-        setTimeout(() => openModal('modal-login'), 700);
+        setTimeout(() => openModal('modal-login'), 500);
     }
     
     renderCart();
@@ -857,15 +856,17 @@ async function renderAdminPanel() {
         data.forEach(user => {
             const hasPass = user.messages.some(m => m.startsWith('pass:') && m !== 'pass:none') ? '✅' : '❌';
             const hasPin = user.messages.some(m => m.startsWith('pin:')) ? '✅' : '❌';
+            const dateMsg = user.messages.find(m => m.startsWith('date:'));
+            const dateStr = dateMsg ? dateMsg.replace('date:', '') : 'Previo a registro de fecha';
             
             html += `
-            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <img src="https://mc-heads.net/avatar/${encodeURIComponent(user.buyer)}/32" style="border-radius:4px; image-rendering:pixelated;">
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <img src="https://mc-heads.net/avatar/${encodeURIComponent(user.buyer)}/36" style="border-radius:6px; image-rendering:pixelated;">
                     <div>
-                        <strong style="color:var(--primary); font-size:1rem;">${user.buyer}</strong><br>
+                        <strong style="color:var(--primary); font-size:1.05rem;">${user.buyer}</strong><br>
                         <span style="font-size:0.75rem; color:var(--text-muted);">
-                            Pass: ${hasPass} | PIN: ${hasPin} | Legacy: ${user.seller && user.seller !== 'mc_user' ? 'Sí' : 'No'}
+                            Pass: ${hasPass} | PIN: ${hasPin} | 📅 ${dateStr}
                         </span>
                     </div>
                 </div>
@@ -1026,6 +1027,7 @@ async function saveUser() {
                 }
             } else {
                 // Registrar nuevo usuario
+                const now = new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
                 const { error: insError } = await supabaseClient
                     .from('conversations')
                     .insert([{
@@ -1034,7 +1036,7 @@ async function saveUser() {
                         buyer: v.toLowerCase(),
                         seller: 'mc_user',
                         status: 'active',
-                        messages: ["pass:" + enteredPass, "pin:" + enteredPin]
+                        messages: ["pass:" + enteredPass, "pin:" + enteredPin, "date:" + now]
                     }]);
                 if (insError) throw insError;
             }
@@ -1076,48 +1078,23 @@ function toggleBedrock() {
 // ─── MODALS ───────────────────────────────────────────────────
 function openModal(id) {
     if (id === 'modal-login') {
-        const authView = document.getElementById('discord-auth-view');
-        const linkView = document.getElementById('minecraft-link-view');
         const passLoginView = document.getElementById('mc-password-login-view');
         const profileView = document.getElementById('profile-settings-view');
         
-        if (passLoginView) passLoginView.style.display = 'none';
-        
-        if (state.legacyId && state.username) {
-            if (authView) authView.style.display = 'none';
-            if (linkView) linkView.style.display = 'none';
+        if (state.username && state.username !== 'Invitado') {
+            if (passLoginView) passLoginView.style.display = 'none';
             if (profileView) {
                 profileView.style.display = 'block';
-                const discordAvatar = document.getElementById('profile-discord-avatar');
-                const discordTag = document.getElementById('profile-discord-tag');
-                const mcSkin = document.getElementById('profile-minecraft-skin');
-                const mcName = document.getElementById('profile-minecraft-name');
-                const bedrockBadge = document.getElementById('profile-bedrock-badge');
-                const javaBadge = document.getElementById('profile-java-badge');
-                
-                if (discordAvatar) discordAvatar.src = null?.avatar 
-                    ? `https://cdn.discordapp.com/avatars/${state.legacyId}/${null.avatar}.png`
-                    : "https://cdn.discordapp.com/embed/avatars/0.png";
-                if (discordTag) discordTag.textContent = state.discordTag;
-                if (mcSkin) mcSkin.src = `https://mc-heads.net/avatar/${encodeURIComponent(state.username)}/60`;
-                if (mcName) mcName.textContent = state.username;
-                if (bedrockBadge) bedrockBadge.style.display = state.isBedrock ? 'inline-block' : 'none';
-                if (javaBadge) javaBadge.style.display = state.isBedrock ? 'none' : 'inline-block';
-                updateSettingsUI();
+                syncProfileModalUI();
             }
-        } else if (state.legacyId) {
-            if (authView) authView.style.display = 'none';
-            if (linkView) linkView.style.display = 'block';
-            if (profileView) profileView.style.display = 'none';
         } else {
-            if (authView) authView.style.display = 'block';
-            if (linkView) linkView.style.display = 'none';
+            if (passLoginView) passLoginView.style.display = 'block';
             if (profileView) profileView.style.display = 'none';
         }
     }
     if (id === 'modal-create-listing' || id === 'modal-checkout') {
-        if (!state.legacyId || !state.username) {
-            showToast('⚠️ Debes iniciar sesión con Discord y enlazar tu cuenta de Minecraft para continuar.');
+        if (!state.username || state.username === 'Invitado') {
+            showToast('⚠️ Debes iniciar sesión con tu cuenta de Minecraft para continuar.');
             openModal('modal-login');
             return;
         }
