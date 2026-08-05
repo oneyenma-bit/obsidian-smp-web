@@ -877,55 +877,142 @@
         <div class="modal-box login-box mc-styled">
             <button class="modal-close" onclick="closeModal('modal-login')">&times;</button>
             
-            <!-- Login View -->
+            <!-- ① AUTH SELECTOR VIEW -->
+            <div id="auth-selector-view" style="display:block; padding: 2rem 1.5rem 1.5rem;">
+                <div style="text-align:center; margin-bottom: 1.8rem;">
+                    <img src="https://mc-heads.net/head/MHF_Steve" id="selector-skin" alt="Skin" style="width:64px;height:64px;border-radius:10px;border:2px solid var(--primary);image-rendering:pixelated;box-shadow:0 0 16px var(--primary-glow);margin-bottom:0.8rem;">
+                    <h3 style="color:#fff;font-size:1.3rem;font-weight:900;letter-spacing:1px;margin:0;">OBSIDIAN SMP</h3>
+                    <p style="color:var(--text-muted);font-size:0.8rem;margin-top:4px;">¿Qué deseas hacer?</p>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                    <button class="btn-mc btn-green-mc width-100" id="go-login-btn" onclick="showLoginView()" style="padding:1rem;font-size:1rem;letter-spacing:1.5px;">
+                        <i class="fa-solid fa-right-to-bracket"></i> INICIAR SESIÓN
+                    </button>
+                    <button class="btn-mc btn-dark-mc width-100" onclick="showRegisterView()" style="padding:1rem;font-size:1rem;letter-spacing:1.5px;border-color:var(--primary);color:var(--primary);">
+                        <i class="fa-solid fa-user-plus"></i> CREAR CUENTA
+                    </button>
+                </div>
+                <p style="text-align:center;font-size:0.72rem;color:var(--text-muted);margin-top:1.2rem;">
+                    <i class="fa-solid fa-shield-halved" style="color:var(--primary);"></i> Tus datos se guardan de forma segura
+                </p>
+            </div>
 
-            <div id="mc-password-login-view" style="display: block;">
+            <!-- ② LOGIN VIEW -->
+            <div id="mc-login-view" style="display:none;">
                 <div class="split-login-container">
-                    <!-- Left Side: Showcase Renders -->
                     <div class="split-flavor-side">
                         <div class="flavor-item-showcase">
                             <img src="img/totem_of_undying.png" alt="Totem" class="totem-pixel floating-icon">
                             <span class="slot-shadow"></span>
                         </div>
-                        <h4 class="flavor-title">OBSIDIAN SMP</h4>
-                        <p class="flavor-desc">Accede a tu cuenta usando tu nombre de Minecraft, contraseña y PIN de seguridad para resguardar tus gemas y clanes.</p>
+                        <h4 class="flavor-title">BIENVENIDO DE VUELTA</h4>
+                        <p class="flavor-desc">Introduce tu usuario de Minecraft y tu contraseña para acceder a tu cuenta.</p>
                     </div>
-                    
-                    <!-- Right Side: Forms -->
                     <div class="split-form-side">
-                        <h3 class="form-title-mc">Iniciar Sesión / Registro</h3>
-                        <p class="form-subtitle-mc">Si es tu primera vez, se creará tu cuenta</p>
-                        
+                        <h3 class="form-title-mc">Iniciar Sesión</h3>
+                        <p class="form-subtitle-mc">Accede a tu cuenta existente</p>
+
                         <div class="mc-field-group">
-                            <label for="username-input">Usuario de Minecraft Java</label>
+                            <label for="login-username-input">Usuario de Minecraft</label>
                             <div class="mc-input-wrap">
                                 <i class="fa-solid fa-user input-icon"></i>
-                                <input type="text" id="username-input" placeholder="Escribe tu Nickname..." autocomplete="off" spellcheck="false">
-                            </div>
-                        </div>
-                        
-                        <div class="mc-field-group">
-                            <label for="password-input">Contraseña</label>
-                            <div class="mc-input-wrap">
-                                <i class="fa-solid fa-lock input-icon"></i>
-                                <input type="password" id="password-input" placeholder="Tu contraseña..." autocomplete="off">
+                                <input type="text" id="login-username-input" placeholder="Tu Nickname..." autocomplete="off" spellcheck="false"
+                                    oninput="updateLoginSkin(this.value)">
                             </div>
                         </div>
 
-                        <div class="mc-field-group" style="margin-bottom: 1.5rem;">
-                            <label for="pin-input">PIN (4 dígitos extra)</label>
+                        <div class="mc-field-group">
+                            <label for="login-password-input">Contraseña</label>
                             <div class="mc-input-wrap">
-                                <i class="fa-solid fa-key input-icon"></i>
-                                <input type="password" id="pin-input" placeholder="0000" maxlength="6" autocomplete="off">
+                                <i class="fa-solid fa-lock input-icon"></i>
+                                <input type="password" id="login-password-input" placeholder="Tu contraseña..." autocomplete="off"
+                                    onkeypress="if(event.key==='Enter') doLogin()">
                             </div>
                         </div>
-                        
-                        <button class="btn-mc btn-green-mc width-100" id="save-user-btn" onclick="saveUser()" style="margin-bottom: 1rem;">
-                            ENTRAR AHORA
+
+                        <div id="login-pin-group" class="mc-field-group" style="display:none; margin-bottom:1.2rem;">
+                            <label for="login-pin-input">PIN de seguridad <span style="color:var(--primary)">(requerido)</span></label>
+                            <div class="mc-input-wrap">
+                                <i class="fa-solid fa-key input-icon"></i>
+                                <input type="password" id="login-pin-input" placeholder="Tu PIN..." maxlength="6" autocomplete="off"
+                                    onkeypress="if(event.key==='Enter') doLogin()">
+                            </div>
+                        </div>
+
+                        <button class="btn-mc btn-green-mc width-100" id="login-submit-btn" onclick="doLogin()" style="margin-bottom:0.8rem;">
+                            <i class="fa-solid fa-right-to-bracket"></i> ENTRAR
+                        </button>
+                        <button class="btn-mc-flat" onclick="showAuthSelector()" style="width:100%;text-align:center;padding:0.5rem;">
+                            <i class="fa-solid fa-arrow-left"></i> Volver
                         </button>
                     </div>
                 </div>
             </div>
+
+            <!-- ③ REGISTER VIEW -->
+            <div id="mc-register-view" style="display:none;">
+                <div class="split-login-container">
+                    <div class="split-flavor-side">
+                        <div class="flavor-item-showcase">
+                            <img src="img/totem_of_undying.png" alt="Totem" class="totem-pixel floating-icon">
+                            <span class="slot-shadow"></span>
+                        </div>
+                        <h4 class="flavor-title">NUEVA CUENTA</h4>
+                        <p class="flavor-desc">Crea tu cuenta con tu Nickname de Minecraft. El PIN es opcional, pero te da una capa extra de seguridad.</p>
+                    </div>
+                    <div class="split-form-side">
+                        <h3 class="form-title-mc">Crear Cuenta</h3>
+                        <p class="form-subtitle-mc">Por primera vez en el servidor</p>
+
+                        <div class="mc-field-group">
+                            <label for="reg-username-input">Usuario de Minecraft</label>
+                            <div class="mc-input-wrap">
+                                <i class="fa-solid fa-user input-icon"></i>
+                                <input type="text" id="reg-username-input" placeholder="Tu Nickname exacto..." autocomplete="off" spellcheck="false"
+                                    oninput="updateRegSkin(this.value)">
+                            </div>
+                        </div>
+
+                        <div class="mc-field-group">
+                            <label for="reg-password-input">Contraseña</label>
+                            <div class="mc-input-wrap">
+                                <i class="fa-solid fa-lock input-icon"></i>
+                                <input type="password" id="reg-password-input" placeholder="Crea una contraseña..." autocomplete="off">
+                            </div>
+                        </div>
+
+                        <!-- PIN Toggle -->
+                        <div style="background:rgba(168,85,247,0.08);border:1.5px solid rgba(168,85,247,0.2);border-radius:10px;padding:10px 14px;margin-bottom:0.8rem;">
+                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.82rem;color:var(--text-dim);font-weight:700;">
+                                <input type="checkbox" id="reg-pin-checkbox" onchange="toggleRegPin()" style="width:18px;height:18px;accent-color:var(--primary);cursor:pointer;">
+                                <span><i class="fa-solid fa-shield-halved" style="color:var(--primary);"></i> Activar PIN de seguridad (opcional)</span>
+                            </label>
+                            <p style="font-size:0.72rem;color:var(--text-muted);line-height:1.35;margin:5px 0 0 28px;">
+                                Te permite proteger tu cuenta con un código extra. Si lo olvidas, solo un admin puede resetearlo.
+                            </p>
+                        </div>
+
+                        <div id="reg-pin-group" style="display:none;" class="mc-field-group" style="margin-bottom:1.2rem;">
+                            <label for="reg-pin-input">Código PIN</label>
+                            <div class="mc-input-wrap">
+                                <i class="fa-solid fa-key input-icon"></i>
+                                <input type="password" id="reg-pin-input" placeholder="Ej: 1234" maxlength="6" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <button class="btn-mc btn-green-mc width-100" id="register-submit-btn" onclick="doRegister()" style="margin-bottom:0.8rem;">
+                            <i class="fa-solid fa-user-plus"></i> CREAR CUENTA
+                        </button>
+                        <button class="btn-mc-flat" onclick="showAuthSelector()" style="width:100%;text-align:center;padding:0.5rem;">
+                            <i class="fa-solid fa-arrow-left"></i> Volver
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ④ mc-password-login-view (legacy alias, hidden) -->
+            <div id="mc-password-login-view" style="display:none;"></div>
+
 
             <!-- Profile / Settings View (shown if logged in) -->
             <div id="profile-settings-view" style="display: none;">

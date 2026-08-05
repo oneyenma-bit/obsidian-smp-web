@@ -151,58 +151,151 @@ function getPublisherAvatar(pubInfo, size = 32) {
 }
 
 // ─── AUTHENTICATION FUNCTIONS ──────────────────────────
+
+// -- View Helpers --
+function showAuthSelector() {
+    document.getElementById('auth-selector-view').style.display = 'block';
+    document.getElementById('mc-login-view').style.display = 'none';
+    document.getElementById('mc-register-view').style.display = 'none';
+    const pv = document.getElementById('profile-settings-view');
+    if (pv) pv.style.display = 'none';
+}
+function showLoginView() {
+    document.getElementById('auth-selector-view').style.display = 'none';
+    document.getElementById('mc-login-view').style.display = 'block';
+    document.getElementById('mc-register-view').style.display = 'none';
+    const pinGrp = document.getElementById('login-pin-group');
+    if (pinGrp) pinGrp.style.display = 'none';
+    ['login-username-input','login-password-input','login-pin-input'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+    });
+}
+function showRegisterView() {
+    document.getElementById('auth-selector-view').style.display = 'none';
+    document.getElementById('mc-login-view').style.display = 'none';
+    document.getElementById('mc-register-view').style.display = 'block';
+    ['reg-username-input','reg-password-input','reg-pin-input'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+    });
+    const cb = document.getElementById('reg-pin-checkbox'); if (cb) cb.checked = false;
+    const pg = document.getElementById('reg-pin-group'); if (pg) pg.style.display = 'none';
+}
+function toggleRegPin() {
+    const cb = document.getElementById('reg-pin-checkbox');
+    const pg = document.getElementById('reg-pin-group');
+    if (cb && pg) pg.style.display = cb.checked ? 'block' : 'none';
+}
+let _lsD; function updateLoginSkin(v) { clearTimeout(_lsD); _lsD = setTimeout(() => { const i = document.getElementById('selector-skin'); if (i && v) i.src = 'https://mc-heads.net/head/' + encodeURIComponent(v); }, 500); }
+let _rsD; function updateRegSkin(v)   { clearTimeout(_rsD); _rsD = setTimeout(() => { const i = document.getElementById('selector-skin'); if (i && v) i.src = 'https://mc-heads.net/head/' + encodeURIComponent(v); }, 500); }
+
+// -- Login --
+async function doLogin() {
+    const v    = (document.getElementById('login-username-input')?.value || '').trim();
+    const pass = (document.getElementById('login-password-input')?.value || '').trim();
+    const pinVal = (document.getElementById('login-pin-input')?.value || '').trim();
+    if (!v)    { showToast('⚠️ Ingresa tu usuario de Minecraft.'); return; }
+    if (!pass) { showToast('⚠️ Ingresa tu contraseña.'); return; }
+    const btn = document.getElementById('login-submit-btn');
+    const resetBtn = () => { if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> ENTRAR'; } };
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> VERIFICANDO...'; }
+    let legacyId = null;
+    if (supabaseClient) {
+        try {
+            const { data, error } = await supabaseClient.from('conversations').select('*').eq('listing_id','registration').eq('buyer', v.toLowerCase());
+            if (error) throw error;
+            if (!data || data.length === 0) { showToast('❌ No existe ninguna cuenta con ese usuario.'); resetBtn(); return; }
+            const reg = data[0];
+            const storedPass = (reg.messages?.find(m => m.startsWith('pass:')) || '').replace('pass:', '');
+            const storedPin  = (reg.messages?.find(m => m.startsWith('pin:'))  || '').replace('pin:', '');
+            if (pass !== storedPass) { showToast('❌ Contraseña incorrecta.'); resetBtn(); return; }
+            if (storedPin) {
+                const pinGroup = document.getElementById('login-pin-group');
+                if (pinGroup && pinGroup.style.display === 'none') {
+                    pinGroup.style.display = 'block';
+                    showToast('🔐 Esta cuenta tiene PIN. Ingresa tu PIN para continuar.');
+                    resetBtn(); return;
+                }
+                if (pinVal !== storedPin) { showToast('❌ PIN incorrecto.'); resetBtn(); return; }
+            }
+            if (reg.seller && reg.seller.length > 10 && reg.seller !== 'mc_user') legacyId = reg.seller;
+        } catch(err) { console.error(err); showToast('❌ Error de conexión.'); resetBtn(); return; }
+    }
+    resetBtn();
+    state.username = v; state.legacyId = legacyId;
+    localStorage.setItem('obs_user', v);
+    if (legacyId) localStorage.setItem('obs_legacy_id', legacyId);
+    loadUserDataOnLogin(legacyId, v);
+    closeModal('modal-login');
+    showToast('✅ ¡Bienvenido de vuelta, ' + v + '!');
+    loadInitialDatabaseData();
+}
+
+// -- Register --
+async function doRegister() {
+    const v    = (document.getElementById('reg-username-input')?.value || '').trim();
+    const pass = (document.getElementById('reg-password-input')?.value || '').trim();
+    const usePIN = document.getElementById('reg-pin-checkbox')?.checked;
+    const pin  = (document.getElementById('reg-pin-input')?.value || '').trim();
+    if (!v) { showToast('⚠️ Ingresa tu usuario de Minecraft.'); return; }
+    if (v.includes(' ') || v.includes('|')) { showToast('⚠️ Nombre no válido.'); return; }
+    if (!pass) { showToast('⚠️ Ingresa una contraseña.'); return; }
+    if (usePIN && !pin) { showToast('⚠️ Escribe tu PIN o desactívalo.'); return; }
+    const btn = document.getElementById('register-submit-btn');
+    const resetBtn = () => { if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-user-plus"></i> CREAR CUENTA'; } };
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> CREANDO...'; }
+    if (supabaseClient) {
+        try {
+            const { data: ex } = await supabaseClient.from('conversations').select('id').eq('listing_id','registration').eq('buyer', v.toLowerCase());
+            if (ex && ex.length > 0) { showToast('❌ Ese usuario ya tiene cuenta. Inicia sesión.'); resetBtn(); return; }
+            const now = new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+            const messages = ['pass:' + pass, 'date:' + now];
+            if (usePIN) messages.push('pin:' + pin);
+            const { error: insErr } = await supabaseClient.from('conversations').insert([{
+                id: 'reg_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+                listing_id: 'registration', buyer: v.toLowerCase(),
+                seller: 'mc_user', status: 'active', messages
+            }]);
+            if (insErr) throw insErr;
+        } catch(err) { console.error(err); showToast('❌ Error al crear tu cuenta.'); resetBtn(); return; }
+    }
+    resetBtn();
+    state.username = v; state.legacyId = null;
+    localStorage.setItem('obs_user', v);
+    loadUserDataOnLogin(null, v);
+    closeModal('modal-login');
+    showToast('✅ ¡Cuenta creada! Bienvenido, ' + v + '!');
+    loadInitialDatabaseData();
+}
+
 async function verifyLocalLogin() {
     const localUser = localStorage.getItem('obs_user');
     const localLegacyId = localStorage.getItem('obs_legacy_id');
-    
     if (localUser) {
         state.username = localUser;
         state.legacyId = localLegacyId || null;
-        
         loadUserDataOnLogin(state.legacyId, localUser);
         return true;
     }
-    
-    const passLoginView = document.getElementById('mc-password-login-view');
-    if (passLoginView) passLoginView.style.display = 'block';
-    
     return false;
 }
 
 function logout() {
-    // Clear user tokens & account session
-    localStorage.removeItem("obs_user");
-    localStorage.removeItem("obs_legacy_id");
-    
-    // Clear user customization state & storage
-    localStorage.removeItem("obs_active_frame");
-    localStorage.removeItem("obs_unlocked_frames");
-    localStorage.removeItem("obs_custom_avatar");
-    localStorage.removeItem("obs_avatar_source");
-    localStorage.removeItem("obs_redeemed_codes");
-
-    state.username = '';
-    state.legacyId = null;
-    state.points = 0;
-    state.activeFrame = '';
-    state.unlockedFrames = [];
-    state.customAvatar = '';
-    state.avatarSource = 'mc-heads';
-    
-    syncUser();
-    renderMarketListings();
-    
-    showToast("🚪 Sesión cerrada correctamente.");
-    
-    const passLoginView = document.getElementById('mc-password-login-view');
-    const profileView = document.getElementById('profile-settings-view');
-    
-    if (passLoginView) passLoginView.style.display = 'block';
-    if (profileView) profileView.style.display = 'none';
-    
+    localStorage.removeItem('obs_user');
+    localStorage.removeItem('obs_legacy_id');
+    localStorage.removeItem('obs_active_frame');
+    localStorage.removeItem('obs_unlocked_frames');
+    localStorage.removeItem('obs_custom_avatar');
+    localStorage.removeItem('obs_avatar_source');
+    localStorage.removeItem('obs_redeemed_codes');
+    state.username = ''; state.legacyId = null; state.points = 0;
+    state.activeFrame = ''; state.unlockedFrames = [];
+    state.customAvatar = ''; state.avatarSource = 'mc-heads';
+    syncUser(); renderMarketListings();
+    showToast('🚪 Sesión cerrada.');
     closeModal('modal-user-profile');
     openModal('modal-login');
 }
+
 
 function toggleSetting(key) {
     if (key === 'sound') {
@@ -1078,18 +1171,23 @@ function toggleBedrock() {
 // ─── MODALS ───────────────────────────────────────────────────
 function openModal(id) {
     if (id === 'modal-login') {
-        const passLoginView = document.getElementById('mc-password-login-view');
-        const profileView = document.getElementById('profile-settings-view');
-        
+        const selectorView  = document.getElementById('auth-selector-view');
+        const loginView     = document.getElementById('mc-login-view');
+        const registerView  = document.getElementById('mc-register-view');
+        const profileView   = document.getElementById('profile-settings-view');
+
         if (state.username && state.username !== 'Invitado') {
-            if (passLoginView) passLoginView.style.display = 'none';
-            if (profileView) {
-                profileView.style.display = 'block';
-                syncProfileModalUI();
-            }
+            // Logged in → show profile
+            if (selectorView)  selectorView.style.display  = 'none';
+            if (loginView)     loginView.style.display     = 'none';
+            if (registerView)  registerView.style.display  = 'none';
+            if (profileView) { profileView.style.display   = 'block'; syncProfileModalUI(); }
         } else {
-            if (passLoginView) passLoginView.style.display = 'block';
-            if (profileView) profileView.style.display = 'none';
+            // Not logged in → show selector
+            if (selectorView)  selectorView.style.display  = 'block';
+            if (loginView)     loginView.style.display     = 'none';
+            if (registerView)  registerView.style.display  = 'none';
+            if (profileView)   profileView.style.display   = 'none';
         }
     }
     if (id === 'modal-create-listing' || id === 'modal-checkout') {
