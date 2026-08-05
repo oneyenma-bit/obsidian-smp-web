@@ -742,7 +742,7 @@ function updateNavUserAvatar() {
     let avatarSrc;
     if (state.avatarSource === 'custom' && state.customAvatar) {
         avatarSrc = state.customAvatar;
-     else {
+    } else {
         avatarSrc = `https://mc-heads.net/avatar/${encodeURIComponent(state.username || 'Steve')}/40`;
     }
 
@@ -887,7 +887,7 @@ async function renderAdminPanel() {
 function deleteUserAccount(id, username) {
     customConfirm(
         '¿Eliminar usuario?',
-        \`¿Estás seguro de que quieres eliminar el registro de seguridad de <b>\${username}</b>? Tendrá que volver a crear su contraseña al entrar.\`,
+        `¿Estás seguro de que quieres eliminar el registro de seguridad de <b>${username}</b>? Tendrá que volver a crear su contraseña al entrar.`,
         async () => {
             showToast("⏳ Eliminando...");
             if (supabaseClient) {
@@ -3082,7 +3082,7 @@ function devLoginAs(username, tag) {
         state.username = '';
         state.legacyId = null;
         state.discordTag = null;
-        null = null;
+
         localStorage.removeItem('obs_user');
         localStorage.removeItem('obs_discord_user');
         localStorage.removeItem('obs_discord_tag');
@@ -3092,7 +3092,7 @@ function devLoginAs(username, tag) {
         state.username = username;
         state.legacyId = tag ? 'dev_id_' + username : null;
         state.discordTag = tag || null;
-        null = tag ? { avatar: 'default_dev_avatar' } : null;
+
         
         localStorage.setItem('obs_user', username);
         if (tag) {
@@ -3384,7 +3384,7 @@ function renderProfileAvatarPreview(username, isOwnProfile) {
     if (isOwnProfile) {
         if (state.avatarSource === 'custom' && state.customAvatar) {
             avatarSrc = state.customAvatar;
-         else {
+        } else {
             avatarSrc = `https://mc-heads.net/avatar/${encodeURIComponent(username || 'Steve')}/80`;
         }
     } else {
