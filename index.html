@@ -877,45 +877,8 @@
         <div class="modal-box login-box mc-styled">
             <button class="modal-close" onclick="closeModal('modal-login')">&times;</button>
             
-            <!-- Discord Authentication View -->
-            <div id="discord-auth-view" style="display: none;">
-                <div class="split-login-container">
-                    <!-- Left Side: Showcase Renders -->
-                    <div class="split-flavor-side">
-                        <div class="flavor-item-showcase">
-                            <img src="img/nether_star.png" alt="Nether Star" class="nether-star-pixel floating-icon">
-                            <span class="slot-shadow"></span>
-                        </div>
-                        <h4 class="flavor-title">OBSIDIAN SMP</h4>
-                        <p class="flavor-desc">Vincula tu Discord para resguardar tus gemas, reclamar kits y publicar ofertas en el marketplace.</p>
-                    </div>
-                    
-                    <!-- Right Side: Action Menu -->
-                    <div class="split-form-side">
-                        <h3 class="form-title-mc">Acceso Seguro</h3>
-                        <p class="form-subtitle-mc">Selecciona tu método de entrada</p>
-                        
-                        <button class="btn-mc btn-purple-mc width-100" onclick="loginWithDiscord()" style="margin-bottom: 0.8rem; padding: 0.85rem 0.8rem;">
-                            <i class="fa-brands fa-discord" style="font-size: 1.1rem; margin-right: 6px;"></i> ENLAZAR NUEVO USUARIO
-                        </button>
-                        
-                        <button class="btn-mc btn-green-mc width-100" onclick="loginWithDiscord()" style="margin-bottom: 1.2rem; padding: 0.85rem 0.8rem;">
-                            <img src="img/diamond.png" alt="" class="btn-icon-pixel"> CONECTAR CUENTA
-                        </button>
-                        
-                        <div style="position: relative; text-align: center; margin: 0.5rem 0 1rem;">
-                            <span style="background: rgba(16, 12, 28, 0.98); padding: 0 10px; color: var(--text-muted); font-size: 0.72rem; font-weight: 700; position: relative; z-index: 2; text-transform: uppercase; letter-spacing: 0.5px;">O ENTRAR SIN DISCORD</span>
-                            <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.08); z-index: 1;"></div>
-                        </div>
-                        
-                        <button class="btn-mc btn-dark-mc width-100" onclick="showPasswordLoginView()" style="padding: 0.85rem 0.8rem;">
-                            <i class="fa-solid fa-key" style="color: #eab308; font-size: 0.9rem;"></i> CON CONTRASEÑA DE 2-PASOS
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <!-- Login View -->
 
-            <!-- Minecraft Username + 2FA Password Login View (Without Discord) -->
             <div id="mc-password-login-view" style="display: block;">
                 <div class="split-login-container">
                     <!-- Left Side: Showcase Renders -->
@@ -924,92 +887,49 @@
                             <img src="img/totem_of_undying.png" alt="Totem" class="totem-pixel floating-icon">
                             <span class="slot-shadow"></span>
                         </div>
-                        <h4 class="flavor-title">MODO RECUPERACIÓN</h4>
-                        <p class="flavor-desc">Accede a tu cuenta de Minecraft usando la contraseña de 2-Pasos que creaste al registrarte.</p>
+                        <h4 class="flavor-title">OBSIDIAN SMP</h4>
+                        <p class="flavor-desc">Accede a tu cuenta usando tu nombre de Minecraft, contraseña y PIN de seguridad para resguardar tus gemas y clanes.</p>
                     </div>
                     
                     <!-- Right Side: Forms -->
                     <div class="split-form-side">
-                        <h3 class="form-title-mc">Iniciar Sesión</h3>
-                        <p class="form-subtitle-mc">Ingresa tus credenciales locales</p>
+                        <h3 class="form-title-mc">Iniciar Sesión / Registro</h3>
+                        <p class="form-subtitle-mc">Si es tu primera vez, se creará tu cuenta</p>
                         
                         <div class="mc-field-group">
-                            <label for="pass-login-username">Usuario de Minecraft</label>
+                            <label for="username-input">Usuario de Minecraft Java</label>
                             <div class="mc-input-wrap">
                                 <i class="fa-solid fa-user input-icon"></i>
-                                <input type="text" id="pass-login-username" placeholder="Escribe tu Nickname..." autocomplete="off" spellcheck="false">
+                                <input type="text" id="username-input" placeholder="Escribe tu Nickname..." autocomplete="off" spellcheck="false">
                             </div>
                         </div>
                         
-                        <div class="mc-field-group" style="margin-bottom: 1.5rem;">
-                            <label for="pass-login-password">Contraseña de 2-Pasos</label>
+                        <div class="mc-field-group">
+                            <label for="password-input">Contraseña</label>
                             <div class="mc-input-wrap">
                                 <i class="fa-solid fa-lock input-icon"></i>
-                                <input type="password" id="pass-login-password" placeholder="Tu contraseña..." autocomplete="off">
+                                <input type="password" id="password-input" placeholder="Tu contraseña..." autocomplete="off">
+                            </div>
+                        </div>
+
+                        <div class="mc-field-group" style="margin-bottom: 1.5rem;">
+                            <label for="pin-input">PIN (4 dígitos extra)</label>
+                            <div class="mc-input-wrap">
+                                <i class="fa-solid fa-key input-icon"></i>
+                                <input type="password" id="pin-input" placeholder="0000" maxlength="6" autocomplete="off">
                             </div>
                         </div>
                         
-                        <button class="btn-mc btn-green-mc width-100" id="pass-login-submit-btn" onclick="loginWithPasswordOnly()" style="margin-bottom: 1rem;">
-                            ENTRAR SIN DISCORD
+                        <button class="btn-mc btn-green-mc width-100" id="save-user-btn" onclick="saveUser()" style="margin-bottom: 1rem;">
+                            ENTRAR AHORA
                         </button>
-                        
-                        <div class="back-link-wrap">
-                            <button class="btn-mc-flat" onclick="showDiscordAuthView()">
-                                <i class="fa-solid fa-arrow-left"></i> Volver a Discord
-                            </button>
-                        </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Minecraft Username Link View -->
-            <div id="minecraft-link-view" style="display: none;">
-                <div class="login-icon">
-                    <img id="login-skin-img" src="https://mc-heads.net/head/MHF_Steve" alt="Skin" class="login-skin">
-                </div>
-                <h3 class="modal-title">Enlaza tu usuario de Minecraft</h3>
-                <p class="modal-desc" id="mc-link-desc">¡Verificado con Discord exitosamente! Escribe tu Nickname de Minecraft.</p>
-                
-                <div class="login-input-row" style="margin-bottom: 0.6rem;">
-                    <input type="text" id="username-input" placeholder="Tu usuario de Minecraft Java..." autocomplete="off" spellcheck="false">
-                </div>
-                
-                <!-- Notice Box emphasizing the importance of 2FA -->
-                <div style="margin-bottom: 0.8rem; text-align: left; background: rgba(168,85,247,0.1); padding: 12px 14px; border-radius: 10px; border: 1.5px solid rgba(168,85,247,0.25);">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.82rem; color: var(--text-dim); font-weight: 700; margin-bottom: 5px;">
-                        <input type="checkbox" id="enable-2fa-checkbox" onchange="toggle2FA()" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
-                        Activar Contraseña de 2-Pasos
-                    </label>
-                    <p style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.35; margin-left: 28px; margin-top: 4px;">
-                        💡 <strong>¡Súper Recomendado!</strong> Si activas esto, podrás iniciar sesión en tu teléfono u otros dispositivos usando solo tu contraseña, sin necesidad de tener acceso a Discord en ese momento.
-                    </p>
-                </div>
-                
-                <div class="login-input-row" id="password-container" style="display: none; margin-bottom: 1.1rem;">
-                    <input type="password" id="password-input" placeholder="Crea una contraseña..." autocomplete="off">
-                    <p style="font-size: 0.72rem; color: #f87171; margin-top: 6px; text-align: left; padding: 0 4px; line-height: 1.3;"><i class="fa-solid fa-triangle-exclamation"></i> Necesaria si quieres recuperar tu cuenta desde otro Discord en el futuro o loguearte sin Discord.</p>
-                </div>
-                
-                <button class="btn-continue" id="save-user-btn">ENLAZAR CUENTA</button>
-                <div class="bedrock-row">
-                    <span>¿Usuario de Bedrock?</span>
-                    <button class="bedrock-toggle" id="bedrock-btn" onclick="toggleBedrock()">No</button>
                 </div>
             </div>
 
             <!-- Profile / Settings View (shown if logged in) -->
             <div id="profile-settings-view" style="display: none;">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem; margin-bottom: 1.5rem;">
-                    <!-- Discord Avatar -->
-                    <div style="text-align: center;">
-                        <img id="profile-discord-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Discord Avatar" style="width: 54px; height: 54px; border-radius: 50%; border: 2px solid #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.3);">
-                        <div id="profile-discord-tag" style="font-size: 0.72rem; color: #fff; font-weight: bold; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px;">User#0</div>
-                        <span style="font-size: 0.6rem; color: var(--text-muted);">Discord</span>
-                    </div>
-                    <!-- Connection line -->
-                    <div style="color: var(--primary); font-size: 1.1rem; filter: drop-shadow(0 0 4px var(--primary-glow));">
-                        <i class="fa-solid fa-link"></i>
-                    </div>
                     <!-- Minecraft Avatar -->
                     <div style="text-align: center;">
                         <img id="profile-minecraft-skin" src="https://mc-heads.net/avatar/MHF_Steve/54" alt="Minecraft Skin" style="width: 54px; height: 54px; border-radius: 8px; border: 2px solid var(--primary); image-rendering: pixelated; box-shadow: 0 0 10px var(--primary-glow);">
@@ -1459,7 +1379,7 @@
                     <i class="fa-solid fa-shield-halved"></i> Fotos &amp; Marcos
                 </button>
                 <button class="prf-tab-btn" id="prf-tab-cuenta" onclick="switchProfileTab('cuenta')">
-                    <i class="fa-solid fa-user-gear"></i> Cuenta &amp; Discord
+                    <i class="fa-solid fa-shield-halved"></i> Seguridad
                 </button>
                 <button class="prf-tab-btn" id="prf-tab-estilo" onclick="switchProfileTab('estilo')">
                     <i class="fa-solid fa-sliders"></i> Estilo &amp; Ajustes
@@ -1474,10 +1394,7 @@
                     <div class="prf-section">
                         <h4><i class="fa-solid fa-image"></i> Foto de Perfil</h4>
                         <div class="prf-avatar-opts">
-                            <label class="prf-radio-opt" id="prf-opt-discord">
-                                <input type="radio" name="avatar-source" value="discord" onchange="updateProfileAvatarPreview('discord')">
-                                <i class="fa-brands fa-discord" style="color:#7289da"></i> Usar foto de Discord
-                            </label>
+                            
                             <label class="prf-radio-opt" id="prf-opt-mc">
                                 <input type="radio" name="avatar-source" value="minecraft" onchange="updateProfileAvatarPreview('minecraft')">
                                 <i class="fa-solid fa-cube" style="color:#5dbb63"></i> Usar skin de Minecraft
@@ -1504,21 +1421,13 @@
                     </div>
                 </div>
 
-                <!-- SUB-TAB 2: CUENTA Y DISCORD -->
+                <!-- SUB-TAB 2: SEGURIDAD -->
                 <div id="prf-panel-cuenta" class="prf-tab-content" style="display:none;">
                     <div class="prf-section">
                         <h4><i class="fa-solid fa-link"></i> Estado de la Cuenta</h4>
                         <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); padding: 1.2rem; border-radius: 14px; margin-bottom: 1rem;">
                             <!-- Discord Avatar -->
-                            <div style="text-align: center;">
-                                <img id="profile-discord-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Discord Avatar" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.3);">
-                                <div id="profile-discord-tag" style="font-size: 0.72rem; color: #fff; font-weight: bold; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px;">User#0</div>
-                                <span style="font-size: 0.6rem; color: var(--text-muted);">Discord</span>
-                            </div>
-                            <!-- Connection line -->
-                            <div style="color: var(--primary); font-size: 1.1rem; filter: drop-shadow(0 0 4px var(--primary-glow));">
-                                <i class="fa-solid fa-link"></i>
-                            </div>
+                            
                             <!-- Minecraft Avatar -->
                             <div style="text-align: center;">
                                 <img id="profile-minecraft-skin" src="https://mc-heads.net/avatar/MHF_Steve/50" alt="Minecraft Skin" style="width: 50px; height: 50px; border-radius: 8px; border: 2px solid var(--primary); image-rendering: pixelated; box-shadow: 0 0 10px var(--primary-glow);">
@@ -1528,7 +1437,7 @@
 
                         <div style="display:flex; flex-direction:column; gap:10px;">
                             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                <button class="btn-mc btn-purple-mc" onclick="loginWithDiscord()" style="flex:1; min-width:160px; padding:0.75rem; font-size:0.8rem;">
+                                <button class="btn-mc btn-purple-mc" onclick="openModal('modal-login')" style="flex:1; min-width:160px; padding:0.75rem; font-size:0.8rem;">
                                     <i class="fa-brands fa-discord"></i> CAMBIAR DISCORD
                                 </button>
                                 <button class="btn-mc btn-dark-mc" onclick="closeModal('modal-user-profile'); openModal('modal-login'); showPasswordLoginView();" style="flex:1; min-width:160px; padding:0.75rem; font-size:0.8rem;">

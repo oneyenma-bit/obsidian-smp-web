@@ -105,17 +105,12 @@ if (supabaseClient) {
         .subscribe();
 }
 
-// CONFIGURACIÓN DE DISCORD CLIENT
-const DISCORD_CLIENT_ID = localStorage.getItem('obs_discord_client_id') || "1532950008251551844"; // Reemplazar con el Client ID de tu aplicación de Discord
-
 // ─── STATE ───────────────────────────────────────────────────
 const state = {
     username: '',
+    legacyId: null, // Para preservar compatibilidad con clanes/publicaciones antiguas
     isBedrock: localStorage.getItem('obs_bedrock') === 'true',
     points: 0,
-    discordUser: null,
-    discordId: null,
-    discordTag: null,
     cart: [],
     payMethod: 'visa',
     currentKit: null,
@@ -127,7 +122,7 @@ const state = {
     // Profile customization
     unlockedFrames: JSON.parse(localStorage.getItem('obs_unlocked_frames') || '[]'),
     activeFrame: localStorage.getItem('obs_active_frame') || '',
-    avatarSource: localStorage.getItem('obs_avatar_source') || 'discord',
+    avatarSource: 'mc-heads',
     customAvatar: localStorage.getItem('obs_custom_avatar') || '',
     profileFont: localStorage.getItem('obs_profile_font') || 'Outfit',
     redeemedCodes: JSON.parse(localStorage.getItem('obs_redeemed_codes') || '[]'),
@@ -135,140 +130,49 @@ const state = {
 };
 
 function parsePublisher(pubStr) {
-    if (!pubStr) return { username: 'Invitado', discordId: null, avatar: null };
+    if (!pubStr) return { username: 'Invitado', legacyId: null, avatar: null };
     if (pubStr.includes('|')) {
         const parts = pubStr.split('|');
-        return { username: parts[0], discordId: parts[1] || null, avatar: parts[2] || null };
+        return { username: parts[0], legacyId: parts[1] || null, avatar: parts[2] || null };
     }
-    return { username: pubStr, discordId: null, avatar: null };
+    return { username: pubStr, legacyId: null, avatar: null };
 }
 
 function isAdminUser() {
     if (state.adminOverride !== undefined) {
         return state.adminOverride;
     }
-    const isDiscordAdmin = state.discordTag && state.discordTag.toLowerCase() === 'pablitorey_';
-    const isMcAdmin = state.username && state.username.toLowerCase() === 'elpayasowtf123';
-    return !!(isDiscordAdmin || isMcAdmin);
+    const isMcAdmin = state.username && (state.username.toLowerCase() === 'elpayasowtf123' || state.username.toLowerCase() === 'cow' || state.username.toLowerCase() === 'oneyenma');
+    return !!isMcAdmin;
 }
 
 function getPublisherAvatar(pubInfo, size = 32) {
-    if (pubInfo.discordId) {
-        if (pubInfo.avatar) {
-            return `https://cdn.discordapp.com/avatars/${pubInfo.discordId}/${pubInfo.avatar}.png`;
-        }
-        return `https://cdn.discordapp.com/embed/avatars/0.png`;
-    }
     return `https://mc-heads.net/avatar/${encodeURIComponent(pubInfo.username || 'Steve')}/${size}`;
 }
 
-// ─── DISCORD AUTHENTICATION FUNCTIONS ──────────────────────────
-function checkDiscordCallback() {
-    if (window.location.hash) {
-        const params = new URLSearchParams(window.location.hash.substring(1));
-        const token = params.get("access_token");
-        if (token) {
-            localStorage.setItem("obs_discord_token", token);
-            window.history.replaceState({}, document.title, window.location.pathname);
-            showToast("🌐 Conectando con Discord...");
-        }
-    }
-}
-async function verifyDiscordLogin() {
-    const token = localStorage.getItem("obs_discord_token");
-    const authView = document.getElementById('discord-auth-view');
-    const linkView = document.getElementById('minecraft-link-view');
-    const passLoginView = document.getElementById('mc-password-login-view');
+// ─── AUTHENTICATION FUNCTIONS ──────────────────────────
+async function verifyLocalLogin() {
+    const localUser = localStorage.getItem('obs_user');
+    const localLegacyId = localStorage.getItem('obs_legacy_id');
     
-    // Si inició sesión con contraseña local (sin Discord)
-    const localUser = localStorage.getItem('obs_logged_without_discord_user');
-    const localId = localStorage.getItem('obs_logged_without_discord_id');
-    
-    if (localUser && localId && !token) {
+    if (localUser) {
         state.username = localUser;
-        state.discordId = localId;
-        state.discordTag = 'Acceso sin Discord';
-        loadUserDataOnLogin(localId, localUser);
+        state.legacyId = localLegacyId || null;
+        
+        loadUserDataOnLogin(state.legacyId, localUser);
         return true;
     }
     
-    if (passLoginView) passLoginView.style.display = 'none';
+    const passLoginView = document.getElementById('mc-password-login-view');
+    if (passLoginView) passLoginView.style.display = 'block';
     
-    if (!token) {
-        if (authView) authView.style.display = 'block';
-        if (linkView) linkView.style.display = 'none';
-        return false;
-    }
-    
-    try {
-        const res = await fetch("https://discord.com/api/users/@me", {
-            headers: { "Authorization": `Bearer ${token}` }
-        });
-        if (res.ok) {
-            const user = await res.json();
-            state.discordUser = user;
-            state.discordId = user.id;
-            state.discordTag = `${user.username}#${user.discriminator || '0'}`;
-            
-            // Cargar usuario de Minecraft enlazado
-            state.username = localStorage.getItem(`obs_mc_user_${user.id}`) || '';
-            
-            // Si no está en local storage (ej: otro dispositivo), lo buscamos en la base de datos
-            if (!state.username && supabaseClient) {
-                try {
-                    const { data } = await supabaseClient
-                        .from('conversations')
-                        .select('*')
-                        .eq('listing_id', 'registration')
-                        .eq('seller', user.id);
-                    if (data && data.length > 0) {
-                        state.username = data[0].buyer;
-                        localStorage.setItem(`obs_mc_user_${user.id}`, state.username);
-                        localStorage.setItem('obs_user', state.username);
-                    }
-                } catch(err) {
-                    console.error("Error fetching user from Supabase:", err);
-                }
-            }
-            
-            loadUserDataOnLogin(user.id, state.username);
-
-            if (state.username) {
-                closeModal('modal-login');
-            } else {
-                if (authView) authView.style.display = 'none';
-                if (linkView) linkView.style.display = 'block';
-                openModal('modal-login');
-            }
-            return true;
-        } else {
-            localStorage.removeItem("obs_discord_token");
-            if (authView) authView.style.display = 'block';
-            if (linkView) linkView.style.display = 'none';
-            return false;
-        }
-    } catch (e) {
-        console.error("Error verifying Discord token:", e);
-        if (authView) authView.style.display = 'block';
-        if (linkView) linkView.style.display = 'none';
-        return false;
-    }
-}
-
-function loginWithDiscord() {
-    let redirectUri = window.location.origin + window.location.pathname;
-    if (redirectUri.endsWith('/') && window.location.pathname === '/') {
-        redirectUri = redirectUri.slice(0, -1);
-    }
-    const url = `https://discord.com/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify`;
-    window.location.href = url;
+    return false;
 }
 
 function logout() {
     // Clear user tokens & account session
-    localStorage.removeItem("obs_discord_token");
-    localStorage.removeItem("obs_logged_without_discord_user");
-    localStorage.removeItem("obs_logged_without_discord_id");
+    localStorage.removeItem("obs_user");
+    localStorage.removeItem("obs_legacy_id");
     
     // Clear user customization state & storage
     localStorage.removeItem("obs_active_frame");
@@ -278,64 +182,26 @@ function logout() {
     localStorage.removeItem("obs_redeemed_codes");
 
     state.username = '';
-    state.discordUser = null;
-    state.discordId = null;
-    state.discordTag = null;
+    state.legacyId = null;
     state.points = 0;
     state.activeFrame = '';
     state.unlockedFrames = [];
     state.customAvatar = '';
-    state.avatarSource = 'discord';
+    state.avatarSource = 'mc-heads';
     
     syncUser();
     renderMarketListings();
     
     showToast("🚪 Sesión cerrada correctamente.");
     
-    const authView = document.getElementById('discord-auth-view');
-    const linkView = document.getElementById('minecraft-link-view');
     const passLoginView = document.getElementById('mc-password-login-view');
     const profileView = document.getElementById('profile-settings-view');
-    if (authView) authView.style.display = 'block';
-    if (linkView) linkView.style.display = 'none';
-    if (passLoginView) passLoginView.style.display = 'none';
+    
+    if (passLoginView) passLoginView.style.display = 'block';
     if (profileView) profileView.style.display = 'none';
     
     closeModal('modal-user-profile');
     openModal('modal-login');
-}
-
-async function unlinkAccount() {
-    if (!state.discordId || !state.username) return;
-    
-    closeModal('modal-login');
-    closeModal('modal-user-profile');
-    
-    customConfirm(
-        '¿Desvincular cuenta?',
-        '¿Estás seguro de que quieres desvincular tu usuario de Minecraft de tu cuenta de Discord? Esto liberará tu Nickname en el servidor.',
-        async () => {
-            if (supabaseClient) {
-                showToast("⏳ Desvinculando cuenta de la base de datos...");
-                try {
-                    const { error } = await supabaseClient
-                        .from('conversations')
-                        .delete()
-                        .eq('listing_id', 'registration')
-                        .eq('buyer', state.username.toLowerCase())
-                        .eq('seller', state.discordId);
-                    if (error) throw error;
-                } catch (err) {
-                    console.error("Error al desvincular cuenta:", err);
-                    showToast("❌ Error al desvincular de la base de datos, pero se cerrará sesión local.");
-                }
-            }
-
-            localStorage.removeItem(`obs_mc_user_${state.discordId}`);
-            logout();
-            showToast("✅ Cuenta desvinculada y sesión cerrada.");
-        }
-    );
 }
 
 function toggleSetting(key) {
@@ -813,7 +679,7 @@ function loadUserDataOnLogin(userId, username) {
 }
 
 function saveUserDataToStorage() {
-    const key = state.discordId || (state.username ? state.username.toLowerCase() : null);
+    const key = state.legacyId || (state.username ? state.username.toLowerCase() : null);
 
     localStorage.setItem('obs_points', state.points);
     localStorage.setItem('obs_active_frame', state.activeFrame || '');
@@ -876,11 +742,7 @@ function updateNavUserAvatar() {
     let avatarSrc;
     if (state.avatarSource === 'custom' && state.customAvatar) {
         avatarSrc = state.customAvatar;
-    } else if (state.avatarSource === 'discord' && state.discordId) {
-        avatarSrc = state.discordUser?.avatar
-            ? `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`
-            : `https://cdn.discordapp.com/embed/avatars/0.png`;
-    } else {
+     else {
         avatarSrc = `https://mc-heads.net/avatar/${encodeURIComponent(state.username || 'Steve')}/40`;
     }
 
@@ -938,16 +800,6 @@ function syncUser() {
 function syncProfileModalUI() {
     if (!state.username || state.username === 'Invitado') return;
 
-    document.querySelectorAll('#profile-discord-avatar').forEach(img => {
-        img.src = state.discordUser?.avatar 
-            ? `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`
-            : "https://cdn.discordapp.com/embed/avatars/0.png";
-    });
-
-    document.querySelectorAll('#profile-discord-tag').forEach(el => {
-        el.textContent = state.discordTag || 'User#0';
-    });
-
     document.querySelectorAll('#profile-minecraft-skin').forEach(img => {
         img.src = `https://mc-heads.net/avatar/${encodeURIComponent(state.username)}/60`;
     });
@@ -963,7 +815,95 @@ function syncProfileModalUI() {
         el.style.display = state.isBedrock ? 'none' : 'inline-block';
     });
 
+    const adminTabBtn = document.getElementById('prf-tab-admin');
+    if (adminTabBtn) {
+        adminTabBtn.style.display = isAdminUser() ? 'block' : 'none';
+    }
+
     updateSettingsUI();
+}
+
+async function renderAdminPanel() {
+    switchProfileTab('admin');
+    const container = document.getElementById('admin-user-list');
+    if (!container) return;
+    
+    if (!isAdminUser()) {
+        container.innerHTML = '<p style="color:red; text-align:center;">Acceso Denegado</p>';
+        return;
+    }
+    
+    container.innerHTML = '<div style="text-align:center; padding: 2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando usuarios...</div>';
+    
+    if (!supabaseClient) {
+        container.innerHTML = '<p style="color:red; text-align:center;">Base de datos no disponible.</p>';
+        return;
+    }
+    
+    try {
+        const { data, error } = await supabaseClient
+            .from('conversations')
+            .select('*')
+            .eq('listing_id', 'registration');
+            
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color: var(--text-muted);">No hay usuarios registrados.</p>';
+            return;
+        }
+        
+        let html = '';
+        data.forEach(user => {
+            const hasPass = user.messages.some(m => m.startsWith('pass:') && m !== 'pass:none') ? '✅' : '❌';
+            const hasPin = user.messages.some(m => m.startsWith('pin:')) ? '✅' : '❌';
+            
+            html += `
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="https://mc-heads.net/avatar/${encodeURIComponent(user.buyer)}/32" style="border-radius:4px; image-rendering:pixelated;">
+                    <div>
+                        <strong style="color:var(--primary); font-size:1rem;">${user.buyer}</strong><br>
+                        <span style="font-size:0.75rem; color:var(--text-muted);">
+                            Pass: ${hasPass} | PIN: ${hasPin} | Legacy: ${user.seller && user.seller !== 'mc_user' ? 'Sí' : 'No'}
+                        </span>
+                    </div>
+                </div>
+                <button onclick="deleteUserAccount('${user.id}', '${user.buyer}')" class="btn-mc btn-dark-mc" style="padding: 6px 12px; font-size: 0.8rem; border-color: #f87171; color: #f87171;">
+                    <i class="fa-solid fa-trash"></i> Eliminar
+                </button>
+            </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+    } catch(err) {
+        console.error("Error loading users:", err);
+        container.innerHTML = '<p style="color:red; text-align:center;">Error cargando registros.</p>';
+    }
+}
+
+function deleteUserAccount(id, username) {
+    customConfirm(
+        '¿Eliminar usuario?',
+        \`¿Estás seguro de que quieres eliminar el registro de seguridad de <b>\${username}</b>? Tendrá que volver a crear su contraseña al entrar.\`,
+        async () => {
+            showToast("⏳ Eliminando...");
+            if (supabaseClient) {
+                const { error } = await supabaseClient
+                    .from('conversations')
+                    .delete()
+                    .eq('id', id);
+                if (error) {
+                    showToast("❌ Error al eliminar.");
+                    return;
+                }
+                showToast("✅ Usuario eliminado exitosamente.");
+                renderAdminPanel(); // Refresh list
+            }
+        }
+    );
 }
 
 function bindEvents() {
@@ -1033,28 +973,26 @@ function bindEvents() {
 async function saveUser() {
     const inp = document.getElementById('username-input');
     const passInp = document.getElementById('password-input');
-    const cb2fa = document.getElementById('enable-2fa-checkbox');
+    const pinInp = document.getElementById('pin-input');
+    
     const v = inp?.value.trim();
     const enteredPass = passInp?.value.trim();
-    const is2FAEnabled = cb2fa ? cb2fa.checked : false;
+    const enteredPin = pinInp?.value.trim();
     
     if (!v) { showToast('⚠️ Ingresa tu usuario de Minecraft.'); return; }
     if (v.includes(' ') || v.includes('|')) { showToast('⚠️ Nombre de usuario no válido.'); return; }
-    if (is2FAEnabled && !enteredPass) { showToast('⚠️ Ingresa tu contraseña de seguridad de 2 pasos.'); return; }
-    
-    if (!state.discordId) {
-        showToast('⚠️ Primero debes iniciar sesión con Discord.');
-        return;
-    }
+    if (!enteredPass) { showToast('⚠️ Ingresa tu contraseña.'); return; }
+    if (!enteredPin) { showToast('⚠️ Ingresa tu PIN de seguridad.'); return; }
 
     const btn = document.getElementById('save-user-btn');
-    const origText = btn ? btn.innerHTML : 'ENLAZAR CUENTA';
+    const origText = btn ? btn.innerHTML : 'INICIAR SESIÓN';
     if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> VERIFICANDO...';
     }
 
-    // Verificar bloqueo de registro y contraseña en base de datos Supabase
+    let legacyId = null;
+
     if (supabaseClient) {
         try {
             const { data, error } = await supabaseClient
@@ -1067,19 +1005,14 @@ async function saveUser() {
             
             if (data && data.length > 0) {
                 const reg = data[0];
-                const storedPass = reg.messages && reg.messages[0] ? reg.messages[0].replace('pass:', '') : '';
+                const storedPassStr = reg.messages ? reg.messages.find(m => m.startsWith('pass:')) : null;
+                const storedPinStr = reg.messages ? reg.messages.find(m => m.startsWith('pin:')) : null;
                 
-                if (storedPass !== 'none') {
-                    if (enteredPass !== storedPass) {
-                        showToast('❌ Contraseña de seguridad de 2 pasos incorrecta o no activada.');
-                        if (btn) {
-                            btn.disabled = false;
-                            btn.innerHTML = origText;
-                        }
-                        return;
-                    }
-                } else if (reg.seller !== state.discordId) {
-                    showToast('❌ Esta cuenta está ligada a otro Discord y no tiene contraseña de recuperación configurada.');
+                const storedPass = storedPassStr ? storedPassStr.replace('pass:', '') : '';
+                const storedPin = storedPinStr ? storedPinStr.replace('pin:', '') : '';
+                
+                if (enteredPass !== storedPass || (storedPin && enteredPin !== storedPin)) {
+                    showToast('❌ Contraseña o PIN incorrectos.');
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = origText;
@@ -1087,26 +1020,21 @@ async function saveUser() {
                     return;
                 }
                 
-                // Si la contraseña coincide pero se loguea desde otro Discord, actualizamos el Discord ID (seller)
-                if (reg.seller !== state.discordId) {
-                    const { error: updError } = await supabaseClient
-                        .from('conversations')
-                        .update({ seller: state.discordId })
-                        .eq('id', reg.id);
-                    if (updError) throw updError;
+                // Extraer legacyId si existe (si fue registrado con Discord antes)
+                if (reg.seller && reg.seller.length > 10 && reg.seller !== 'mc_user') {
+                    legacyId = reg.seller;
                 }
             } else {
-                // Registrar este usuario a este Discord ID con su contraseña
-                const finalPass = is2FAEnabled ? enteredPass : 'none';
+                // Registrar nuevo usuario
                 const { error: insError } = await supabaseClient
                     .from('conversations')
                     .insert([{
                         id: 'reg_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
                         listing_id: 'registration',
                         buyer: v.toLowerCase(),
-                        seller: state.discordId,
+                        seller: 'mc_user',
                         status: 'active',
-                        messages: ["pass:" + finalPass]
+                        messages: ["pass:" + enteredPass, "pin:" + enteredPin]
                     }]);
                 if (insError) throw insError;
             }
@@ -1127,12 +1055,15 @@ async function saveUser() {
     }
     
     state.username = v;
-    localStorage.setItem(`obs_mc_user_${state.discordId}`, v);
-    localStorage.setItem('obs_user', v); // compatible fallback
+    state.legacyId = legacyId;
+    localStorage.setItem('obs_user', v);
+    if (legacyId) {
+        localStorage.setItem('obs_legacy_id', legacyId);
+    }
     
-    loadUserDataOnLogin(state.discordId, v);
+    loadUserDataOnLogin(legacyId, v);
     closeModal('modal-login');
-    showToast(`✅ Cuenta vinculada: ¡Bienvenido, ${v}!`);
+    showToast(`✅ Sesión iniciada: ¡Bienvenido, ${v}!`);
     loadInitialDatabaseData();
 }
 
@@ -1152,7 +1083,7 @@ function openModal(id) {
         
         if (passLoginView) passLoginView.style.display = 'none';
         
-        if (state.discordId && state.username) {
+        if (state.legacyId && state.username) {
             if (authView) authView.style.display = 'none';
             if (linkView) linkView.style.display = 'none';
             if (profileView) {
@@ -1164,8 +1095,8 @@ function openModal(id) {
                 const bedrockBadge = document.getElementById('profile-bedrock-badge');
                 const javaBadge = document.getElementById('profile-java-badge');
                 
-                if (discordAvatar) discordAvatar.src = state.discordUser?.avatar 
-                    ? `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`
+                if (discordAvatar) discordAvatar.src = null?.avatar 
+                    ? `https://cdn.discordapp.com/avatars/${state.legacyId}/${null.avatar}.png`
                     : "https://cdn.discordapp.com/embed/avatars/0.png";
                 if (discordTag) discordTag.textContent = state.discordTag;
                 if (mcSkin) mcSkin.src = `https://mc-heads.net/avatar/${encodeURIComponent(state.username)}/60`;
@@ -1174,7 +1105,7 @@ function openModal(id) {
                 if (javaBadge) javaBadge.style.display = state.isBedrock ? 'none' : 'inline-block';
                 updateSettingsUI();
             }
-        } else if (state.discordId) {
+        } else if (state.legacyId) {
             if (authView) authView.style.display = 'none';
             if (linkView) linkView.style.display = 'block';
             if (profileView) profileView.style.display = 'none';
@@ -1185,7 +1116,7 @@ function openModal(id) {
         }
     }
     if (id === 'modal-create-listing' || id === 'modal-checkout') {
-        if (!state.discordId || !state.username) {
+        if (!state.legacyId || !state.username) {
             showToast('⚠️ Debes iniciar sesión con Discord y enlazar tu cuenta de Minecraft para continuar.');
             openModal('modal-login');
             return;
@@ -1725,14 +1656,12 @@ function renderMarketplace() {
             itemImg = 'img/' + itemImg;
         }
 
-        const realOwner = (pubInfo.discordId 
-            ? (pubInfo.discordId === state.discordId)
-            : (pubInfo.username === state.username));
+        const realOwner = (pubInfo.legacyId && state.legacyId ? (pubInfo.legacyId === state.legacyId) : (pubInfo.username === state.username));
         const isAdmin = isAdminUser();
         const isOwner = realOwner || isAdmin;
 
         // Determine publisher avatar frame
-        const isCurrentUser = (pubInfo.discordId ? pubInfo.discordId === state.discordId : pubInfo.username === state.username);
+        const isCurrentUser = (pubInfo.legacyId ? pubInfo.legacyId === state.legacyId : pubInfo.username === state.username);
         const pubFrame = isCurrentUser ? state.activeFrame : '';
         const pubAvatarSrc = isCurrentUser && state.avatarSource === 'custom' && state.customAvatar
             ? state.customAvatar
@@ -1906,10 +1835,10 @@ function handleCreateListingSubmit(e) {
     }
 
     let publisher = state.username || 'Invitado';
-    if (state.discordId) {
-        publisher += '|' + state.discordId;
-        if (state.discordUser && state.discordUser.avatar) {
-            publisher += '|' + state.discordUser.avatar;
+    if (state.legacyId) {
+        publisher += '|' + state.legacyId;
+        if (null && null.avatar) {
+            publisher += '|' + null.avatar;
         } else {
             publisher += '|';
         }
@@ -1968,9 +1897,7 @@ function openListingDetailModal(listingId) {
         itemImg = 'img/' + itemImg;
     }
 
-    const realOwner = (pubInfo.discordId 
-        ? (pubInfo.discordId === state.discordId)
-        : (pubInfo.username === state.username));
+    const realOwner = (pubInfo.legacyId && state.legacyId ? (pubInfo.legacyId === state.legacyId) : (pubInfo.username === state.username));
     const isAdmin = isAdminUser();
 
     detailContainer.innerHTML = `
@@ -2389,8 +2316,8 @@ function deleteListing(id) {
     const item = state.marketplaceListings.find(l => l.id === listingId);
     if (item) {
         const pubInfo = parsePublisher(item.publisher);
-        const isOwner = (pubInfo.discordId 
-            ? (pubInfo.discordId === state.discordId)
+        const isOwner = (pubInfo.legacyId 
+            ? (pubInfo.legacyId === state.legacyId)
             : (pubInfo.username === state.username)) || isAdminUser();
         if (!isOwner) {
             showToast('⚠️ No tienes permiso para eliminar esta publicación.');
@@ -2486,7 +2413,7 @@ async function loginWithPasswordOnly() {
                 } else if (p === storedPass) {
                     // Login exitoso!
                     state.username = reg.buyer;
-                    state.discordId = reg.seller; // ID de Discord enlazado
+                    state.legacyId = reg.seller; // ID de Discord enlazado
                     state.discordTag = 'Acceso sin Discord';
                     
                     // Guardamos localmente
@@ -2653,7 +2580,7 @@ async function handleFactionSubmit(e) {
         price: tag,
         desc_text: serializedDesc,
         image: factionUploadedImageBase64 || 'img/obsidian.png',
-        publisher: state.discordId ? `${publisherVal}|${state.discordId}|${state.discordUser?.avatar || ''}` : publisherVal
+        publisher: state.legacyId ? `${publisherVal}|${state.legacyId}|${null?.avatar || ''}` : publisherVal
     };
     
     if (supabaseClient) {
@@ -2832,9 +2759,7 @@ function openFactionDetailModal(factionId) {
     const frameClass = data.frame || 'frame-iron';
     
     const pubInfo = parsePublisher(item.publisher);
-    const isOwner = pubInfo.discordId 
-        ? (pubInfo.discordId === state.discordId)
-        : (pubInfo.username === state.username);
+    const isOwner = (pubInfo.legacyId && state.legacyId ? (pubInfo.legacyId === state.legacyId) : (pubInfo.username === state.username));
         
     const isAdmin = isAdminUser();
     const canManage = isOwner || isAdmin;
@@ -3155,9 +3080,9 @@ function toggleDevAdminOverride() {
 function devLoginAs(username, tag) {
     if (username === 'Invitado') {
         state.username = '';
-        state.discordId = null;
+        state.legacyId = null;
         state.discordTag = null;
-        state.discordUser = null;
+        null = null;
         localStorage.removeItem('obs_user');
         localStorage.removeItem('obs_discord_user');
         localStorage.removeItem('obs_discord_tag');
@@ -3165,9 +3090,9 @@ function devLoginAs(username, tag) {
         showToast('🚪 Has cerrado sesión de pruebas (Modo Invitado).');
     } else {
         state.username = username;
-        state.discordId = tag ? 'dev_id_' + username : null;
+        state.legacyId = tag ? 'dev_id_' + username : null;
         state.discordTag = tag || null;
-        state.discordUser = tag ? { avatar: 'default_dev_avatar' } : null;
+        null = tag ? { avatar: 'default_dev_avatar' } : null;
         
         localStorage.setItem('obs_user', username);
         if (tag) {
@@ -3411,7 +3336,7 @@ function openUserProfileModal(targetUsername) {
 
     if (isOwnProfile) {
         if (tagEl) {
-            tagEl.textContent = state.discordTag ? `@${state.discordTag}` : (state.discordId ? 'Discord conectado' : 'Sin Discord');
+            tagEl.textContent = state.legacyId ? 'Cuenta Legacy' : 'Jugador';
         }
         if (editPanel) editPanel.style.display = '';
         if (viewPanel) viewPanel.style.display = 'none';
@@ -3459,11 +3384,7 @@ function renderProfileAvatarPreview(username, isOwnProfile) {
     if (isOwnProfile) {
         if (state.avatarSource === 'custom' && state.customAvatar) {
             avatarSrc = state.customAvatar;
-        } else if (state.avatarSource === 'discord' && state.discordId) {
-            avatarSrc = state.discordUser?.avatar
-                ? `https://cdn.discordapp.com/avatars/${state.discordId}/${state.discordUser.avatar}.png`
-                : `https://cdn.discordapp.com/embed/avatars/0.png`;
-        } else {
+         else {
             avatarSrc = `https://mc-heads.net/avatar/${encodeURIComponent(username || 'Steve')}/80`;
         }
     } else {
