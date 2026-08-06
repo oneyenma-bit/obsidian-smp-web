@@ -741,7 +741,7 @@ function loadUserDataOnLogin(userId, username) {
             .then(({ data }) => {
                 if (data && data.length > 0) {
                     const prof = data[0];
-                    if (prof.points !== undefined && prof.points > state.points) {
+                    if (prof.points !== undefined) {
                         state.points = prof.points;
                     }
                     if (prof.active_frame) {
@@ -759,7 +759,7 @@ function loadUserDataOnLogin(userId, username) {
                         localStorage.setItem('obs_last_spin_time', prof.last_spin_time.toString());
                         localStorage.setItem(`obs_last_spin_time_${key}`, prof.last_spin_time.toString());
                     }
-                    saveUserDataToStorage();
+                    saveUserDataToStorage(true); // Solo actualiza localStorage, no escribe en Supabase
                     syncUser();
                 } else {
                     // Fallback to conversations table if user_profiles is empty
@@ -788,9 +788,7 @@ function loadUserDataOnLogin(userId, username) {
 
                     if (msgGems) {
                         const gemsVal = parseInt(msgGems.replace('gems:', ''), 10) || 0;
-                        if (gemsVal > state.points) {
-                            state.points = gemsVal;
-                        }
+                        state.points = gemsVal; // La base de datos sobrescribe el valor local
                     }
                     if (msgFrame) {
                         state.activeFrame = msgFrame.replace('active_frame:', '');
@@ -808,18 +806,18 @@ function loadUserDataOnLogin(userId, username) {
                         localStorage.setItem('obs_last_spin_time', spinTime);
                         localStorage.setItem(`obs_last_spin_time_${key}`, spinTime);
                     }
-                    saveUserDataToStorage();
+                    saveUserDataToStorage(true); // Solo actualiza localStorage, no escribe en Supabase
                     syncUser();
                 }
             })
             .catch(() => {});
     }
 
-    saveUserDataToStorage();
+    saveUserDataToStorage(true); // Solo actualiza localStorage localmente al inicio síncrono
     syncUser();
 }
 
-function saveUserDataToStorage() {
+function saveUserDataToStorage(skipSupabase = false) {
     const key = state.legacyId || (state.username ? state.username.toLowerCase() : null);
 
     localStorage.setItem('obs_points', state.points);
@@ -840,6 +838,8 @@ function saveUserDataToStorage() {
         localStorage.setItem(`obs_active_frame_${uKey}`, state.activeFrame || '');
         localStorage.setItem(`obs_unlocked_frames_${uKey}`, JSON.stringify(state.unlockedFrames || []));
     }
+
+    if (skipSupabase) return;
 
     // Save to Supabase
     if (supabaseClient && state.username && state.username !== 'Invitado') {
