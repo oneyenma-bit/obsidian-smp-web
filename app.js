@@ -932,6 +932,12 @@ function syncProfileModalUI() {
         });
     }
 
+    const devToolsSection = document.getElementById('dev-tools-section');
+    if (devToolsSection) {
+        const isDevUser = state.username && state.username.toLowerCase() === 'elpayasowtf123';
+        devToolsSection.style.display = isDevUser ? 'block' : 'none';
+    }
+
     updateSettingsUI();
 }
 
