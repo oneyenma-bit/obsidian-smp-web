@@ -398,11 +398,11 @@
                         <div class="kit-body">
                             <h3 class="kit-name amber-color">AMBER</h3>
                             <p class="kit-desc">Full Diamante + Herramientas + 14 Libros Encantados</p>
-                            <div class="kit-price"><span class="price-num">$2.00</span> <span class="price-usd">USD</span></div>
+                            <div class="kit-price"><span class="price-num">$1.99</span> <span class="price-usd">USD</span></div>
                         </div>
                         <div class="kit-actions">
                             <button class="btn-glass" onclick="openShulkerModal('amber')"><i class="fa-solid fa-eye"></i> Ver Kit</button>
-                            <button class="btn-primary" onclick="addToCart('amber','Rango Amber + Shulker Roja',2.00)"><i class="fa-solid fa-cart-plus"></i> Comprar $2 USD</button>
+                            <button class="btn-primary" onclick="addToCart('amber','Rango Amber + Shulker Roja',1.99)"><i class="fa-solid fa-cart-plus"></i> Comprar $1.99 USD</button>
                         </div>
                     </div>
 
@@ -416,11 +416,11 @@
                         <div class="kit-body">
                             <h3 class="kit-name void-color">VOID</h3>
                             <p class="kit-desc">Full Netherite + Tridente + Arco + Tótem + Manzanas de Oro</p>
-                            <div class="kit-price"><span class="price-num">$4.00</span> <span class="price-usd">USD</span></div>
+                            <div class="kit-price"><span class="price-num">$4.99</span> <span class="price-usd">USD</span></div>
                         </div>
                         <div class="kit-actions">
                             <button class="btn-glass" onclick="openShulkerModal('void')"><i class="fa-solid fa-eye"></i> Ver Kit</button>
-                            <button class="btn-primary" onclick="addToCart('void','Rango Void + Shulker Morada',4.00)"><i class="fa-solid fa-cart-plus"></i> Comprar $4 USD</button>
+                            <button class="btn-primary" onclick="addToCart('void','Rango Void + Shulker Morada',4.99)"><i class="fa-solid fa-cart-plus"></i> Comprar $4.99 USD</button>
                         </div>
                     </div>
 
@@ -434,11 +434,11 @@
                         <div class="kit-body">
                             <h3 class="kit-name midnight-color">MIDNIGHT</h3>
                             <p class="kit-desc">Full Netherite Elite + Elytras + Mazo + Plantilla Warden + 3 Tótems</p>
-                            <div class="kit-price"><span class="price-num">$6.00</span> <span class="price-usd">USD</span></div>
+                            <div class="kit-price"><span class="price-num">$6.99</span> <span class="price-usd">USD</span></div>
                         </div>
                         <div class="kit-actions">
                             <button class="btn-glass" onclick="openShulkerModal('midnight')"><i class="fa-solid fa-eye"></i> Ver Kit</button>
-                            <button class="btn-primary" onclick="addToCart('midnight','Rango Midnight + Shulker Negra',6.00)"><i class="fa-solid fa-cart-plus"></i> Comprar $6 USD</button>
+                            <button class="btn-primary" onclick="addToCart('midnight','Rango Midnight + Shulker Negra',6.99)"><i class="fa-solid fa-cart-plus"></i> Comprar $6.99 USD</button>
                         </div>
                     </div>
 
@@ -1019,8 +1019,8 @@
                 <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem; margin-bottom: 1.5rem;">
                     <!-- Minecraft Avatar -->
                     <div style="text-align: center;">
-                        <img id="profile-minecraft-skin" src="https://mc-heads.net/avatar/MHF_Steve/54" alt="Minecraft Skin" style="width: 54px; height: 54px; border-radius: 8px; border: 2px solid var(--primary); image-rendering: pixelated; box-shadow: 0 0 10px var(--primary-glow);">
-                        <div id="profile-minecraft-name" style="font-size: 0.72rem; color: #fff; font-weight: bold; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px;">Player</div>
+                        <img class="profile-minecraft-skin" src="https://mc-heads.net/avatar/MHF_Steve/54" alt="Minecraft Skin" style="width: 54px; height: 54px; border-radius: 8px; border: 2px solid var(--primary); image-rendering: pixelated; box-shadow: 0 0 10px var(--primary-glow);">
+                        <div class="profile-minecraft-name" style="font-size: 0.72rem; color: #fff; font-weight: bold; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px;">Player</div>
                         <div style="margin-top: 2px; height: 14px; display: flex; align-items: center; justify-content: center;">
                             <span id="profile-bedrock-badge" class="shulker-tier-chip" style="font-size: 0.5rem; padding: 0.1rem 0.3rem; margin: 0; background: var(--primary);">BEDROCK</span>
                             <span id="profile-java-badge" class="shulker-tier-chip" style="font-size: 0.5rem; padding: 0.1rem 0.3rem; margin: 0; background: #10b981;">JAVA</span>
@@ -1033,11 +1033,11 @@
                 <!-- Settings Options -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.7rem; font-size: 0.82rem; text-align: left; color: var(--text-muted); font-weight: 600;">
                     <span><i class="fa-solid fa-volume-high" style="color: var(--primary); margin-right: 4px;"></i> Sonido de Clics Minecraft</span>
-                    <button class="bedrock-toggle" id="setting-sound-btn" onclick="toggleSetting('sound')" style="padding: 0.2rem 0.8rem; font-size: 0.72rem; width: 50px;">Sí</button>
+                    <button class="bedrock-toggle setting-sound-btn" onclick="toggleSetting('sound')" style="padding: 0.2rem 0.8rem; font-size: 0.72rem; width: 50px;">Sí</button>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; font-size: 0.82rem; text-align: left; color: var(--text-muted); font-weight: 600;">
                     <span><i class="fa-solid fa-sparkles" style="color: var(--primary); margin-right: 4px;"></i> Partículas de Fondo</span>
-                    <button class="bedrock-toggle" id="setting-particles-btn" onclick="toggleSetting('particles')" style="padding: 0.2rem 0.8rem; font-size: 0.72rem; width: 50px;">Sí</button>
+                    <button class="bedrock-toggle setting-particles-btn" onclick="toggleSetting('particles')" style="padding: 0.2rem 0.8rem; font-size: 0.72rem; width: 50px;">Sí</button>
                 </div>
 
                 <div style="margin-top: 1.2rem; display: flex; gap: 0.6rem;">
@@ -1520,8 +1520,8 @@
                             
                             <!-- Minecraft Avatar -->
                             <div style="text-align: center;">
-                                <img id="profile-minecraft-skin" src="https://mc-heads.net/avatar/MHF_Steve/50" alt="Minecraft Skin" style="width: 50px; height: 50px; border-radius: 8px; border: 2px solid var(--primary); image-rendering: pixelated; box-shadow: 0 0 10px var(--primary-glow);">
-                                <div id="profile-minecraft-name" style="font-size: 0.72rem; color: #fff; font-weight: bold; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px;">Player</div>
+                                <img class="profile-minecraft-skin" src="https://mc-heads.net/avatar/MHF_Steve/50" alt="Minecraft Skin" style="width: 50px; height: 50px; border-radius: 8px; border: 2px solid var(--primary); image-rendering: pixelated; box-shadow: 0 0 10px var(--primary-glow);">
+                                <div class="profile-minecraft-name" style="font-size: 0.72rem; color: #fff; font-weight: bold; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px;">Player</div>
                             </div>
                         </div>
 
@@ -1572,11 +1572,11 @@
                         <h4><i class="fa-solid fa-sliders"></i> Preferencias de la Aplicación</h4>
                         <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); padding: 0.8rem 1rem; border-radius: 10px; margin-bottom: 0.6rem;">
                             <span style="font-size:0.83rem; color:var(--text-muted); font-weight:600;"><i class="fa-solid fa-volume-high" style="color: var(--primary); margin-right: 6px;"></i> Sonido de Clics Minecraft</span>
-                            <button class="bedrock-toggle" id="setting-sound-btn" onclick="toggleSetting('sound')" style="padding: 0.2rem 0.8rem; font-size: 0.72rem; width: 50px;">Sí</button>
+                            <button class="bedrock-toggle setting-sound-btn" onclick="toggleSetting('sound')" style="padding: 0.2rem 0.8rem; font-size: 0.72rem; width: 50px;">Sí</button>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); padding: 0.8rem 1rem; border-radius: 10px;">
                             <span style="font-size:0.83rem; color:var(--text-muted); font-weight:600;"><i class="fa-solid fa-sparkles" style="color: var(--primary); margin-right: 6px;"></i> Partículas de Fondo</span>
-                            <button class="bedrock-toggle" id="setting-particles-btn" onclick="toggleSetting('particles')" style="padding: 0.2rem 0.8rem; font-size: 0.72rem; width: 50px;">Sí</button>
+                            <button class="bedrock-toggle setting-particles-btn" onclick="toggleSetting('particles')" style="padding: 0.2rem 0.8rem; font-size: 0.72rem; width: 50px;">Sí</button>
                         </div>
                     </div>
 

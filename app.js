@@ -4,8 +4,14 @@
  */
 
 // ─── CONFIGURATION ───────────────────────────────────────────
-// REEMPLAZA ESTO CON EL LINK DE TU TIENDA TEBEX (EJEMPLO: https://obsidian-smp.tebex.io)
-const TEBEX_STORE_URL = "https://tu-tienda.tebex.io";
+const TEBEX_STORE_URL = "https://obsidian-smp.tebex.store";
+
+// Mapeo de IDs de paquetes de Tebex para redirección directa
+const TEBEX_PACKAGES = {
+    'amber': '7602698',
+    'void': '7602702',
+    'midnight': '7602712'
+};
 
 // CONFIGURACIÓN DE SUPABASE (TIEMPO REAL)
 // Regístrate gratis en supabase.com, crea un proyecto y pega tus credenciales aquí.
@@ -305,11 +311,13 @@ function toggleSetting(key) {
         if (!current) playMcClick();
     } else if (key === 'particles') {
         const current = localStorage.getItem('mc_particles') !== 'false';
-        localStorage.setItem('mc_particles', !current ? 'true' : 'false');
+        const nextState = !current;
+        localStorage.setItem('mc_particles', nextState ? 'true' : 'false');
         updateSettingsUI();
-        const canvas = document.getElementById('particles-canvas');
-        if (canvas) {
-            canvas.style.display = !current ? 'block' : 'none';
+        if (nextState) {
+            if (typeof window.startParticles === 'function') window.startParticles();
+        } else {
+            if (typeof window.stopParticles === 'function') window.stopParticles();
         }
     }
 }
@@ -323,8 +331,8 @@ function toggle2FA() {
 }
 
 function updateSettingsUI() {
-    const soundButtons = document.querySelectorAll('#setting-sound-btn');
-    const particlesButtons = document.querySelectorAll('#setting-particles-btn');
+    const soundButtons = document.querySelectorAll('.setting-sound-btn');
+    const particlesButtons = document.querySelectorAll('.setting-particles-btn');
     
     const soundOn = localStorage.getItem('mc_sound') !== 'false';
     const particlesOn = localStorage.getItem('mc_particles') !== 'false';
@@ -500,7 +508,7 @@ function loadInitialDatabaseData() {
 const KITS = {
     amber: {
         label: 'Rango Amber + Shulker Roja',
-        price: 2.00,
+        price: 1.99,
         tier: 'AMBER',
         colorClass: 'amber-color',
         image: 'img/amber.jpeg',
@@ -514,7 +522,7 @@ const KITS = {
     },
     void: {
         label: 'Rango Void + Shulker Morada',
-        price: 4.00,
+        price: 4.99,
         tier: 'VOID',
         colorClass: 'void-color',
         image: 'img/void.jpeg',
@@ -529,7 +537,7 @@ const KITS = {
     },
     midnight: {
         label: 'Rango Midnight + Shulker Negra',
-        price: 6.00,
+        price: 6.99,
         tier: 'MIDNIGHT',
         colorClass: 'midnight-color',
         image: 'img/midnight.png',
@@ -562,6 +570,9 @@ const KITS = {
 };
 
 // ─── MINECRAFT ENCHANTMENT PARTICLES ──────────────────────────
+let particlesAnimationFrameId = null;
+let particlesActive = false;
+
 function initParticles() {
     const canvas = document.getElementById('particles-canvas');
     if (!canvas) return;
@@ -589,7 +600,9 @@ function initParticles() {
     }));
 
     function draw() {
+        if (!particlesActive) return;
         ctx.clearRect(0, 0, W, H);
+        
         particles.forEach(p => {
             p.y += p.vy;
             p.x += p.vx;
@@ -602,15 +615,34 @@ function initParticles() {
             ctx.save();
             ctx.translate(p.x, p.y);
             ctx.rotate(p.rotation);
+            
+            // OPTIMIZED GLOW EFFECT: No slow shadowBlur, we draw a larger rectangle with lower opacity!
+            ctx.fillStyle = `${p.color}${p.alpha * 0.22})`;
+            ctx.fillRect(-p.size, -p.size, p.size * 2, p.size * 2);
+            
             ctx.fillStyle = `${p.color}${p.alpha})`;
-            ctx.shadowColor = `${p.color}0.8)`;
-            ctx.shadowBlur = 8;
             ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
             ctx.restore();
         });
-        requestAnimationFrame(draw);
+        particlesAnimationFrameId = requestAnimationFrame(draw);
     }
-    draw();
+
+    window.startParticles = function() {
+        if (particlesActive) return;
+        particlesActive = true;
+        canvas.style.display = 'block';
+        draw();
+    };
+
+    window.stopParticles = function() {
+        particlesActive = false;
+        if (particlesAnimationFrameId) {
+            cancelAnimationFrame(particlesAnimationFrameId);
+            particlesAnimationFrameId = null;
+        }
+        canvas.style.display = 'none';
+        ctx.clearRect(0, 0, W, H);
+    };
 
     let lastWidth = window.innerWidth;
     window.addEventListener('resize', () => {
@@ -618,6 +650,9 @@ function initParticles() {
             W = canvas.width = window.innerWidth;
             H = canvas.height = window.innerHeight;
             lastWidth = window.innerWidth;
+            if (particlesActive && !particlesAnimationFrameId) {
+                draw();
+            }
         }
     });
 }
@@ -627,10 +662,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     initParticles();
     
     // Configuración inicial de partículas
-    const canvas = document.getElementById('particles-canvas');
-    if (canvas) {
-        const particlesOn = localStorage.getItem('mc_particles') !== 'false';
-        canvas.style.display = particlesOn ? 'block' : 'none';
+    const particlesOn = localStorage.getItem('mc_particles') !== 'false';
+    if (particlesOn) {
+        if (typeof window.startParticles === 'function') window.startParticles();
+    } else {
+        if (typeof window.stopParticles === 'function') window.stopParticles();
     }
     
     const isLogged = await verifyLocalLogin();
@@ -978,11 +1014,11 @@ function syncUser() {
 function syncProfileModalUI() {
     if (!state.username || state.username === 'Invitado') return;
 
-    document.querySelectorAll('#profile-minecraft-skin').forEach(img => {
+    document.querySelectorAll('.profile-minecraft-skin').forEach(img => {
         img.src = `https://mc-heads.net/avatar/${encodeURIComponent(state.username)}/60`;
     });
 
-    document.querySelectorAll('#profile-minecraft-name').forEach(el => {
+    document.querySelectorAll('.profile-minecraft-name').forEach(el => {
         el.textContent = state.username;
     });
 
@@ -1570,8 +1606,19 @@ function processPayment() {
         btn.innerHTML = orig;
         closeModal('modal-checkout');
         
+        let targetUrl = TEBEX_STORE_URL;
+        
+        // Si hay exactamente un artículo en el carrito y está mapeado, se genera el link directo de compra
+        if (state.cart.length === 1) {
+            const item = state.cart[0];
+            const packageId = TEBEX_PACKAGES[item.id];
+            if (packageId) {
+                targetUrl = `${TEBEX_STORE_URL}/package/${packageId}`;
+            }
+        }
+        
         // Redirigir a la tienda oficial de Tebex para el pago seguro
-        window.open(TEBEX_STORE_URL, '_blank');
+        window.open(targetUrl, '_blank');
         
         showToast('🔒 Redirigiendo a nuestra tienda segura en Tebex para completar tu compra.');
     }, 800);
@@ -3869,9 +3916,12 @@ function checkRouletteCooldown() {
             timerEl.textContent = text;
             lastTimerText = text;
         }
-        if (spinBtn && !spinBtn.disabled) {
-            spinBtn.disabled = true;
-            spinBtn.innerHTML = `<i class="fa-solid fa-lock"></i> Disponible en ${hours}h ${minutes}m`;
+        if (spinBtn) {
+            if (!spinBtn.disabled) spinBtn.disabled = true;
+            const btnText = `<i class="fa-solid fa-lock"></i> Disponible en ${hours}h ${minutes}m`;
+            if (spinBtn.innerHTML !== btnText) {
+                spinBtn.innerHTML = btnText;
+            }
         }
         return false;
     }
