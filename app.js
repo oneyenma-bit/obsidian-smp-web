@@ -912,6 +912,26 @@ function syncProfileModalUI() {
         adminTabBtn.style.display = isAdminUser() ? 'block' : 'none';
     }
 
+    // Check PIN status dynamically
+    const pinStatusTitle = document.querySelector('#profile-pin-setup h4');
+    const pinStatusDesc = document.querySelector('#profile-pin-setup p');
+    if (supabaseClient && pinStatusTitle) {
+        supabaseClient.from('conversations').select('*').eq('listing_id', 'registration').eq('buyer', state.username.toLowerCase())
+        .then(({ data }) => {
+            if (data && data.length > 0) {
+                const reg = data[0];
+                const hasPin = reg.messages?.some(m => m.startsWith('pin:'));
+                if (hasPin) {
+                    pinStatusTitle.innerHTML = '<i class="fa-solid fa-shield-halved" style="color: #4ade80;"></i> Seguridad 2-Pasos (PIN Activo)';
+                    pinStatusDesc.innerHTML = 'Tu cuenta está protegida. Puedes cambiar tu PIN de 4 dígitos abajo si lo deseas.';
+                } else {
+                    pinStatusTitle.innerHTML = '<i class="fa-solid fa-shield-halved" style="color: #ef4444;"></i> Seguridad 2-Pasos (Desactivado)';
+                    pinStatusDesc.innerHTML = 'Protege tu cuenta con un PIN de 4 dígitos. Te lo pediremos al iniciar sesión. ¡Recomendado!';
+                }
+            }
+        });
+    }
+
     updateSettingsUI();
 }
 
@@ -3773,3 +3793,37 @@ function spinDailyRoulette() {
         setInterval(checkRouletteCooldown, 1000);
     }, 500);
 })();
+
+// -- Update PIN --
+async function updateUserPin() {
+    const pin = document.getElementById('profile-pin-input')?.value.trim();
+    if (!pin || pin.length !== 4) { showToast('⚠️ Ingresa un PIN válido de 4 dígitos.'); return; }
+    if (!state.username) { showToast('❌ No estás logueado.'); return; }
+    
+    const btn = event.target;
+    btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    
+    if (supabaseClient) {
+        try {
+            const { data, error } = await supabaseClient.from('conversations').select('*').eq('listing_id', 'registration').eq('buyer', state.username.toLowerCase());
+            if (error || !data || data.length === 0) { throw new Error('Cuenta no encontrada en BD'); }
+            
+            const reg = data[0];
+            let messages = reg.messages || [];
+            // Remove old pin if exists
+            messages = messages.filter(m => !m.startsWith('pin:'));
+            messages.push('pin:' + pin);
+            
+            const { error: updErr } = await supabaseClient.from('conversations').update({ messages }).eq('id', reg.id);
+            if (updErr) throw updErr;
+            
+            showToast('✅ ¡PIN actualizado correctamente!');
+            document.getElementById('profile-pin-input').value = '';
+            syncProfileModalUI();
+        } catch (err) {
+            console.error(err);
+            showToast('❌ Error al actualizar PIN.');
+        }
+    }
+    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk" style="margin-right: 5px;"></i> GUARDAR';
+}

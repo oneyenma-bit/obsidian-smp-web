@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=VT323&family=Rajdhani:wght@400;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=4.13">
+    <link rel="stylesheet" href="style.css?v=5.1">
 </head>
 <body>
 
@@ -1523,20 +1523,18 @@
                         </div>
 
                         <div style="display:flex; flex-direction:column; gap:10px;">
-                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                <button class="btn-mc btn-purple-mc" onclick="openModal('modal-login')" style="flex:1; min-width:160px; padding:0.75rem; font-size:0.8rem;">
-                                    <i class="fa-brands fa-discord"></i> CAMBIAR DISCORD
-                                </button>
-                                <button class="btn-mc btn-dark-mc" onclick="closeModal('modal-user-profile'); openModal('modal-login'); showPasswordLoginView();" style="flex:1; min-width:160px; padding:0.75rem; font-size:0.8rem;">
-                                    <i class="fa-solid fa-key" style="color:#eab308"></i> CLAVE 2-PASOS
-                                </button>
-                            </div>
-                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                <button class="btn-mc btn-red-mc" onclick="closeModal('modal-user-profile'); unlinkAccount();" style="flex:1; min-width:160px; padding:0.75rem; font-size:0.8rem; background:#dc2626; color:#fff;">
-                                    <i class="fa-solid fa-link-slash"></i> DESVINCULAR DISCORD
-                                </button>
-                                <button class="btn-mc btn-dark-mc" onclick="closeModal('modal-user-profile'); logout();" style="flex:1; min-width:160px; padding:0.75rem; font-size:0.8rem; border-color:rgba(239,68,68,0.3); color:#fca5a5;">
-                                    <i class="fa-solid fa-right-from-bracket" style="color:#ef4444"></i> CERRAR SESIÓN
+                            <div style="display:flex; flex-direction: column; gap:10px;">
+                                <!-- 2-Step Verification Config Box -->
+                                <div id="profile-pin-setup" style="background: rgba(0,0,0,0.3); border: 2px solid #eab308; padding: 15px; border-radius: 8px;">
+                                    <h4 style="margin-bottom: 10px; font-family: 'VT323', sans-serif; font-size: 1.2rem; color: #fde047;"><i class="fa-solid fa-shield-halved"></i> Seguridad 2-Pasos (PIN)</h4>
+                                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 10px;">Protege tu cuenta con un PIN de 4 dígitos. Te lo pediremos al iniciar sesión.</p>
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="password" id="profile-pin-input" placeholder="Nuevo PIN (ej. 1234)" maxlength="4" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff;">
+                                        <button class="btn-mc btn-purple-mc" onclick="updateUserPin()" style="padding: 8px 15px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-floppy-disk" style="margin-right: 5px;"></i> GUARDAR</button>
+                                    </div>
+                                </div>
+                                <button class="btn-mc btn-dark-mc" onclick="closeModal('modal-user-profile'); logout();" style="width: 100%; padding:0.75rem; font-size:0.8rem; border-color:rgba(239,68,68,0.3); color:#fca5a5; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fa-solid fa-right-from-bracket" style="color:#ef4444; margin-right: 5px;"></i> CERRAR SESIÓN
                                 </button>
                             </div>
                         </div>
