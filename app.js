@@ -761,6 +761,55 @@ function loadUserDataOnLogin(userId, username) {
                     }
                     saveUserDataToStorage();
                     syncUser();
+                } else {
+                    // Fallback to conversations table if user_profiles is empty
+                    syncFromConversations();
+                }
+            })
+            .catch(() => {
+                // Fallback to conversations table if user_profiles doesn't exist
+                syncFromConversations();
+            });
+    }
+
+    function syncFromConversations() {
+        supabaseClient
+            .from('conversations')
+            .select('*')
+            .eq('listing_id', 'registration')
+            .eq('buyer', username.toLowerCase())
+            .then(({ data }) => {
+                if (data && data.length > 0) {
+                    const reg = data[0];
+                    const msgGems = reg.messages?.find(m => m.startsWith('gems:'));
+                    const msgFrame = reg.messages?.find(m => m.startsWith('active_frame:'));
+                    const msgUnlocked = reg.messages?.find(m => m.startsWith('unlocked_frames:'));
+                    const msgSpin = reg.messages?.find(m => m.startsWith('last_spin_time:'));
+
+                    if (msgGems) {
+                        const gemsVal = parseInt(msgGems.replace('gems:', ''), 10) || 0;
+                        if (gemsVal > state.points) {
+                            state.points = gemsVal;
+                        }
+                    }
+                    if (msgFrame) {
+                        state.activeFrame = msgFrame.replace('active_frame:', '');
+                    }
+                    if (msgUnlocked) {
+                        try {
+                            const dbFrames = JSON.parse(msgUnlocked.replace('unlocked_frames:', ''));
+                            if (Array.isArray(dbFrames)) {
+                                state.unlockedFrames = Array.from(new Set([...state.unlockedFrames, ...dbFrames]));
+                            }
+                        } catch(e) {}
+                    }
+                    if (msgSpin) {
+                        const spinTime = msgSpin.replace('last_spin_time:', '');
+                        localStorage.setItem('obs_last_spin_time', spinTime);
+                        localStorage.setItem(`obs_last_spin_time_${key}`, spinTime);
+                    }
+                    saveUserDataToStorage();
+                    syncUser();
                 }
             })
             .catch(() => {});
@@ -806,6 +855,43 @@ function saveUserDataToStorage() {
                     last_spin_time: lastSpin
                 }, { onConflict: 'username' })
                 .then(() => {})
+                .catch(() => {});
+        } catch(e) {}
+
+        // Save backup to conversations table
+        try {
+            supabaseClient
+                .from('conversations')
+                .select('*')
+                .eq('listing_id', 'registration')
+                .eq('buyer', state.username.toLowerCase())
+                .then(({ data }) => {
+                    if (data && data.length > 0) {
+                        const reg = data[0];
+                        let messages = reg.messages || [];
+                        
+                        // Filter out existing values
+                        messages = messages.filter(m => 
+                            !m.startsWith('gems:') && 
+                            !m.startsWith('active_frame:') && 
+                            !m.startsWith('unlocked_frames:') &&
+                            !m.startsWith('last_spin_time:')
+                        );
+                        
+                        // Add new values
+                        messages.push('gems:' + state.points);
+                        messages.push('active_frame:' + (state.activeFrame || ''));
+                        messages.push('unlocked_frames:' + JSON.stringify(state.unlockedFrames || []));
+                        messages.push('last_spin_time:' + lastSpin);
+                        
+                        supabaseClient
+                            .from('conversations')
+                            .update({ messages })
+                            .eq('id', reg.id)
+                            .then(() => {})
+                            .catch(() => {});
+                    }
+                })
                 .catch(() => {});
         } catch(e) {}
     }
@@ -1551,21 +1637,8 @@ async function redeemPromoCode() {
     // Apply reward
     if (reward.type === 'gems') {
         const amount = parseInt(reward.value) || 0;
-        state.points = (state.points || 0) + amount;
-        localStorage.setItem('obs_points', state.points);
-        localStorage.setItem(`obs_points_${state.username.toLowerCase()}`, state.points);
-        
-        if (supabaseClient) {
-            try {
-                await supabaseClient
-                    .from('user_profiles')
-                    .update({ points: state.points })
-                    .eq('username', state.username);
-            } catch(e) {}
-        }
-        
+        saveUserPoints((state.points || 0) + amount);
         showToast(`🎉 ¡Código canjeado! Recibiste +${amount} Gemas (${reward.name}).`);
-        syncUser();
     } else if (reward.type === 'frame') {
         const frameId = reward.value;
         if (!state.unlockedFrames.includes(frameId)) {

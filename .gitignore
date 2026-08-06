@@ -3,3 +3,4 @@
 .stitch/
 stitch_output.json
 *.log
+scratch/
