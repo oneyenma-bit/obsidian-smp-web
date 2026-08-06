@@ -1064,18 +1064,21 @@ async function renderAdminPanel() {
             const dateMsg = user.messages.find(m => m.startsWith('date:'));
             const dateStr = dateMsg ? dateMsg.replace('date:', '') : 'Previo a registro de fecha';
             
+            const msgGems = user.messages.find(m => m.startsWith('gems:'));
+            const gemsCount = msgGems ? msgGems.replace('gems:', '') : '0';
+            
             html += `
-            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <img src="https://mc-heads.net/avatar/${encodeURIComponent(user.buyer)}/36" style="border-radius:6px; image-rendering:pixelated;">
                     <div>
                         <strong style="color:var(--primary); font-size:1.05rem;">${user.buyer}</strong><br>
                         <span style="font-size:0.75rem; color:var(--text-muted);">
-                            Pass: ${hasPass} | PIN: ${hasPin} | 📅 ${dateStr}
+                            Pass: ${hasPass} | PIN: ${hasPin} | 💎 ${gemsCount} Gemas | 📅 ${dateStr}
                         </span>
                     </div>
                 </div>
-                <button onclick="deleteUserAccount('${user.id}', '${user.buyer}')" class="btn-mc btn-dark-mc" style="padding: 6px 12px; font-size: 0.8rem; border-color: #f87171; color: #f87171;">
+                <button onclick="deleteUserAccount('${user.id}', '${user.buyer}')" class="btn-mc btn-dark-mc" style="padding: 6px 12px; font-size: 0.8rem; border-color: #f87171; color: #f87171; margin: 0;">
                     <i class="fa-solid fa-trash"></i> Eliminar
                 </button>
             </div>
@@ -1110,6 +1113,86 @@ function deleteUserAccount(id, username) {
             }
         }
     );
+}
+
+async function adminGiveGems() {
+    const inputUser = document.getElementById('admin-give-username');
+    const inputAmount = document.getElementById('admin-give-amount');
+    if (!inputUser || !inputAmount) return;
+
+    const targetUser = inputUser.value.trim().toLowerCase();
+    const amountVal = parseInt(inputAmount.value, 10);
+
+    if (!targetUser) {
+        showToast('⚠️ Ingresa el usuario de Minecraft.');
+        return;
+    }
+    if (isNaN(amountVal) || amountVal <= 0) {
+        showToast('⚠️ Ingresa una cantidad válida de gemas.');
+        return;
+    }
+
+    if (!supabaseClient) {
+        showToast('❌ Conexión a la base de datos no disponible.');
+        return;
+    }
+
+    showToast('⏳ Procesando transacción...');
+
+    try {
+        // Buscar el usuario en la BD de registros
+        const { data, error } = await supabaseClient
+            .from('conversations')
+            .select('*')
+            .eq('listing_id', 'registration')
+            .eq('buyer', targetUser);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            showToast(`❌ El usuario "${targetUser}" no está registrado en la web.`);
+            return;
+        }
+
+        const reg = data[0];
+        let messages = reg.messages || [];
+
+        // Buscar gemas actuales
+        const msgGems = messages.find(m => m.startsWith('gems:'));
+        const currentGems = msgGems ? parseInt(msgGems.replace('gems:', ''), 10) || 0 : 0;
+        const newGems = currentGems + amountVal;
+
+        // Filtrar gemas viejas y agregar el nuevo valor
+        messages = messages.filter(m => !m.startsWith('gems:'));
+        messages.push('gems:' + newGems);
+
+        const { error: updErr } = await supabaseClient
+            .from('conversations')
+            .update({ messages })
+            .eq('id', reg.id);
+
+        if (updErr) throw updErr;
+
+        showToast(`🎉 Se han otorgado +${amountVal} gemas a ${targetUser}. Total: ${newGems} Gemas.`);
+        
+        // Limpiar inputs
+        inputUser.value = '';
+        inputAmount.value = '';
+
+        // Si el admin se dio las gemas a sí mismo, sincronizar de inmediato
+        if (state.username && state.username.toLowerCase() === targetUser) {
+            state.points = newGems;
+            saveUserDataToStorage();
+            syncUser();
+        }
+
+        // Recargar panel
+        renderAdminPanel();
+
+    } catch (err) {
+        console.error("Error adminGiveGems:", err);
+        showToast('❌ Error al otorgar gemas.');
+    }
 }
 
 function bindEvents() {
@@ -3487,7 +3570,7 @@ function getAvatarFrameHTML(avatarSrc, frameId, options = {}) {
 }
 
 function switchProfileTab(tabName) {
-    const tabs = ['marcos', 'cuenta', 'estilo'];
+    const tabs = ['marcos', 'cuenta', 'estilo', 'admin'];
     tabs.forEach(t => {
         const btn = document.getElementById(`prf-tab-${t}`);
         const panel = document.getElementById(`prf-panel-${t}`);
