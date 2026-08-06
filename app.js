@@ -58,16 +58,26 @@ async function dbFetchConversations() {
             .select('*');
         if (error) throw error;
         if (data) {
+            const lowerUser = state.username.toLowerCase();
+
+            // Find which faction listing IDs this user is an accepted member of,
+            // using the fresh Supabase batch (not stale state.conversations).
+            const acceptedFactionIds = new Set(
+                data
+                    .filter(c => c.status === 'accepted' && c.buyer && c.buyer.toLowerCase() === lowerUser)
+                    .map(c => c.listing_id)
+            );
+
             state.conversations = data
                 .filter(c => {
+                    // Always include clan_chat rooms for clans the user belongs to
                     if (c.status === 'clan_chat') {
-                        const userFaction = getUserFaction();
-                        return userFaction && userFaction.faction.id === c.listing_id;
+                        return acceptedFactionIds.has(c.listing_id);
                     }
-                    const sellerName = c.seller && c.seller.includes('|') ? c.seller.split('|')[0] : c.seller;
-                    const buyerName = c.buyer && c.buyer.includes('|') ? c.buyer.split('|')[0] : c.buyer;
-                    return sellerName.toLowerCase() === state.username.toLowerCase() || 
-                           buyerName.toLowerCase() === state.username.toLowerCase();
+                    const sellerName = c.seller && c.seller.includes('|') ? c.seller.split('|')[0] : (c.seller || '');
+                    const buyerName = c.buyer && c.buyer.includes('|') ? c.buyer.split('|')[0] : (c.buyer || '');
+                    return sellerName.toLowerCase() === lowerUser || 
+                           buyerName.toLowerCase() === lowerUser;
                 })
                 .map(c => ({
                     id: c.id,
@@ -3470,86 +3480,159 @@ async function sendJoinRequest(factionId) {
     openInboxModal();
 }
 
+// Global lock: prevents concurrent join attempts on the same faction
+const _joinLock = new Set();
+
 async function joinFactionDirectly(factionId) {
     if (!state.username) return;
 
-    const currentFaction = getUserFaction();
-    if (currentFaction) {
-        showToast(`⚠️ Ya perteneces al clan: ${currentFaction.title}. Debes abandonarlo primero.`);
+    // Immediate duplicate-click guard
+    if (_joinLock.has(factionId)) {
+        showToast('⏳ Ya estás procesando tu unión al clan, espera...');
         return;
     }
+    _joinLock.add(factionId);
 
-    const faction = state.marketplaceListings.find(l => l.id === factionId);
-    if (!faction) return;
+    // Disable the button immediately to prevent UI double-clicks
+    const joinBtns = document.querySelectorAll(`[onclick="joinFactionDirectly('${factionId}')"]`);
+    joinBtns.forEach(btn => {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> PROCESANDO...';
+    });
 
-    let factionData = {};
     try {
-        if (faction.desc && faction.desc.startsWith('FACDATA:')) {
-            factionData = JSON.parse(faction.desc.substring(8));
+        // 1. Re-check from Supabase in real time (not local cache) to avoid race condition
+        if (supabaseClient) {
+            const { data: liveConvs } = await supabaseClient
+                .from('conversations')
+                .select('id, listing_id, buyer, status')
+                .eq('buyer', state.username.toLowerCase())
+                .eq('status', 'accepted');
+
+            if (liveConvs && liveConvs.length > 0) {
+                // User is already a member of some clan in the real DB
+                const alreadyInThisClan = liveConvs.find(c => c.listing_id === factionId);
+                if (alreadyInThisClan) {
+                    showToast('✅ Ya eres miembro de este clan.');
+                    // Sync local state so the UI shows correctly
+                    await dbFetchConversations();
+                    openFactionDetailModal(factionId);
+                    return;
+                }
+                // In a different clan
+                const { data: otherFac } = await supabaseClient
+                    .from('listings')
+                    .select('title')
+                    .eq('id', liveConvs[0].listing_id)
+                    .maybeSingle();
+                const otherName = otherFac ? otherFac.title : 'otro clan';
+                showToast(`⚠️ Ya perteneces al clan: ${otherName}. Debes abandonarlo primero.`);
+                await dbFetchConversations();
+                openFactionDetailModal(factionId);
+                return;
+            }
+        } else {
+            // Fallback: check local cache
+            const localFaction = getUserFaction();
+            if (localFaction) {
+                showToast(`⚠️ Ya perteneces al clan: ${localFaction.title}. Debes abandonarlo primero.`);
+                return;
+            }
         }
-    } catch(e) {}
 
-    const currentCount = parseInt(factionData.memberCount || 1);
-    factionData.memberCount = currentCount + 1;
-    const newDesc = "FACDATA:" + JSON.stringify(factionData);
+        const faction = state.marketplaceListings.find(l => l.id === factionId);
+        if (!faction) return;
 
-    if (supabaseClient) {
-        try {
+        // 2. Read the REAL current member count from Supabase (not local cache)
+        let factionData = {};
+        if (supabaseClient) {
+            const { data: liveListing } = await supabaseClient
+                .from('listings')
+                .select('desc_text')
+                .eq('id', factionId)
+                .maybeSingle();
+            if (liveListing && liveListing.desc_text && liveListing.desc_text.startsWith('FACDATA:')) {
+                try { factionData = JSON.parse(liveListing.desc_text.substring(8)); } catch(e) {}
+            }
+        } else {
+            if (faction.desc && faction.desc.startsWith('FACDATA:')) {
+                try { factionData = JSON.parse(faction.desc.substring(8)); } catch(e) {}
+            }
+        }
+
+        const maxMembers = parseInt(factionData.maxMembers || 8);
+        const currentCount = parseInt(factionData.memberCount || 1);
+        if (currentCount >= maxMembers) {
+            showToast(`⚠️ El clan ya está lleno (${currentCount}/${maxMembers}).`);
+            openFactionDetailModal(factionId);
+            return;
+        }
+
+        factionData.memberCount = currentCount + 1;
+        const newDesc = "FACDATA:" + JSON.stringify(factionData);
+
+        if (supabaseClient) {
             const { error } = await supabaseClient
                 .from('listings')
                 .update({ desc_text: newDesc })
                 .eq('id', faction.id);
             if (error) throw error;
-        } catch(err) {
-            console.error("Error al unirse al clan:", err);
-            showToast('❌ Error de conexión al unirse al clan.');
-            return;
         }
-    }
 
-    faction.desc = newDesc;
-    localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+        // 3. Update local listing cache immediately so getUserFaction() works right away
+        faction.desc = newDesc;
+        localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
 
-    // Also register a conversation so UI knows we are a member
-    const requestConvId = 'req_' + Date.now();
-    const mockRequest = {
-        id: requestConvId,
-        listingId: faction.id,
-        buyer: state.username,
-        seller: faction.publisher,
-        status: 'accepted',
-        messages: [{
-            sender: state.username,
-            text: `[ADMIN] Se ha unido directamente al clan.`,
-            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-        }]
-    };
+        // 4. Create the membership conversation record
+        const requestConvId = 'req_' + Date.now();
+        const mockRequest = {
+            id: requestConvId,
+            listingId: faction.id,
+            buyer: state.username,
+            seller: faction.publisher,
+            status: 'accepted',
+            messages: [{
+                sender: state.username,
+                text: `[ADMIN] Se ha unido directamente al clan.`,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            }]
+        };
 
-    if (supabaseClient) {
-        try {
+        if (supabaseClient) {
             const { error } = await supabaseClient
                 .from('conversations')
                 .insert([{
                     id: mockRequest.id,
                     listing_id: mockRequest.listingId,
-                    buyer: mockRequest.buyer,
+                    buyer: mockRequest.buyer.toLowerCase(),
                     seller: mockRequest.seller,
                     status: mockRequest.status,
                     messages: mockRequest.messages
                 }]);
             if (error) throw error;
-        } catch(e) {
-            console.error("Error al registrar unión en conversaciones:", e);
         }
+
+        // 5. Immediately push to local state so getUserFaction() returns correct data
+        state.conversations.push(mockRequest);
+        localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+        updateInboxBadge();
+
+        showToast(`🟢 ¡Te has unido directamente al clan ${faction.title}!`);
+
+        // 6. Sync UI tab & profile badge
+        syncUser();
+
+        // 7. Re-render the faction detail modal so the button now shows "YA ERES MIEMBRO"
+        openFactionDetailModal(factionId);
+        renderFactions();
+
+    } catch(err) {
+        console.error("Error al unirse al clan:", err);
+        showToast('❌ Error de conexión al unirse al clan.');
+    } finally {
+        // Always release the lock so the user can retry if something went wrong
+        _joinLock.delete(factionId);
     }
-
-    state.conversations.push(mockRequest);
-    localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
-    updateInboxBadge();
-
-    showToast(`🟢 ¡Te has unido directamente al clan ${faction.title}!`);
-    closeModal('modal-view-faction');
-    renderFactions();
 }
 
 function toggleDevAdminOverride() {
