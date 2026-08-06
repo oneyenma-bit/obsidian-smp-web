@@ -4490,8 +4490,8 @@ function renderClanChatMessages() {
     const container = document.getElementById('clan-chat-messages-container');
     if (!container) return;
     
+    // Si no hay chatRoom aún (cargando), simplemente no renderizar — no mostrar pantalla falsa
     if (!chatRoom || !chatRoom.messages || chatRoom.messages.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--text-muted);">No hay mensajes en el chat.</div>`;
         return;
     }
     
@@ -4549,6 +4549,12 @@ async function sendClanChatMessage() {
     
     const newMessages = [...(chatRoom.messages || []), newMsg];
     
+    // --- OPTIMISTIC UPDATE: actualizar estado local ANTES del await ---
+    // Esto previene que el realtime listener sobreescriba el state mientras esperamos
+    chatRoom.messages = newMessages;
+    localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+    renderClanChatMessages();
+    
     if (supabaseClient) {
         try {
             const { error } = await supabaseClient
@@ -4556,16 +4562,17 @@ async function sendClanChatMessage() {
                 .update({ messages: newMessages, updated_at: new Date() })
                 .eq('id', clanChatId);
             if (error) throw error;
+            // Re-sincronizar el chatRoom desde el state actual (puede haber sido reemplazado por realtime)
+            const freshRoom = state.conversations.find(c => c.id === clanChatId);
+            if (freshRoom) {
+                freshRoom.messages = newMessages;
+                localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+            }
         } catch(e) {
             console.error("Error sending clan chat message:", e);
             showToast('❌ Error de conexión al enviar el mensaje.');
-            return;
         }
     }
-    
-    chatRoom.messages = newMessages;
-    localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
-    renderClanChatMessages();
 }
 
 function toggleClanChatAdminView() {
