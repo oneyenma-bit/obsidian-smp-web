@@ -104,6 +104,9 @@
             <button class="cat-tab roulette-cat-tab" id="tab-ruleta" onclick="openModal('modal-daily-roulette')" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.15) 100%); border: 1px solid rgba(245, 158, 11, 0.5); color: #fef08a;">
                 <i class="fa-solid fa-gift" style="color: #f59e0b; font-size: 1rem; animation: pulseLogo 2s infinite;"></i> RULETA DIARIA
             </button>
+            <button class="cat-tab clan-chat-cat-tab" id="tab-clan-chat" onclick="openClanChatModal()" style="display: none; background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(22, 163, 74, 0.1) 100%); border: 1px solid rgba(34, 197, 94, 0.4); color: #bbf7d0;">
+                <i class="fa-solid fa-comments" style="color: #22c55e;"></i> CHAT DE CLAN
+            </button>
         </div>
     </div>
 
@@ -1677,6 +1680,79 @@
                     <i class="fa-solid fa-rotate-right"></i> ¡GIRAR RULETA AHORA!
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: CHAT DE CLAN (ESTILO WHATSAPP) ===== -->
+    <div class="modal-bg" id="modal-clan-chat">
+        <div class="modal-box" style="max-width: 600px; padding: 0; background: #1a1a1a; border: 2px solid #2d2c2c; display: flex; flex-direction: column; height: 80vh;">
+            
+            <!-- Header -->
+            <div style="background: #111; padding: 1rem; border-bottom: 2px solid #2d2c2c; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 0.8rem;">
+                    <img id="clan-chat-crest" src="img/obsidian.png" style="width: 38px; height: 38px; border: 1.5px solid var(--primary); background: #1a1a1a;" alt="Crest">
+                    <div>
+                        <h3 id="clan-chat-title" style="margin: 0; font-size: 1.1rem; color: #fff; font-family: var(--font);">CHAT DE CLAN</h3>
+                        <span id="clan-chat-member-count" style="font-size: 0.72rem; color: var(--text-muted);">Cargando miembros...</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn-mc btn-purple-mc" id="clan-chat-admin-toggle-btn" onclick="toggleClanChatAdminView()" style="display: none; padding: 0.4rem 0.8rem; font-size: 0.72rem; margin:0;">
+                        <i class="fa-solid fa-gears"></i> ADMIN
+                    </button>
+                    <button class="modal-close" onclick="closeModal('modal-clan-chat')" style="position: static; font-size: 1.4rem; color: var(--text-muted); background: none; border: none; padding: 0; cursor: pointer;">&times;</button>
+                </div>
+            </div>
+
+            <!-- Main Area -->
+            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;">
+                
+                <!-- Pinned Message -->
+                <div id="clan-chat-pinned-box" style="display: none; background: rgba(92, 142, 50, 0.15); border-bottom: 1.5px solid rgba(92, 142, 50, 0.3); padding: 8px 12px; font-size: 0.75rem; color: #c2ff82; align-items: center; gap: 8px; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                        <i class="fa-solid fa-thumbtack" style="font-size: 0.7rem; transform: rotate(45deg); flex-shrink: 0;"></i>
+                        <span id="clan-chat-pinned-text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Mensaje anclado aquí.</span>
+                    </div>
+                    <button id="clan-chat-unpin-btn" onclick="unpinClanMessage()" style="display: none; background: none; border: none; color: #ef4444; font-size: 0.72rem; font-weight: bold; cursor: pointer; padding: 0 4px;">Quitar</button>
+                </div>
+
+                <!-- Chat View -->
+                <div id="clan-chat-messages-container" style="flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; background: #141414;">
+                    <!-- Bubbles will be injected here -->
+                </div>
+
+                <!-- Admin View (Hidden by default) -->
+                <div id="clan-chat-admin-container" style="display: none; flex: 1; padding: 1.2rem; overflow-y: auto; background: #1a1a1a; flex-direction: column; gap: 1.2rem;">
+                    
+                    <!-- Pin Message Config -->
+                    <div style="background: #222; border: 1.5px solid #2d2c2c; padding: 0.8rem 1rem;">
+                        <h4 style="font-size: 0.85rem; color: #fff; margin-bottom: 6px;"><i class="fa-solid fa-thumbtack" style="transform: rotate(45deg);"></i> Anclar Comentario del Clan</h4>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="clan-pin-input" placeholder="Escribe un anuncio para anclar..." style="flex: 1; padding: 6px 10px; background: #141414; border: 1px solid #333; color: #fff; font-size: 0.8rem;">
+                            <button class="btn-mc btn-green-mc" onclick="pinClanMessage()" style="padding: 6px 12px; font-size: 0.75rem; margin:0;">Anclar</button>
+                        </div>
+                    </div>
+
+                    <!-- Members List Admin -->
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <h4 style="font-size: 0.85rem; color: #fff; border-bottom: 1px solid #2d2c2c; padding-bottom: 4px; margin-bottom: 4px;"><i class="fa-solid fa-users-gear"></i> Administrar Miembros</h4>
+                        <div id="clan-chat-admin-members-list" style="display: flex; flex-direction: column; gap: 6px;">
+                            <!-- Members list will be injected here -->
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Footer / Input Form (Only shown in Chat View) -->
+            <div id="clan-chat-input-box" style="background: #111; padding: 0.8rem 1rem; border-top: 2px solid #2d2c2c; display: flex; gap: 8px;">
+                <input type="text" id="clan-chat-text-input" placeholder="Escribe un mensaje para el clan..." onkeydown="if(event.key === 'Enter') sendClanChatMessage()" style="flex: 1; padding: 0.6rem 1rem; background: #141414; border: 2px solid #2d2c2c; color: #fff; outline: none; font-size: 0.85rem;">
+                <button class="btn-mc btn-green-mc" onclick="sendClanChatMessage()" style="padding: 0.6rem 1.2rem; font-size: 0.82rem; margin:0; width: auto;">
+                    <i class="fa-solid fa-paper-plane"></i> Enviar
+                </button>
+            </div>
+
         </div>
     </div>
 

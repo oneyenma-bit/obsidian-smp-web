@@ -60,6 +60,10 @@ async function dbFetchConversations() {
         if (data) {
             state.conversations = data
                 .filter(c => {
+                    if (c.status === 'clan_chat') {
+                        const userFaction = getUserFaction();
+                        return userFaction && userFaction.faction.id === c.listing_id;
+                    }
                     const sellerName = c.seller && c.seller.includes('|') ? c.seller.split('|')[0] : c.seller;
                     const buyerName = c.buyer && c.buyer.includes('|') ? c.buyer.split('|')[0] : c.buyer;
                     return sellerName.toLowerCase() === state.username.toLowerCase() || 
@@ -106,6 +110,7 @@ if (supabaseClient) {
                 renderInboxList();
                 renderChatMessages();
                 updateInboxBadge();
+                if (typeof renderClanChatMessages === 'function') renderClanChatMessages();
             });
         })
         .subscribe();
@@ -1067,6 +1072,13 @@ function syncUser() {
     if (ls) ls.src = `https://mc-heads.net/head/${encodeURIComponent(u)}`;
 
     syncProfileModalUI();
+
+    // Toggle Clan Chat tab visibility dynamically
+    const userFaction = getUserFaction();
+    const tabBtn = document.getElementById('tab-clan-chat');
+    if (tabBtn) {
+        tabBtn.style.display = userFaction ? 'inline-flex' : 'none';
+    }
 }
 
 function syncProfileModalUI() {
@@ -4234,3 +4246,532 @@ async function updateUserPin() {
     }
     btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk" style="margin-right: 5px;"></i> GUARDAR';
 }
+
+/* ─── CLAN PRIVATE CHAT ROOM (MINI WHATSAPP) ─────────────────── */
+let clanChatAdminViewActive = false;
+
+async function openClanChatModal() {
+    const userFaction = getUserFaction();
+    if (!userFaction) {
+        showToast('⚠️ No perteneces a ningún clan.');
+        return;
+    }
+    
+    clanChatAdminViewActive = false;
+    const adminContainer = document.getElementById('clan-chat-admin-container');
+    const msgContainer = document.getElementById('clan-chat-messages-container');
+    const inputBox = document.getElementById('clan-chat-input-box');
+    const toggleBtn = document.getElementById('clan-chat-admin-toggle-btn');
+    
+    if (adminContainer) adminContainer.style.display = 'none';
+    if (msgContainer) msgContainer.style.display = 'flex';
+    if (inputBox) inputBox.style.display = 'flex';
+    if (toggleBtn) {
+        toggleBtn.textContent = 'ADMIN';
+        toggleBtn.style.display = 'none';
+    }
+    
+    const faction = userFaction.faction;
+    let factionData = {};
+    try {
+        if (faction.desc && faction.desc.startsWith('FACDATA:')) {
+            factionData = JSON.parse(faction.desc.substring(8));
+        }
+    } catch(e) {}
+    
+    const crestEl = document.getElementById('clan-chat-crest');
+    if (crestEl) crestEl.src = faction.image || 'img/obsidian.png';
+    const titleEl = document.getElementById('clan-chat-title');
+    if (titleEl) titleEl.textContent = faction.title.toUpperCase();
+    
+    const isLeader = userFaction.role === 'leader';
+    const clanAdmins = factionData.admins || [];
+    const isClanAdmin = isLeader || clanAdmins.map(a => a.toLowerCase()).includes(state.username.toLowerCase());
+    
+    if (toggleBtn && isClanAdmin) {
+        toggleBtn.style.display = 'inline-flex';
+    }
+    
+    const clanChatId = 'clan_chat_' + faction.id;
+    let chatRoom = state.conversations.find(c => c.id === clanChatId);
+    
+    if (!chatRoom) {
+        if (supabaseClient) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('conversations')
+                    .select('*')
+                    .eq('id', clanChatId)
+                    .maybeSingle();
+                if (data) {
+                    chatRoom = {
+                        id: data.id,
+                        listingId: data.listing_id,
+                        buyer: data.buyer,
+                        seller: data.seller,
+                        status: data.status,
+                        messages: data.messages
+                    };
+                    state.conversations.push(chatRoom);
+                    localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+                }
+            } catch(e) {
+                console.error("Error fetching clan chat:", e);
+            }
+        }
+    }
+    
+    if (!chatRoom) {
+        const newChat = {
+            id: clanChatId,
+            listingId: faction.id,
+            buyer: 'clan_system',
+            seller: 'clan_system',
+            status: 'clan_chat',
+            messages: [{
+                sender: 'System',
+                text: `¡Bienvenidos al chat oficial del clan ${faction.title}!`,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            }]
+        };
+        
+        if (supabaseClient) {
+            try {
+                const { error } = await supabaseClient
+                    .from('conversations')
+                    .insert([{
+                        id: newChat.id,
+                        listing_id: newChat.listingId,
+                        buyer: newChat.buyer,
+                        seller: newChat.seller,
+                        status: newChat.status,
+                        messages: newChat.messages
+                    }]);
+                if (error) throw error;
+            } catch(e) {
+                console.error("Error creating clan chat in Supabase:", e);
+            }
+        }
+        state.conversations.push(newChat);
+        localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+        chatRoom = newChat;
+    }
+    
+    openModal('modal-clan-chat');
+    renderClanChatMessages();
+    syncClanChatHeader();
+}
+
+function syncClanChatHeader() {
+    const userFaction = getUserFaction();
+    if (!userFaction) return;
+    
+    const faction = userFaction.faction;
+    let factionData = {};
+    try {
+        if (faction.desc && faction.desc.startsWith('FACDATA:')) {
+            factionData = JSON.parse(faction.desc.substring(8));
+        }
+    } catch(e) {}
+    
+    const countEl = document.getElementById('clan-chat-member-count');
+    if (countEl) {
+        countEl.textContent = `${factionData.memberCount || 1} miembros`;
+    }
+    
+    const pinnedBox = document.getElementById('clan-chat-pinned-box');
+    const pinnedText = document.getElementById('clan-chat-pinned-text');
+    const unpinBtn = document.getElementById('clan-chat-unpin-btn');
+    
+    const isLeader = userFaction.role === 'leader';
+    const clanAdmins = factionData.admins || [];
+    const isClanAdmin = isLeader || clanAdmins.map(a => a.toLowerCase()).includes(state.username.toLowerCase());
+    
+    if (factionData.pinnedMessage) {
+        if (pinnedBox) pinnedBox.style.display = 'flex';
+        if (pinnedText) pinnedText.textContent = factionData.pinnedMessage;
+        if (unpinBtn) {
+            unpinBtn.style.display = isClanAdmin ? 'inline-block' : 'none';
+        }
+    } else {
+        if (pinnedBox) pinnedBox.style.display = 'none';
+    }
+}
+
+function renderClanChatMessages() {
+    const userFaction = getUserFaction();
+    if (!userFaction) return;
+    
+    const clanChatId = 'clan_chat_' + userFaction.faction.id;
+    const chatRoom = state.conversations.find(c => c.id === clanChatId);
+    const container = document.getElementById('clan-chat-messages-container');
+    if (!container) return;
+    
+    if (!chatRoom || !chatRoom.messages || chatRoom.messages.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--text-muted);">No hay mensajes en el chat.</div>`;
+        return;
+    }
+    
+    container.innerHTML = chatRoom.messages.map(m => {
+        const isMe = m.sender.toLowerCase() === state.username.toLowerCase();
+        const isSystem = m.sender === 'System';
+        
+        if (isSystem) {
+            return `
+                <div style="align-self: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); font-size: 0.72rem; padding: 4px 10px; border-radius: 4px; max-width: 80%; text-align: center; margin: 4px 0;">
+                    ${m.text}
+                </div>
+            `;
+        }
+        
+        const bubbleBg = isMe ? 'var(--primary)' : '#262626';
+        const bubbleColor = '#fff';
+        const align = isMe ? 'flex-end' : 'flex-start';
+        
+        return `
+            <div style="align-self: ${align}; max-width: 75%; background: ${bubbleBg}; color: ${bubbleColor}; padding: 8px 12px; border-radius: 4px; border-bottom: 2px solid rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 2px; position: relative;">
+                ${!isMe ? `<span style="font-size: 0.65rem; color: #a3e635; font-weight: bold; margin-bottom: 2px;">${m.sender}</span>` : ''}
+                <span style="font-size: 0.82rem; line-height: 1.3; font-weight: 500;">${m.text}</span>
+                <span style="font-size: 0.6rem; color: rgba(255,255,255,0.5); align-self: flex-end; margin-top: 2px;">${m.time}</span>
+            </div>
+        `;
+    }).join('');
+    
+    setTimeout(() => {
+        container.scrollTop = container.scrollHeight;
+    }, 50);
+}
+
+async function sendClanChatMessage() {
+    const input = document.getElementById('clan-chat-text-input');
+    if (!input) return;
+    
+    const text = input.value.trim();
+    if (!text) return;
+    
+    const userFaction = getUserFaction();
+    if (!userFaction) return;
+    
+    const clanChatId = 'clan_chat_' + userFaction.faction.id;
+    const chatRoom = state.conversations.find(c => c.id === clanChatId);
+    if (!chatRoom) return;
+    
+    input.value = '';
+    
+    const newMsg = {
+        sender: state.username,
+        text: text,
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    };
+    
+    const newMessages = [...(chatRoom.messages || []), newMsg];
+    
+    if (supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('conversations')
+                .update({ messages: newMessages, updated_at: new Date() })
+                .eq('id', clanChatId);
+            if (error) throw error;
+        } catch(e) {
+            console.error("Error sending clan chat message:", e);
+            showToast('❌ Error de conexión al enviar el mensaje.');
+            return;
+        }
+    }
+    
+    chatRoom.messages = newMessages;
+    localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+    renderClanChatMessages();
+}
+
+function toggleClanChatAdminView() {
+    const adminContainer = document.getElementById('clan-chat-admin-container');
+    const msgContainer = document.getElementById('clan-chat-messages-container');
+    const inputBox = document.getElementById('clan-chat-input-box');
+    const toggleBtn = document.getElementById('clan-chat-admin-toggle-btn');
+    
+    if (!adminContainer || !msgContainer || !inputBox || !toggleBtn) return;
+    
+    clanChatAdminViewActive = !clanChatAdminViewActive;
+    
+    if (clanChatAdminViewActive) {
+        adminContainer.style.display = 'flex';
+        msgContainer.style.display = 'none';
+        inputBox.style.display = 'none';
+        toggleBtn.textContent = 'CHAT';
+        renderClanChatAdminPanel();
+    } else {
+        adminContainer.style.display = 'none';
+        msgContainer.style.display = 'flex';
+        inputBox.style.display = 'flex';
+        toggleBtn.textContent = 'ADMIN';
+        renderClanChatMessages();
+    }
+}
+
+async function renderClanChatAdminPanel() {
+    const userFaction = getUserFaction();
+    if (!userFaction) return;
+    
+    const faction = userFaction.faction;
+    let factionData = {};
+    try {
+        if (faction.desc && faction.desc.startsWith('FACDATA:')) {
+            factionData = JSON.parse(faction.desc.substring(8));
+        }
+    } catch(e) {}
+    
+    const pinInput = document.getElementById('clan-pin-input');
+    if (pinInput) pinInput.value = factionData.pinnedMessage || '';
+    
+    const listContainer = document.getElementById('clan-chat-admin-members-list');
+    if (!listContainer) return;
+    
+    const members = [];
+    const pubInfo = parsePublisher(faction.publisher);
+    members.push({
+        username: pubInfo.username,
+        role: 'leader'
+    });
+    
+    (state.conversations || []).forEach(c => {
+        if (c.listingId === faction.id && c.status === 'accepted' && c.buyer !== 'clan_system') {
+            const memberName = c.buyer;
+            const isMemberAdmin = (factionData.admins || []).map(a => a.toLowerCase()).includes(memberName.toLowerCase());
+            
+            if (!members.find(m => m.username.toLowerCase() === memberName.toLowerCase())) {
+                members.push({
+                    username: memberName,
+                    role: isMemberAdmin ? 'admin' : 'member',
+                    conversationId: c.id
+                });
+            }
+        }
+    });
+    
+    const isCurrentUserLeader = userFaction.role === 'leader';
+    
+    listContainer.innerHTML = members.map(m => {
+        const isLeader = m.role === 'leader';
+        const isAdmin = m.role === 'admin';
+        
+        let roleBadge = `<span style="font-size: 0.65rem; padding: 2px 6px; background: #eab308; color: #111; font-weight: bold;">LÍDER</span>`;
+        if (isAdmin) {
+            roleBadge = `<span style="font-size: 0.65rem; padding: 2px 6px; background: #a855f7; color: #fff; font-weight: bold;">ADMIN</span>`;
+        } else if (m.role === 'member') {
+            roleBadge = `<span style="font-size: 0.65rem; padding: 2px 6px; background: #4b5563; color: #fff; font-weight: bold;">MIEMBRO</span>`;
+        }
+        
+        let actionsHtml = '';
+        const isSelf = state.username && m.username.toLowerCase() === state.username.toLowerCase();
+        if (isCurrentUserLeader && !isLeader) {
+            actionsHtml = `
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--text-dim); cursor: pointer; user-select: none;">
+                        <input type="checkbox" ${isAdmin ? 'checked' : ''} onchange="toggleClanMemberAdmin('${m.username}', this.checked)" style="accent-color: var(--primary);"> Admin
+                    </label>
+                    <button class="btn-mc btn-dark-mc" onclick="kickClanMember('${m.username}', '${m.conversationId}')" style="padding: 4px 8px; font-size: 0.7rem; border-color: #991b1b; color: #f87171; margin:0;">Expulsar</button>
+                </div>
+            `;
+        } else if (!isLeader && !isAdmin && !isSelf) {
+            actionsHtml = `
+                <button class="btn-mc btn-dark-mc" onclick="kickClanMember('${m.username}', '${m.conversationId}')" style="padding: 4px 8px; font-size: 0.7rem; border-color: #991b1b; color: #f87171; margin:0;">Expulsar</button>
+            `;
+        }
+        
+        return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #141414; border: 1px solid #2d2c2c;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <img src="https://mc-heads.net/avatar/${encodeURIComponent(m.username)}/24" style="width: 24px; height: 24px; image-rendering: pixelated;" alt="Avatar">
+                    <span style="font-size: 0.85rem; color: #fff; font-weight: bold;">${m.username}</span>
+                    ${roleBadge}
+                </div>
+                ${actionsHtml}
+            </div>
+        `;
+    }).join('');
+}
+
+async function pinClanMessage() {
+    const input = document.getElementById('clan-pin-input');
+    if (!input) return;
+    
+    const text = input.value.trim();
+    const userFaction = getUserFaction();
+    if (!userFaction) return;
+    
+    const faction = userFaction.faction;
+    let factionData = {};
+    try {
+        if (faction.desc && faction.desc.startsWith('FACDATA:')) {
+            factionData = JSON.parse(faction.desc.substring(8));
+        }
+    } catch(e) {}
+    
+    factionData.pinnedMessage = text || null;
+    const newDesc = "FACDATA:" + JSON.stringify(factionData);
+    
+    if (supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('listings')
+                .update({ desc_text: newDesc })
+                .eq('id', faction.id);
+            if (error) throw error;
+            showToast(text ? '📌 Mensaje anclado correctamente.' : '📌 Mensaje desanclado.');
+        } catch(e) {
+            console.error("Error pinning clan message:", e);
+            showToast('❌ Error de conexión al anclar mensaje.');
+            return;
+        }
+    }
+    
+    faction.desc = newDesc;
+    localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+    syncClanChatHeader();
+    if (clanChatAdminViewActive) renderClanChatAdminPanel();
+}
+
+async function unpinClanMessage() {
+    const userFaction = getUserFaction();
+    if (!userFaction) return;
+    
+    const faction = userFaction.faction;
+    let factionData = {};
+    try {
+        if (faction.desc && faction.desc.startsWith('FACDATA:')) {
+            factionData = JSON.parse(faction.desc.substring(8));
+        }
+    } catch(e) {}
+    
+    factionData.pinnedMessage = null;
+    const newDesc = "FACDATA:" + JSON.stringify(factionData);
+    
+    if (supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('listings')
+                .update({ desc_text: newDesc })
+                .eq('id', faction.id);
+            if (error) throw error;
+            showToast('📌 Mensaje desanclado.');
+        } catch(e) {
+            console.error("Error unpinning message:", e);
+            showToast('❌ Error de conexión.');
+            return;
+        }
+    }
+    
+    faction.desc = newDesc;
+    localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+    syncClanChatHeader();
+}
+
+async function toggleClanMemberAdmin(username, isChecked) {
+    const userFaction = getUserFaction();
+    if (!userFaction || userFaction.role !== 'leader') return;
+    
+    const faction = userFaction.faction;
+    let factionData = {};
+    try {
+        if (faction.desc && faction.desc.startsWith('FACDATA:')) {
+            factionData = JSON.parse(faction.desc.substring(8));
+        }
+    } catch(e) {}
+    
+    let admins = factionData.admins || [];
+    if (isChecked) {
+        if (!admins.map(a => a.toLowerCase()).includes(username.toLowerCase())) {
+            admins.push(username);
+        }
+    } else {
+        admins = admins.filter(a => a.toLowerCase() !== username.toLowerCase());
+    }
+    
+    factionData.admins = admins;
+    const newDesc = "FACDATA:" + JSON.stringify(factionData);
+    
+    if (supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('listings')
+                .update({ desc_text: newDesc })
+                .eq('id', faction.id);
+            if (error) throw error;
+            showToast(isChecked ? `👑 ${username} promovido a administrador.` : `👑 ${username} degradado a miembro.`);
+        } catch(e) {
+            console.error("Error toggling member admin in Supabase:", e);
+            showToast('❌ Error de conexión al guardar cambios.');
+            return;
+        }
+    }
+    
+    faction.desc = newDesc;
+    localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+    renderClanChatAdminPanel();
+}
+
+async function kickClanMember(username, conversationId) {
+    const userFaction = getUserFaction();
+    if (!userFaction) return;
+    
+    const faction = userFaction.faction;
+    
+    customConfirm(
+        '¿Expulsar Miembro?',
+        `¿Estás seguro de expulsar a ${username} del clan?`,
+        async () => {
+            let factionData = {};
+            try {
+                if (faction.desc && faction.desc.startsWith('FACDATA:')) {
+                    factionData = JSON.parse(faction.desc.substring(8));
+                }
+            } catch(e) {}
+            
+            const currentCount = parseInt(factionData.memberCount || 1);
+            factionData.memberCount = Math.max(1, currentCount - 1);
+            
+            if (factionData.admins) {
+                factionData.admins = factionData.admins.filter(a => a.toLowerCase() !== username.toLowerCase());
+            }
+            
+            const newDesc = "FACDATA:" + JSON.stringify(factionData);
+            
+            if (supabaseClient) {
+                try {
+                    const { error: listErr } = await supabaseClient
+                        .from('listings')
+                        .update({ desc_text: newDesc })
+                        .eq('id', faction.id);
+                    if (listErr) throw listErr;
+                    
+                    const { error: convErr } = await supabaseClient
+                        .from('conversations')
+                        .update({ status: 'kicked', updated_at: new Date() })
+                        .eq('id', conversationId);
+                    if (convErr) throw convErr;
+                    
+                    showToast(`🚪 ${username} fue expulsado del clan.`);
+                } catch(e) {
+                    console.error("Error kicking clan member:", e);
+                    showToast('❌ Error de conexión al expulsar miembro.');
+                    return;
+                }
+            } else {
+                showToast(`🚪 ${username} fue expulsado del clan.`);
+            }
+            
+            faction.desc = newDesc;
+            const c = state.conversations.find(conv => conv.id === conversationId);
+            if (c) c.status = 'kicked';
+            
+            localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+            localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+            
+            renderClanChatAdminPanel();
+            syncClanChatHeader();
+        }
+    );
+}
+
