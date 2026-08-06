@@ -144,6 +144,64 @@ function parsePublisher(pubStr) {
     return { username: pubStr, legacyId: null, avatar: null };
 }
 
+function getUserFaction() {
+    if (!state.username || state.username === 'Invitado') return null;
+    const lowerUser = state.username.toLowerCase();
+    
+    // Check if they are leader of any faction
+    const ownedFaction = (state.marketplaceListings || []).find(item => 
+        item.category === 'faccion' && parsePublisher(item.publisher).username.toLowerCase() === lowerUser
+    );
+    if (ownedFaction) {
+        return {
+            faction: ownedFaction,
+            role: 'leader',
+            title: ownedFaction.title
+        };
+    }
+    
+    // Check if they are accepted member of any faction
+    const memberConv = (state.conversations || []).find(c => 
+        c.status === 'accepted' && c.buyer.toLowerCase() === lowerUser
+    );
+    if (memberConv) {
+        const memberFaction = (state.marketplaceListings || []).find(item => 
+            item.category === 'faccion' && item.id === memberConv.listingId
+        );
+        if (memberFaction) {
+            return {
+                faction: memberFaction,
+                role: 'member',
+                title: memberFaction.title,
+                conversation: memberConv
+            };
+        }
+    }
+    
+    return null;
+}
+
+function isUserInFaction(username) {
+    if (!username || username === 'Invitado') return null;
+    const lowerUser = username.toLowerCase();
+    
+    const owned = (state.marketplaceListings || []).find(item => 
+        item.category === 'faccion' && parsePublisher(item.publisher).username.toLowerCase() === lowerUser
+    );
+    if (owned) return owned.title;
+    
+    const member = (state.conversations || []).find(c => 
+        c.status === 'accepted' && c.buyer.toLowerCase() === lowerUser
+    );
+    if (member) {
+        const f = (state.marketplaceListings || []).find(item => 
+            item.category === 'faccion' && item.id === member.listingId
+        );
+        if (f) return f.title;
+    }
+    return null;
+}
+
 function isAdminUser() {
     if (state.adminOverride !== undefined) {
         return state.adminOverride;
@@ -1028,6 +1086,26 @@ function syncProfileModalUI() {
     document.querySelectorAll('#profile-java-badge').forEach(el => {
         el.style.display = state.isBedrock ? 'none' : 'inline-block';
     });
+
+    // Dynamic Clan Badge display in profile
+    const userFaction = getUserFaction();
+    document.querySelectorAll('.profile-minecraft-clan-badge').forEach(el => el.remove());
+    if (userFaction) {
+        document.querySelectorAll('.profile-minecraft-name').forEach(el => {
+            const badge = document.createElement('div');
+            badge.className = 'profile-minecraft-clan-badge';
+            badge.style.fontSize = '0.7rem';
+            badge.style.color = '#c2ff82'; // Minecraft light green
+            badge.style.fontWeight = 'bold';
+            badge.style.marginTop = '4px';
+            badge.style.display = 'flex';
+            badge.style.alignItems = 'center';
+            badge.style.justifyContent = 'center';
+            badge.style.gap = '4px';
+            badge.innerHTML = `<i class="fa-solid fa-flag" style="font-size: 0.6rem;"></i> CLAN: ${userFaction.title.toUpperCase()}`;
+            el.parentNode.insertBefore(badge, el.nextSibling);
+        });
+    }
 
     const adminTabBtn = document.getElementById('prf-tab-admin');
     if (adminTabBtn) {
@@ -2761,6 +2839,12 @@ function openFactionEditorModal(factionId) {
         openModal('modal-login');
         return;
     }
+
+    const currentFaction = getUserFaction();
+    if (currentFaction && (!factionId || currentFaction.faction.id !== factionId)) {
+        showToast(`⚠️ Ya perteneces al clan: ${currentFaction.title}. Debes abandonarlo o disolverlo primero.`);
+        return;
+    }
     
     // Reset form
     document.getElementById('faction-editor-form').reset();
@@ -3069,34 +3153,62 @@ function openFactionDetailModal(factionId) {
     const canManage = isOwner || isAdmin;
     
     let joinBtnHtml = '';
-    if (state.username && !isOwner) {
-        const applicantName = state.username.toLowerCase();
-        const existingRequest = state.conversations.find(c => c.listingId === item.id && c.buyer.toLowerCase() === applicantName);
-        
-        let adminBtn = isAdmin ? `<button class="btn-mc btn-purple-mc width-100" onclick="joinFactionDirectly('${item.id}')" style="margin-top: 0.5rem; padding: 0.6rem; background:#8b5cf6;"><i class="fa-solid fa-bolt"></i> UNIRSE AL INSTANTE (ADMIN)</button>` : '';
+    const currentFaction = getUserFaction();
+    let adminBtn = isAdmin ? `<button class="btn-mc btn-purple-mc width-100" onclick="joinFactionDirectly('${item.id}')" style="margin-top: 0.5rem; padding: 0.6rem; background:#8b5cf6;"><i class="fa-solid fa-bolt"></i> UNIRSE AL INSTANTE (ADMIN)</button>` : '';
 
-        if (existingRequest) {
-            if (existingRequest.status === 'pending') {
+    if (!state.username) {
+        joinBtnHtml = `<button class="btn-mc btn-purple-mc width-100" onclick="openModal('modal-login')" style="margin-top: 1rem; padding: 0.6rem;"><i class="fa-solid fa-right-to-bracket"></i> LOGUEATE PARA UNIRTE</button>`;
+    } else if (isOwner) {
+        joinBtnHtml = `<button class="btn-mc btn-green-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-crown"></i> ERES EL LÍDER</button>`;
+    } else if (currentFaction) {
+        if (currentFaction.faction.id === item.id) {
+            joinBtnHtml = `
+                <button class="btn-mc btn-green-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-check"></i> YA ERES MIEMBRO</button>
+                <button class="btn-mc btn-dark-mc width-100" onclick="leaveFaction('${item.id}')" style="margin-top: 0.5rem; padding: 0.6rem; border-color: #f87171; color: #f87171;"><i class="fa-solid fa-right-from-bracket"></i> ABANDONAR CLAN</button>
+            `;
+        } else {
+            joinBtnHtml = `<button class="btn-mc btn-dark-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-triangle-exclamation"></i> MIEMBRO DE ${currentFaction.title.toUpperCase()}</button>`;
+        }
+    } else {
+        // User not in any faction
+        if (recruitment === 'Cerrado') {
+            joinBtnHtml = `
+                <button class="btn-mc btn-dark-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-lock"></i> RECLUTAMIENTO CERRADO</button>
+                ${adminBtn}
+            `;
+        } else if (recruitment === 'Abierto') {
+            joinBtnHtml = `
+                <button class="btn-mc btn-green-mc width-100" onclick="joinFactionDirectly('${item.id}')" style="margin-top: 1rem; padding: 0.6rem;"><i class="fa-solid fa-bolt"></i> UNIRSE AL INSTANTE</button>
+                ${adminBtn}
+            `;
+        } else {
+            // "Invitación" or default
+            const applicantName = state.username.toLowerCase();
+            const existingRequest = state.conversations.find(c => c.listingId === item.id && c.buyer.toLowerCase() === applicantName);
+            if (existingRequest) {
+                if (existingRequest.status === 'pending') {
+                    joinBtnHtml = `
+                        <button class="btn-mc btn-dark-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-spinner fa-spin"></i> SOLICITUD PENDIENTE</button>
+                        ${adminBtn}
+                    `;
+                } else if (existingRequest.status === 'rejected') {
+                    joinBtnHtml = `
+                        <button class="btn-mc btn-dark-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-xmark" style="color:#ef4444;"></i> SOLICITUD RECHAZADA</button>
+                        ${adminBtn}
+                    `;
+                } else {
+                    joinBtnHtml = `
+                        <button class="btn-mc btn-green-mc width-100" onclick="sendJoinRequest('${item.id}')" style="margin-top: 1rem; padding: 0.6rem;"><i class="fa-solid fa-plus"></i> SOLICITAR UNIRSE</button>
+                        ${adminBtn}
+                    `;
+                }
+            } else {
                 joinBtnHtml = `
-                    <button class="btn-mc btn-dark-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-spinner fa-spin"></i> SOLICITUD PENDIENTE</button>
-                    ${adminBtn}
-                `;
-            } else if (existingRequest.status === 'accepted') {
-                joinBtnHtml = `<button class="btn-mc btn-green-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-check"></i> YA ERES MIEMBRO</button>`;
-            } else if (existingRequest.status === 'rejected') {
-                joinBtnHtml = `
-                    <button class="btn-mc btn-dark-mc width-100" style="margin-top: 1rem; padding: 0.6rem;" disabled><i class="fa-solid fa-xmark" style="color:#ef4444;"></i> SOLICITUD RECHAZADA</button>
+                    <button class="btn-mc btn-green-mc width-100" onclick="sendJoinRequest('${item.id}')" style="margin-top: 1rem; padding: 0.6rem;"><i class="fa-solid fa-plus"></i> SOLICITAR UNIRSE</button>
                     ${adminBtn}
                 `;
             }
-        } else {
-            joinBtnHtml = `
-                <button class="btn-mc btn-green-mc width-100" onclick="sendJoinRequest('${item.id}')" style="margin-top: 1rem; padding: 0.6rem;"><i class="fa-solid fa-plus"></i> ENVIAR SOLICITUD</button>
-                ${adminBtn}
-            `;
         }
-    } else if (!state.username) {
-        joinBtnHtml = `<button class="btn-mc btn-purple-mc width-100" onclick="openModal('modal-login')" style="margin-top: 1rem; padding: 0.6rem;"><i class="fa-solid fa-right-to-bracket"></i> LOGUEATE PARA UNIRTE</button>`;
     }
 
     detailContainer.innerHTML = `
@@ -3215,10 +3327,80 @@ function deleteFaction(factionId) {
     );
 }
 
+async function leaveFaction(factionId) {
+    if (!state.username) return;
+    
+    const faction = state.marketplaceListings.find(l => l.id === factionId);
+    if (!faction) return;
+    
+    customConfirm(
+        '¿Abandonar Clan?',
+        `¿Estás seguro de que deseas abandonar el clan ${faction.title}?`,
+        async () => {
+            const lowerUser = state.username.toLowerCase();
+            const memberConv = state.conversations.find(c => 
+                c.listingId === factionId && c.buyer.toLowerCase() === lowerUser && c.status === 'accepted'
+            );
+            if (!memberConv) return;
+            
+            let factionData = {};
+            try {
+                if (faction.desc && faction.desc.startsWith('FACDATA:')) {
+                    factionData = JSON.parse(faction.desc.substring(8));
+                }
+            } catch(e) {}
+            
+            const currentCount = parseInt(factionData.memberCount || 1);
+            factionData.memberCount = Math.max(1, currentCount - 1);
+            const newDesc = "FACDATA:" + JSON.stringify(factionData);
+            
+            if (supabaseClient) {
+                try {
+                    const { error: listError } = await supabaseClient
+                        .from('listings')
+                        .update({ desc_text: newDesc })
+                        .eq('id', factionId);
+                    if (listError) throw listError;
+                    
+                    const { error: convError } = await supabaseClient
+                        .from('conversations')
+                        .update({ status: 'left', updated_at: new Date() })
+                        .eq('id', memberConv.id);
+                    if (convError) throw convError;
+                    
+                    showToast(`🚪 Has abandonado el clan ${faction.title}.`);
+                } catch(err) {
+                    console.error("Error al abandonar el clan:", err);
+                    showToast('❌ Error de conexión al abandonar el clan.');
+                    return;
+                }
+            } else {
+                showToast(`🚪 Has abandonado el clan ${faction.title}.`);
+            }
+            
+            faction.desc = newDesc;
+            memberConv.status = 'left';
+            
+            localStorage.setItem('obs_market_listings', JSON.stringify(state.marketplaceListings));
+            localStorage.setItem('obs_conversations', JSON.stringify(state.conversations));
+            
+            closeModal('modal-view-faction');
+            renderFactions();
+            syncProfileModalUI();
+        }
+    );
+}
+
 async function sendJoinRequest(factionId) {
     if (!state.username) {
         showToast('⚠️ Debes iniciar sesión para enviar una solicitud de unión.');
         openModal('modal-login');
+        return;
+    }
+
+    const currentFaction = getUserFaction();
+    if (currentFaction) {
+        showToast(`⚠️ Ya perteneces al clan: ${currentFaction.title}. Debes abandonarlo primero.`);
         return;
     }
     
@@ -3278,6 +3460,13 @@ async function sendJoinRequest(factionId) {
 
 async function joinFactionDirectly(factionId) {
     if (!state.username) return;
+
+    const currentFaction = getUserFaction();
+    if (currentFaction) {
+        showToast(`⚠️ Ya perteneces al clan: ${currentFaction.title}. Debes abandonarlo primero.`);
+        return;
+    }
+
     const faction = state.marketplaceListings.find(l => l.id === factionId);
     if (!faction) return;
 
@@ -3423,6 +3612,12 @@ async function acceptFactionRequest(chatId) {
     const faction = state.marketplaceListings.find(l => l.id === c.listingId);
     if (!faction) {
         showToast('❌ No se encontró el clan.');
+        return;
+    }
+
+    const applicantClan = isUserInFaction(c.buyer);
+    if (applicantClan) {
+        showToast(`⚠️ Este jugador ya es miembro de otro clan: ${applicantClan}.`);
         return;
     }
     
