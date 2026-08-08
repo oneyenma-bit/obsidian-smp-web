@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Cleanup — Obsidian SMP</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .card {
+            background: #13131a;
+            border: 1px solid #2d2d3d;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.1);
+        }
+        h1 { color: #a78bfa; font-size: 1.6rem; margin-bottom: 0.5rem; }
+        p.sub { color: #64748b; font-size: 0.9rem; margin-bottom: 2rem; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.75rem 1.5rem; border: none; border-radius: 8px;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-scan  { background: #3b82f6; color: #fff; }
+        .btn-scan:hover { background: #2563eb; }
+        .btn-delete { background: #ef4444; color: #fff; }
+        .btn-delete:hover { background: #dc2626; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .log {
+            background: #0d0d14;
+            border: 1px solid #1e1e2e;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            font-family: monospace;
+            font-size: 0.82rem;
+            max-height: 420px;
+            overflow-y: auto;
+            line-height: 1.7;
+        }
+        .log .ok   { color: #4ade80; }
+        .log .warn { color: #facc15; }
+        .log .err  { color: #f87171; }
+        .log .info { color: #60a5fa; }
+        .log .dim  { color: #475569; }
+        .summary {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #1a1a2e;
+            border-radius: 8px;
+            border: 1px solid #2d2d4a;
+            font-size: 0.88rem;
+        }
+        .summary h3 { color: #a78bfa; margin-bottom: 0.75rem; }
+        .member-row {
+            display: flex; justify-content: space-between;
+            padding: 0.4rem 0; border-bottom: 1px solid #1e1e2e;
+            font-size: 0.82rem;
+        }
+        .member-row:last-child { border-bottom: none; }
+        .badge-del  { color: #f87171; font-weight: 700; }
+        .badge-keep { color: #4ade80; font-weight: 700; }
+        .actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Limpieza de Miembros — Obsidian SMP</h1>
+    <p class="sub">Este panel elimina de Supabase todos los registros de membresia (conversations con status = "accepted") de usuarios que no sean lideres activos de algun clan.</p>
+
+    <div class="actions">
+        <button class="btn btn-scan" id="btn-scan" onclick="scan()">Escanear base de datos</button>
+        <button class="btn btn-delete" id="btn-delete" onclick="executeCleanup()" disabled>Eliminar miembros bugueados</button>
+    </div>
+
+    <div class="log" id="log"><span class="dim">Presiona "Escanear" para ver que se va a eliminar antes de confirmar...</span></div>
+    <div class="summary" id="summary" style="display:none;"></div>
+</div>
+
+<script>
+const SUPABASE_URL  = "https://ijfvbgglhvhzbmmqrnwc.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_2w2khQIaLpbQNB-sQyt_pg_Dzufp7z0";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let toDelete = [];
+let scanned  = false;
+
+function log(msg, cls) {
+    if (!cls) cls = 'info';
+    var el = document.getElementById('log');
+    el.innerHTML += '<div class="' + cls + '">' + msg + '</div>';
+    el.scrollTop = el.scrollHeight;
+}
+
+function parsePublisher(pubStr) {
+    if (!pubStr) return '';
+    return pubStr.includes('|') ? pubStr.split('|')[0].toLowerCase() : pubStr.toLowerCase();
+}
+
+async function scan() {
+    document.getElementById('btn-scan').disabled = true;
+    document.getElementById('btn-delete').disabled = true;
+    document.getElementById('log').innerHTML = '';
+    document.getElementById('summary').style.display = 'none';
+    toDelete = [];
+    scanned = false;
+
+    log('Conectando a Supabase...', 'info');
+
+    var r1 = await sb.from('listings').select('id, title, publisher').eq('category', 'faccion');
+    var listings = r1.data;
+    var lErr = r1.error;
+
+    if (lErr) {
+        log('Error al obtener clanes: ' + lErr.message, 'err');
+        document.getElementById('btn-scan').disabled = false;
+        return;
+    }
+    log('Clanes encontrados: ' + listings.length, 'ok');
+
+    var leaderUsernames = new Set(listings.map(function(l) { return parsePublisher(l.publisher); }));
+    var clanMap = {};
+    listings.forEach(function(l) { clanMap[l.id] = l.title; });
+
+    log('Lideres detectados:', 'info');
+    leaderUsernames.forEach(function(u) { log('   - ' + u, 'dim'); });
+
+    var r2 = await sb.from('conversations').select('id, listing_id, buyer, seller, status').eq('status', 'accepted');
+    var convs = r2.data;
+    var cErr = r2.error;
+
+    if (cErr) {
+        log('Error al obtener membresias: ' + cErr.message, 'err');
+        document.getElementById('btn-scan').disabled = false;
+        return;
+    }
+    log('Registros de membresia encontrados: ' + convs.length, 'info');
+
+    var keep = [];
+    var remove = [];
+
+    convs.forEach(function(c) {
+        var buyer = (c.buyer || '').toLowerCase();
+        var clanName = clanMap[c.listing_id] || c.listing_id;
+        if (leaderUsernames.has(buyer)) {
+            keep.push(Object.assign({}, c, { clanName: clanName }));
+        } else {
+            remove.push(Object.assign({}, c, { clanName: clanName }));
+        }
+    });
+
+    toDelete = remove.map(function(r) { return r.id; });
+
+    log('', 'dim');
+    log('CONSERVAR (' + keep.length + ' registros):', 'ok');
+    keep.forEach(function(r) { log('   + ' + r.buyer + ' -> ' + r.clanName + ' [' + r.id + ']', 'ok'); });
+
+    log('ELIMINAR (' + remove.length + ' registros):', 'warn');
+    remove.forEach(function(r) { log('   - ' + r.buyer + ' -> ' + r.clanName + ' [' + r.id + ']', 'warn'); });
+
+    var sumEl = document.getElementById('summary');
+    sumEl.style.display = 'block';
+    var rows = keep.map(function(r) {
+        return '<div class="member-row"><span>' + r.buyer + '</span><span>' + r.clanName + '</span><span class="badge-keep">CONSERVAR</span></div>';
+    }).join('') + remove.map(function(r) {
+        return '<div class="member-row"><span>' + r.buyer + '</span><span>' + r.clanName + '</span><span class="badge-del">ELIMINAR</span></div>';
+    }).join('');
+    sumEl.innerHTML = '<h3>Resumen del escaneo</h3>' + rows +
+        '<div style="margin-top:.75rem;color:#94a3b8;">Total a eliminar: <strong style="color:#f87171;">' + remove.length + '</strong> | Total a conservar: <strong style="color:#4ade80;">' + keep.length + '</strong></div>';
+
+    scanned = true;
+    document.getElementById('btn-scan').disabled = false;
+    if (remove.length > 0) {
+        document.getElementById('btn-delete').disabled = false;
+        log('Revisa la lista y presiona "Eliminar" cuando estes seguro.', 'warn');
+    } else {
+        log('No hay nada que eliminar. La base de datos ya esta limpia!', 'ok');
+    }
+}
+
+async function executeCleanup() {
+    if (!scanned || toDelete.length === 0) return;
+    if (!confirm('Eliminar ' + toDelete.length + ' registros de membresia? Esta accion no se puede deshacer.')) return;
+
+    document.getElementById('btn-delete').disabled = true;
+    document.getElementById('btn-scan').disabled = true;
+
+    log('Iniciando eliminacion...', 'info');
+
+    var BATCH = 50;
+    var deleted = 0;
+
+    for (var i = 0; i < toDelete.length; i += BATCH) {
+        var batch = toDelete.slice(i, i + BATCH);
+        var res = await sb.from('conversations').delete().in('id', batch);
+        if (res.error) {
+            log('Error en lote: ' + res.error.message, 'err');
+        } else {
+            deleted += batch.length;
+            log('Eliminados ' + deleted + '/' + toDelete.length + '...', 'ok');
+        }
+    }
+
+    log('Limpieza completada! Se eliminaron ' + deleted + ' registros de membresia.', 'ok');
+    log('Ahora los usuarios pueden unirse a clanes normalmente.', 'ok');
+
+    toDelete = [];
+    scanned = false;
+    document.getElementById('btn-scan').disabled = false;
+}
+</script>
+</body>
+</html>

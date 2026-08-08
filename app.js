@@ -68,11 +68,19 @@ async function dbFetchConversations() {
                     .map(c => c.listing_id)
             );
 
+            // Find which faction listing IDs this user is the leader of,
+            // using their published factions from state.marketplaceListings.
+            const ownedFactionIds = new Set(
+                (state.marketplaceListings || [])
+                    .filter(item => item.category === 'faccion' && parsePublisher(item.publisher).username.toLowerCase() === lowerUser)
+                    .map(item => item.id)
+            );
+
             state.conversations = data
                 .filter(c => {
-                    // Always include clan_chat rooms for clans the user belongs to
+                    // Always include clan_chat rooms for clans the user belongs to (as member or leader)
                     if (c.status === 'clan_chat') {
-                        return acceptedFactionIds.has(c.listing_id);
+                        return acceptedFactionIds.has(c.listing_id) || ownedFactionIds.has(c.listing_id);
                     }
                     const sellerName = c.seller && c.seller.includes('|') ? c.seller.split('|')[0] : (c.seller || '');
                     const buyerName = c.buyer && c.buyer.includes('|') ? c.buyer.split('|')[0] : (c.buyer || '');
@@ -1704,23 +1712,56 @@ function processPayment() {
     setTimeout(() => {
         btn.disabled = false;
         btn.innerHTML = orig;
+        
+        // 1. Obtener detalles del carrito antes de limpiarlo
+        const total = cartTotal();
+        const pointsEarned = Math.floor(total * 100);
+        const purchasedItems = state.cart.map(i => `${i.qty}x ${i.name}`).join(', ');
+        const txId = 'tbx-' + Math.floor(1000000 + Math.random() * 9000000);
+        
+        // 2. Si el usuario está registrado, sumarle y sincronizar sus puntos
+        if (state.username && state.username !== 'Invitado') {
+            saveUserPoints(state.points + pointsEarned);
+        }
+
+        // 3. Rellenar los detalles en el modal de éxito (modal-success)
+        const successPointsAmt = document.getElementById('success-points-amt');
+        const successPointsAmt2 = document.getElementById('success-points-amt2');
+        const successUser = document.getElementById('success-user');
+        const successItem = document.getElementById('success-item');
+        const successTx = document.getElementById('success-tx');
+
+        if (successPointsAmt) successPointsAmt.textContent = pointsEarned;
+        if (successPointsAmt2) successPointsAmt2.textContent = `${pointsEarned} Pts`;
+        if (successUser) successUser.textContent = state.username || 'Invitado';
+        if (successItem) successItem.textContent = purchasedItems || 'Kits de Obsidian SMP';
+        if (successTx) successTx.textContent = txId;
+
+        // 4. Limpiar el carrito y cerrar el modal de checkout
         closeModal('modal-checkout');
-        
+        state.cart = [];
+        renderCart();
+
+        // 5. Generar y abrir el link de Tebex
         let targetUrl = TEBEX_STORE_URL;
-        
-        // Si hay exactamente un artículo en el carrito y está mapeado, se genera el link directo de compra
-        if (state.cart.length === 1) {
-            const item = state.cart[0];
-            const packageId = TEBEX_PACKAGES[item.id];
-            if (packageId) {
-                targetUrl = `${TEBEX_STORE_URL}/package/${packageId}`;
+        if (purchasedItems) {
+            // Si hay exactamente un artículo mapeado, redirigir directo al paquete
+            const firstItem = purchasedItems.includes(',') ? null : purchasedItems;
+            if (firstItem) {
+                // Buscamos el ID del kit en base al nombre o ID
+                const matchedId = Object.keys(TEBEX_PACKAGES).find(k => KITS[k] && purchasedItems.toLowerCase().includes(KITS[k].label.toLowerCase().split(' + ')[0].toLowerCase()));
+                const packageId = matchedId ? TEBEX_PACKAGES[matchedId] : null;
+                if (packageId) {
+                    targetUrl = `${TEBEX_STORE_URL}/package/${packageId}`;
+                }
             }
         }
         
-        // Redirigir a la tienda oficial de Tebex para el pago seguro
         window.open(targetUrl, '_blank');
-        
         showToast('🔒 Redirigiendo a nuestra tienda segura en Tebex para completar tu compra.');
+        
+        // 6. Abrir el modal de éxito con instrucciones
+        openModal('modal-success');
     }, 800);
 }
 

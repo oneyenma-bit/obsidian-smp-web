@@ -2182,6 +2182,11 @@ input { font-family: var(--font); }
     border: 1px solid #10b981;
     color: #a7f3d0;
 }
+.helper-badge {
+    background: rgba(59, 130, 246, 0.2);
+    border: 1px solid #3b82f6;
+    color: #93c5fd;
+}
 .staff-bio {
     font-size: .78rem;
     color: var(--text-dim);
